@@ -30,7 +30,7 @@ function BuildsTab() {
 
   const fetchBuilds = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/v1/ci/builds?limit=50')
+      const response = await fetch('http://localhost:8060/api/v1/ci/builds?limit=50')
       if (!response.ok) throw new Error('Failed to fetch builds')
       const data = await response.json()
       setBuilds(data.builds || [])

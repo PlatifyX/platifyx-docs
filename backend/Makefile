@@ -39,7 +39,7 @@ docker-build:
 
 docker-run:
 	@echo "Running Docker container..."
-	@docker run -p 8080:8080 --env-file .env platifyx-core:latest
+	@docker run -p 8060:8060 --env-file .env platifyx-core:latest
 
 tidy:
 	@echo "Tidying modules..."

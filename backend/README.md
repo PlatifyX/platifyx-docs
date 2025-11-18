@@ -122,7 +122,7 @@ Copie o arquivo `.env.example` para `.env` e configure:
 
 ```bash
 ENVIRONMENT=development
-PORT=8080
+PORT=8060
 VERSION=0.1.0
 
 DATABASE_URL=postgres://user:password@localhost:5432/platifyx

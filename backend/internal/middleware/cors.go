@@ -12,7 +12,7 @@ func CORS() gin.HandlerFunc {
 		"http://localhost:8060",
 		"http://localhost:5173", // Vite default port
 		"http://localhost:3000", // Common React port
-		"http://localhost:8080",
+		"http://localhost:8060",
 		"http://127.0.0.1:7000",
 		"http://127.0.0.1:8060",
 		"http://127.0.0.1:5173",
