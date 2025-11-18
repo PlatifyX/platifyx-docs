@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
 import ServicesPage from './pages/ServicesPage'
 import KubernetesPage from './pages/KubernetesPage'
+import AzureDevOpsPage from './pages/AzureDevOpsPage'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/kubernetes" element={<KubernetesPage />} />
+          <Route path="/azuredevops" element={<AzureDevOpsPage />} />
         </Routes>
       </Layout>
     </Router>
