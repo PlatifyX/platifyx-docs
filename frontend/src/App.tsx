@@ -16,7 +16,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/kubernetes" element={<KubernetesPage />} />
-          <Route path="/azuredevops" element={<AzureDevOpsPage />} />
+          <Route path="/ci" element={<AzureDevOpsPage />} />
           <Route path="/integrations" element={<IntegrationsPage />} />
         </Routes>
       </Layout>

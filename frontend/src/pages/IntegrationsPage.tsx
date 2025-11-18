@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plug, CheckCircle, XCircle } from 'lucide-react'
+import { Plug, CheckCircle, XCircle, Plus } from 'lucide-react'
 import IntegrationCard from '../components/Integrations/IntegrationCard'
 import AzureDevOpsModal from '../components/Integrations/AzureDevOpsModal'
 import styles from './IntegrationsPage.module.css'
@@ -17,6 +17,7 @@ function IntegrationsPage() {
   const [loading, setLoading] = useState(true)
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
 
   useEffect(() => {
     fetchIntegrations()
@@ -37,32 +38,65 @@ function IntegrationsPage() {
 
   const handleConfigure = (integration: Integration) => {
     setSelectedIntegration(integration)
+    setIsCreating(false)
     setShowModal(true)
   }
 
-  const handleSave = async (config: any) => {
-    if (!selectedIntegration) return
+  const handleCreateNew = () => {
+    setSelectedIntegration(null)
+    setIsCreating(true)
+    setShowModal(true)
+  }
 
+  const handleSave = async (integrationData: any) => {
     try {
-      const response = await fetch(`http://localhost:6000/api/v1/integrations/${selectedIntegration.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          enabled: true,
-          config: config,
-        }),
-      })
+      if (isCreating) {
+        // Create new integration
+        const response = await fetch('http://localhost:6000/api/v1/integrations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: integrationData.name,
+            type: 'azuredevops',
+            enabled: true,
+            config: integrationData.config,
+          }),
+        })
 
-      if (!response.ok) throw new Error('Failed to update integration')
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to create integration')
+        }
+      } else if (selectedIntegration) {
+        // Update existing integration
+        const response = await fetch(`http://localhost:6000/api/v1/integrations/${selectedIntegration.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: integrationData.name,
+            enabled: true,
+            config: integrationData.config,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to update integration')
+        }
+      }
 
       await fetchIntegrations()
       setShowModal(false)
       setSelectedIntegration(null)
-    } catch (err) {
+      setIsCreating(false)
+    } catch (err: any) {
       console.error('Error saving integration:', err)
-      alert('Erro ao salvar integração')
+      alert(err.message || 'Erro ao salvar integração')
+      throw err
     }
   }
 
@@ -106,6 +140,10 @@ function IntegrationsPage() {
             <p className={styles.subtitle}>Configure as integrações com ferramentas externas</p>
           </div>
         </div>
+        <button className={styles.addButton} onClick={handleCreateNew}>
+          <Plus size={20} />
+          <span>Nova Integração</span>
+        </button>
       </div>
 
       <div className={styles.stats}>
@@ -130,13 +168,15 @@ function IntegrationsPage() {
         ))}
       </div>
 
-      {showModal && selectedIntegration?.type === 'azuredevops' && (
+      {showModal && (isCreating || selectedIntegration?.type === 'azuredevops') && (
         <AzureDevOpsModal
           integration={selectedIntegration}
+          isCreating={isCreating}
           onSave={handleSave}
           onClose={() => {
             setShowModal(false)
             setSelectedIntegration(null)
+            setIsCreating(false)
           }}
         />
       )}

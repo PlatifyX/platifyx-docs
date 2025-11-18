@@ -118,18 +118,18 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 		}
 
 		if handlers.AzureDevOpsHandler != nil {
-			azuredevops := v1.Group("/azuredevops")
+			ci := v1.Group("/ci")
 			{
-				azuredevops.GET("/stats", handlers.AzureDevOpsHandler.GetStats)
+				ci.GET("/stats", handlers.AzureDevOpsHandler.GetStats)
 
-				azuredevops.GET("/pipelines", handlers.AzureDevOpsHandler.ListPipelines)
-				azuredevops.GET("/pipelines/:id/runs", handlers.AzureDevOpsHandler.ListPipelineRuns)
+				ci.GET("/pipelines", handlers.AzureDevOpsHandler.ListPipelines)
+				ci.GET("/pipelines/:id/runs", handlers.AzureDevOpsHandler.ListPipelineRuns)
 
-				azuredevops.GET("/builds", handlers.AzureDevOpsHandler.ListBuilds)
-				azuredevops.GET("/builds/:id", handlers.AzureDevOpsHandler.GetBuild)
+				ci.GET("/builds", handlers.AzureDevOpsHandler.ListBuilds)
+				ci.GET("/builds/:id", handlers.AzureDevOpsHandler.GetBuild)
 
-				azuredevops.GET("/releases", handlers.AzureDevOpsHandler.ListReleases)
-				azuredevops.GET("/releases/:id", handlers.AzureDevOpsHandler.GetRelease)
+				ci.GET("/releases", handlers.AzureDevOpsHandler.ListReleases)
+				ci.GET("/releases/:id", handlers.AzureDevOpsHandler.GetRelease)
 			}
 		}
 
@@ -137,7 +137,9 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 		{
 			integrations.GET("", handlers.IntegrationHandler.List)
 			integrations.GET("/:id", handlers.IntegrationHandler.GetByID)
+			integrations.POST("", handlers.IntegrationHandler.Create)
 			integrations.PUT("/:id", handlers.IntegrationHandler.Update)
+			integrations.POST("/test/azuredevops", handlers.IntegrationHandler.TestAzureDevOps)
 		}
 	}
 

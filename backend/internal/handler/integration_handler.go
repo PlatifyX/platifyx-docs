@@ -1,10 +1,13 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
+	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/azuredevops"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -68,6 +71,7 @@ func (h *IntegrationHandler) Update(c *gin.Context) {
 	}
 
 	var input struct {
+		Name    string                 `json:"name"`
 		Enabled bool                   `json:"enabled"`
 		Config  map[string]interface{} `json:"config"`
 	}
@@ -79,6 +83,20 @@ func (h *IntegrationHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Get existing integration
+	integration, err := h.service.GetByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Integration not found",
+		})
+		return
+	}
+
+	// Update name if provided
+	if input.Name != "" {
+		integration.Name = input.Name
+	}
+
 	if err := h.service.Update(id, input.Enabled, input.Config); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to update integration",
@@ -88,5 +106,88 @@ func (h *IntegrationHandler) Update(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Integration updated successfully",
+	})
+}
+
+func (h *IntegrationHandler) Create(c *gin.Context) {
+	var input struct {
+		Name    string                 `json:"name" binding:"required"`
+		Type    string                 `json:"type" binding:"required"`
+		Enabled bool                   `json:"enabled"`
+		Config  map[string]interface{} `json:"config" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Convert config map to JSON
+	configJSON, err := json.Marshal(input.Config)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid config format",
+		})
+		return
+	}
+
+	integration := &domain.Integration{
+		Name:    input.Name,
+		Type:    input.Type,
+		Enabled: input.Enabled,
+		Config:  configJSON,
+	}
+
+	if err := h.service.Create(integration); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to create integration",
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message":     "Integration created successfully",
+		"integration": integration,
+	})
+}
+
+func (h *IntegrationHandler) TestAzureDevOps(c *gin.Context) {
+	var input struct {
+		Organization string `json:"organization" binding:"required"`
+		URL          string `json:"url" binding:"required"`
+		PAT          string `json:"pat" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Create temporary Azure DevOps config
+	config := domain.AzureDevOpsConfig{
+		Organization: input.Organization,
+		Project:      "",
+		PAT:          input.PAT,
+	}
+
+	// Try to connect and list projects
+	client := azuredevops.NewClient(config)
+
+	// Test by making a simple API call to verify credentials
+	_, err := client.ListPipelines()
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Failed to connect to Azure DevOps. Please check your credentials.",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
 	})
 }
