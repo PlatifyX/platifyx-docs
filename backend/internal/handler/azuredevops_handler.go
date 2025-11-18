@@ -201,6 +201,11 @@ func (h *AzureDevOpsHandler) ListBuilds(c *gin.Context) {
 	// Apply additional filters
 	filteredBuilds := make([]domain.Build, 0)
 	for _, build := range allBuilds {
+		// Exclude cancelled builds
+		if build.Result == "canceled" || build.Result == "cancelled" {
+			continue
+		}
+
 		// Filter by project
 		if filterProject != "" && build.Project != filterProject {
 			continue
@@ -369,6 +374,11 @@ func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 	// Apply additional filters
 	filteredReleases := make([]domain.Release, 0)
 	for _, release := range allReleases {
+		// Exclude abandoned (cancelled) releases
+		if release.Status == "abandoned" {
+			continue
+		}
+
 		// Filter by project
 		if filterProject != "" && release.Project != filterProject {
 			continue
@@ -501,7 +511,7 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 		}
 
 		svc := service.NewAzureDevOpsService(*config, h.log)
-		builds, err := svc.GetBuilds(100)
+		builds, err := svc.GetBuilds(200)
 		if err != nil {
 			continue
 		}
@@ -513,9 +523,34 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 		allBuilds = append(allBuilds, builds...)
 	}
 
-	// Filter builds
+	// Fetch releases with filters
+	var allReleases []domain.Release
+	for integrationName, config := range configs {
+		if filterIntegration != "" && integrationName != filterIntegration {
+			continue
+		}
+
+		svc := service.NewAzureDevOpsService(*config, h.log)
+		releases, err := svc.GetReleases(100)
+		if err != nil {
+			continue
+		}
+
+		for i := range releases {
+			releases[i].Integration = integrationName
+		}
+
+		allReleases = append(allReleases, releases...)
+	}
+
+	// Filter builds (exclude cancelled)
 	filteredBuilds := make([]domain.Build, 0)
 	for _, build := range allBuilds {
+		// IMPORTANT: Exclude cancelled builds
+		if build.Result == "canceled" || build.Result == "cancelled" {
+			continue
+		}
+
 		if filterProject != "" && build.Project != filterProject {
 			continue
 		}
@@ -539,10 +574,53 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 		filteredBuilds = append(filteredBuilds, build)
 	}
 
-	// Calculate stats
+	// Filter releases (exclude cancelled, count only prod/main)
+	filteredReleases := make([]domain.Release, 0)
+	prodReleases := make([]domain.Release, 0)
+	for _, release := range allReleases {
+		// Exclude cancelled releases
+		if release.Status == "abandoned" {
+			continue
+		}
+
+		if filterProject != "" && release.Project != filterProject {
+			continue
+		}
+
+		if filterStartDate != "" {
+			startDate, err := time.Parse("2006-01-02", filterStartDate)
+			if err == nil && release.CreatedOn.Before(startDate) {
+				continue
+			}
+		}
+		if filterEndDate != "" {
+			endDate, err := time.Parse("2006-01-02", filterEndDate)
+			if err == nil {
+				endDate = endDate.Add(24 * time.Hour)
+				if release.CreatedOn.After(endDate) {
+					continue
+				}
+			}
+		}
+
+		filteredReleases = append(filteredReleases, release)
+
+		// Count prod releases (releases with environments named prod, production, or main)
+		for _, env := range release.Environments {
+			envLower := strings.ToLower(env.Name)
+			if strings.Contains(envLower, "prod") || strings.Contains(envLower, "main") {
+				prodReleases = append(prodReleases, release)
+				break
+			}
+		}
+	}
+
+	// Calculate build stats
 	successCount := 0
 	failedCount := 0
 	runningCount := 0
+	totalDuration := 0.0
+	validDurationCount := 0
 
 	for _, build := range filteredBuilds {
 		switch build.Result {
@@ -555,6 +633,15 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 				runningCount++
 			}
 		}
+
+		// Calculate duration in seconds
+		if !build.StartTime.IsZero() && !build.FinishTime.IsZero() {
+			duration := build.FinishTime.Sub(build.StartTime).Seconds()
+			if duration > 0 {
+				totalDuration += duration
+				validDurationCount++
+			}
+		}
 	}
 
 	successRate := 0.0
@@ -562,13 +649,69 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 		successRate = float64(successCount) / float64(len(filteredBuilds)) * 100
 	}
 
+	avgPipelineTime := 0.0
+	if validDurationCount > 0 {
+		avgPipelineTime = totalDuration / float64(validDurationCount)
+	}
+
+	// Calculate deploy frequency (deploys per day)
+	deployFrequency := 0.0
+	if len(filteredReleases) > 0 {
+		var minDate, maxDate time.Time
+		for i, release := range filteredReleases {
+			if i == 0 || release.CreatedOn.Before(minDate) {
+				minDate = release.CreatedOn
+			}
+			if i == 0 || release.CreatedOn.After(maxDate) {
+				maxDate = release.CreatedOn
+			}
+		}
+		daysDiff := maxDate.Sub(minDate).Hours() / 24
+		if daysDiff > 0 {
+			deployFrequency = float64(len(filteredReleases)) / daysDiff
+		} else if len(filteredReleases) > 0 {
+			deployFrequency = float64(len(filteredReleases))
+		}
+	}
+
+	// Calculate deploy failure rate
+	deploySuccessCount := 0
+	deployFailedCount := 0
+	for _, release := range filteredReleases {
+		hasFailure := false
+		hasSuccess := false
+		for _, env := range release.Environments {
+			if env.DeploymentStatus == "failed" {
+				hasFailure = true
+			}
+			if env.DeploymentStatus == "succeeded" {
+				hasSuccess = true
+			}
+		}
+		if hasFailure {
+			deployFailedCount++
+		} else if hasSuccess {
+			deploySuccessCount++
+		}
+	}
+
+	deployFailureRate := 0.0
+	totalValidReleases := deploySuccessCount + deployFailedCount
+	if totalValidReleases > 0 {
+		deployFailureRate = float64(deployFailedCount) / float64(totalValidReleases) * 100
+	}
+
 	stats := map[string]interface{}{
-		"totalPipelines": len(filteredPipelines),
-		"totalBuilds":    len(filteredBuilds),
-		"successCount":   successCount,
-		"failedCount":    failedCount,
-		"runningCount":   runningCount,
-		"successRate":    successRate,
+		"totalPipelines":     len(filteredPipelines),
+		"totalBuilds":        len(filteredBuilds),
+		"totalReleases":      len(prodReleases),
+		"successCount":       successCount,
+		"failedCount":        failedCount,
+		"runningCount":       runningCount,
+		"successRate":        successRate,
+		"avgPipelineTime":    avgPipelineTime,
+		"deployFrequency":    deployFrequency,
+		"deployFailureRate":  deployFailureRate,
 	}
 
 	c.JSON(http.StatusOK, stats)

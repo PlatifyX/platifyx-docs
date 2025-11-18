@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { GitBranch } from 'lucide-react'
+import { GitBranch, Layers } from 'lucide-react'
 import StatsCard from '../components/AzureDevOps/StatsCard'
 import PipelinesTab from '../components/AzureDevOps/PipelinesTab'
 import BuildsTab from '../components/AzureDevOps/BuildsTab'
@@ -8,9 +8,11 @@ import CIFilters, { FilterValues } from '../components/AzureDevOps/CIFilters'
 import styles from './AzureDevOpsPage.module.css'
 
 type TabType = 'pipelines' | 'builds' | 'releases'
+type IntegrationType = 'all' | 'azuredevops' | 'github' | 'jenkins'
 
 function AzureDevOpsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('pipelines')
+  const [integrationType, setIntegrationType] = useState<IntegrationType>('azuredevops')
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -49,16 +51,48 @@ function AzureDevOpsPage() {
     setFilters(newFilters)
   }
 
+  const getIntegrationTitle = () => {
+    switch (integrationType) {
+      case 'azuredevops':
+        return 'Azure DevOps'
+      case 'github':
+        return 'GitHub Actions'
+      case 'jenkins':
+        return 'Jenkins'
+      case 'all':
+        return 'Todas as Integrações CI/CD'
+      default:
+        return 'CI/CD'
+    }
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.headerContent}>
           <GitBranch size={32} className={styles.headerIcon} />
           <div>
-            <h1 className={styles.title}>Azure DevOps</h1>
+            <h1 className={styles.title}>{getIntegrationTitle()}</h1>
             <p className={styles.subtitle}>Pipelines, Builds e Releases</p>
           </div>
         </div>
+      </div>
+
+      <div className={styles.integrationSelector}>
+        <div className={styles.selectorLabel}>
+          <Layers size={18} />
+          <span>Tipo de Integração:</span>
+        </div>
+        <select
+          className={styles.selectorDropdown}
+          value={integrationType}
+          onChange={(e) => setIntegrationType(e.target.value as IntegrationType)}
+        >
+          <option value="azuredevops">Azure DevOps</option>
+          <option value="github" disabled>GitHub Actions (Em breve)</option>
+          <option value="jenkins" disabled>Jenkins (Em breve)</option>
+          <option value="all">Todas as Integrações</option>
+        </select>
       </div>
 
       {!loading && stats && !error && (
@@ -69,7 +103,7 @@ function AzureDevOpsPage() {
         <div className={styles.error}>
           <p>⚠️ {error}</p>
           <p className={styles.errorHint}>
-            Verifique se as credenciais do Azure DevOps estão configuradas no backend
+            Verifique se as credenciais estão configuradas no backend
           </p>
         </div>
       )}
