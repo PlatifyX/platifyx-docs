@@ -1,6 +1,23 @@
 import { useState, useEffect } from 'react'
-import { Rocket, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Rocket, CheckCircle, XCircle, Clock, UserCheck } from 'lucide-react'
 import styles from './AzureDevOpsTabs.module.css'
+
+interface User {
+  id: string
+  displayName: string
+  uniqueName: string
+}
+
+interface ReleaseApproval {
+  id: number
+  approver: User
+  approvedBy?: User
+  status: string
+  comments: string
+  createdOn: string
+  modifiedOn: string
+  isAutomated: boolean
+}
 
 interface ReleaseEnvironment {
   id: number
@@ -9,6 +26,8 @@ interface ReleaseEnvironment {
   deploymentStatus: string
   createdOn: string
   modifiedOn: string
+  preDeployApprovals?: ReleaseApproval[]
+  postDeployApprovals?: ReleaseApproval[]
 }
 
 interface Release {
@@ -17,7 +36,7 @@ interface Release {
   status: string
   createdOn: string
   modifiedOn: string
-  createdBy: string
+  createdBy: User
   description: string
   releaseDefinition: {
     id: number
@@ -65,6 +84,26 @@ function ReleasesTab() {
     return date.toLocaleString('pt-BR')
   }
 
+  const getApprovedBy = (env: ReleaseEnvironment): string | null => {
+    // Check pre-deploy approvals first
+    const preApproval = env.preDeployApprovals?.find(
+      (a) => a.status === 'approved' && a.approvedBy
+    )
+    if (preApproval?.approvedBy) {
+      return preApproval.approvedBy.displayName
+    }
+
+    // Check post-deploy approvals
+    const postApproval = env.postDeployApprovals?.find(
+      (a) => a.status === 'approved' && a.approvedBy
+    )
+    if (postApproval?.approvedBy) {
+      return postApproval.approvedBy.displayName
+    }
+
+    return null
+  }
+
   if (loading) {
     return <div className={styles.loading}>Carregando releases...</div>
   }
@@ -103,20 +142,33 @@ function ReleasesTab() {
               <span className={styles.label}>Created:</span>
               <span>{formatDate(release.createdOn)}</span>
             </div>
+            <div className={styles.listItemRow}>
+              <span className={styles.label}>Created By:</span>
+              <span>{release.createdBy?.displayName || 'N/A'}</span>
+            </div>
 
             {release.environments && release.environments.length > 0 && (
               <div className={styles.environments}>
                 <span className={styles.label}>Environments:</span>
                 <div className={styles.environmentsList}>
-                  {release.environments.map((env) => (
-                    <div key={env.id} className={styles.environment}>
-                      {getEnvironmentIcon(env.deploymentStatus)}
-                      <span>{env.name}</span>
-                      <span className={`${styles.badge} ${getEnvironmentBadge(env.deploymentStatus)}`}>
-                        {env.deploymentStatus || env.status}
-                      </span>
-                    </div>
-                  ))}
+                  {release.environments.map((env) => {
+                    const approvedBy = getApprovedBy(env)
+                    return (
+                      <div key={env.id} className={styles.environment}>
+                        {getEnvironmentIcon(env.deploymentStatus)}
+                        <span>{env.name}</span>
+                        <span className={`${styles.badge} ${getEnvironmentBadge(env.deploymentStatus)}`}>
+                          {env.deploymentStatus || env.status}
+                        </span>
+                        {approvedBy && (
+                          <span className={styles.approver}>
+                            <UserCheck size={14} />
+                            <span>{approvedBy}</span>
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}

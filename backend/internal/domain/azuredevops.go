@@ -75,10 +75,23 @@ type Release struct {
 }
 
 type ReleaseEnvironment struct {
-	ID               int       `json:"id"`
-	Name             string    `json:"name"`
-	Status           string    `json:"status"`
-	DeploymentStatus string    `json:"deploymentStatus"`
-	CreatedOn        time.Time `json:"createdOn"`
-	ModifiedOn       time.Time `json:"modifiedOn"`
+	ID               int                   `json:"id"`
+	Name             string                `json:"name"`
+	Status           string                `json:"status"`
+	DeploymentStatus string                `json:"deploymentStatus"`
+	CreatedOn        time.Time             `json:"createdOn"`
+	ModifiedOn       time.Time             `json:"modifiedOn"`
+	PreDeployApprovals []ReleaseApproval   `json:"preDeployApprovals,omitempty"`
+	PostDeployApprovals []ReleaseApproval  `json:"postDeployApprovals,omitempty"`
+}
+
+type ReleaseApproval struct {
+	ID           int       `json:"id"`
+	Approver     User      `json:"approver"`
+	ApprovedBy   User      `json:"approvedBy,omitempty"`
+	Status       string    `json:"status"`
+	Comments     string    `json:"comments"`
+	CreatedOn    time.Time `json:"createdOn"`
+	ModifiedOn   time.Time `json:"modifiedOn"`
+	IsAutomated  bool      `json:"isAutomated"`
 }
