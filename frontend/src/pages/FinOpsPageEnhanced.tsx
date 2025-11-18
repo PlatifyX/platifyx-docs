@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, TrendingDown, Server, Cloud, AlertTriangle } from 'lucide-react'
+import { DollarSign, TrendingUp, TrendingDown, Cloud, AlertTriangle, Calendar, Filter } from 'lucide-react'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart
@@ -30,7 +30,10 @@ function FinOpsPageEnhanced() {
   const [teamCosts, setTeamCosts] = useState<TagCost[]>([])
   const [appCosts, setAppCosts] = useState<TagCost[]>([])
   const [forecast, setForecast] = useState<any[]>([])
-  const [stats, setStats] = useState<any>(null)
+  const [resources, setResources] = useState<any[]>([])
+
+  // Date filters
+  const [monthsToShow, setMonthsToShow] = useState(12)
 
   useEffect(() => {
     fetchAllData()
@@ -40,13 +43,13 @@ function FinOpsPageEnhanced() {
     setLoading(true)
     try {
       // Fetch all data in parallel
-      const [monthlyRes, serviceRes, teamRes, appRes, forecastRes, statsRes] = await Promise.all([
+      const [monthlyRes, serviceRes, teamRes, appRes, forecastRes, resourcesRes] = await Promise.all([
         fetch('http://localhost:8060/api/v1/finops/aws/monthly'),
         fetch('http://localhost:8060/api/v1/finops/aws/by-service'),
         fetch('http://localhost:8060/api/v1/finops/aws/by-tag?tag=Team'),
         fetch('http://localhost:8060/api/v1/finops/aws/by-tag?tag=Application'),
         fetch('http://localhost:8060/api/v1/finops/aws/forecast'),
-        fetch('http://localhost:8060/api/v1/finops/stats?provider=aws'),
+        fetch('http://localhost:8060/api/v1/finops/resources?provider=aws'),
       ])
 
       const monthlyData = await monthlyRes.json()
@@ -54,14 +57,17 @@ function FinOpsPageEnhanced() {
       const teamData = await teamRes.json()
       const appData = await appRes.json()
       const forecastData = await forecastRes.json()
-      const statsData = await statsRes.json()
+      const resourcesData = await resourcesRes.json()
+
+      console.log('Monthly Data:', monthlyData)
+      console.log('Service Data:', serviceData)
 
       setMonthlyCosts(monthlyData || [])
       setServiceCosts((serviceData || []).sort((a: ServiceCost, b: ServiceCost) => b.cost - a.cost).slice(0, 10))
       setTeamCosts((teamData || []).sort((a: TagCost, b: TagCost) => b.cost - a.cost))
       setAppCosts((appData || []).sort((a: TagCost, b: TagCost) => b.cost - a.cost))
       setForecast(forecastData || [])
-      setStats(statsData || {})
+      setResources((resourcesData || []).sort((a: any, b: any) => (b.cost || 0) - (a.cost || 0)).slice(0, 10))
     } catch (error) {
       console.error('Error fetching FinOps data:', error)
     } finally {
@@ -78,8 +84,20 @@ function FinOpsPageEnhanced() {
 
   const formatMonth = (dateStr: string) => {
     if (!dateStr) return ''
-    const date = new Date(dateStr + '-01')
-    return date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+    try {
+      // dateStr comes as "2024-01" or "2024-01-01"
+      const parts = dateStr.split('-')
+      if (parts.length >= 2) {
+        const year = parseInt(parts[0])
+        const month = parseInt(parts[1]) - 1 // JavaScript months are 0-indexed
+        const date = new Date(year, month, 1)
+        return date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+      }
+      return dateStr
+    } catch (e) {
+      console.error('Error formatting date:', dateStr, e)
+      return dateStr
+    }
   }
 
   if (loading) {
@@ -90,10 +108,28 @@ function FinOpsPageEnhanced() {
     )
   }
 
-  const totalCost = stats?.totalCost || 0
-  const monthlyCost = stats?.monthlyCost || 0
-  const dailyCost = stats?.dailyCost || 0
-  const trend = stats?.costTrend || 0
+  // Calculate metrics from monthly data
+  const filteredMonthly = monthlyCosts.slice(-monthsToShow)
+  const totalCost = filteredMonthly.reduce((sum, item) => sum + (item.cost || 0), 0)
+  const avgMonthlyCost = filteredMonthly.length > 0 ? totalCost / filteredMonthly.length : 0
+  const dailyCost = avgMonthlyCost / 30
+
+  // Calculate trend (compare last month vs previous month)
+  let trend = 0
+  if (filteredMonthly.length >= 2) {
+    const lastMonth = filteredMonthly[filteredMonthly.length - 1]?.cost || 0
+    const prevMonth = filteredMonthly[filteredMonthly.length - 2]?.cost || 0
+    if (prevMonth > 0) {
+      trend = ((lastMonth - prevMonth) / prevMonth) * 100
+    }
+  }
+
+  const totalResources = resources.length
+  const activeResources = resources.filter(r =>
+    r.status?.toLowerCase() === 'running' ||
+    r.status?.toLowerCase() === 'active' ||
+    r.status?.toLowerCase() === 'available'
+  ).length
 
   return (
     <div className={styles.container}>
@@ -102,9 +138,26 @@ function FinOpsPageEnhanced() {
           <Cloud size={32} className={styles.headerIcon} />
           <div>
             <h1 className={styles.title}>FinOps - AWS Cost Analytics</h1>
-            <p className={styles.subtitle}>Análise completa de custos AWS - Últimos 12 meses</p>
+            <p className={styles.subtitle}>Análise completa de custos AWS</p>
           </div>
         </div>
+      </div>
+
+      {/* Date Filter */}
+      <div className={styles.filterSection}>
+        <div className={styles.filterLabel}>
+          <Calendar size={20} />
+          <span>Período de Análise</span>
+        </div>
+        <select
+          className={styles.filterSelect}
+          value={monthsToShow}
+          onChange={(e) => setMonthsToShow(parseInt(e.target.value))}
+        >
+          <option value={3}>Últimos 3 meses</option>
+          <option value={6}>Últimos 6 meses</option>
+          <option value={12}>Últimos 12 meses</option>
+        </select>
       </div>
 
       {/* 🔵 1. VISÃO GERAL (HIGH LEVEL) */}
@@ -118,7 +171,7 @@ function FinOpsPageEnhanced() {
               <DollarSign size={24} />
             </div>
             <div className={styles.statContent}>
-              <p className={styles.statLabel}>Custo Total (Anual)</p>
+              <p className={styles.statLabel}>Custo Total ({monthsToShow} meses)</p>
               <p className={styles.statValue}>{formatCurrency(totalCost)}</p>
             </div>
           </div>
@@ -129,7 +182,7 @@ function FinOpsPageEnhanced() {
             </div>
             <div className={styles.statContent}>
               <p className={styles.statLabel}>Custo Mensal Médio</p>
-              <p className={styles.statValue}>{formatCurrency(monthlyCost)}</p>
+              <p className={styles.statValue}>{formatCurrency(avgMonthlyCost)}</p>
             </div>
           </div>
 
@@ -148,7 +201,7 @@ function FinOpsPageEnhanced() {
               {trend >= 0 ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
             </div>
             <div className={styles.statContent}>
-              <p className={styles.statLabel}>Tendência</p>
+              <p className={styles.statLabel}>Tendência (Mês a Mês)</p>
               <p className={`${styles.statValue} ${trend >= 0 ? styles.trendUp : styles.trendDown}`}>
                 {trend >= 0 ? '+' : ''}{trend.toFixed(1)}%
               </p>
@@ -160,7 +213,7 @@ function FinOpsPageEnhanced() {
         <div className={styles.chartCard}>
           <h3 className={styles.chartTitle}>📈 Custo Total Mensal (Tendência)</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={monthlyCosts}>
+            <AreaChart data={filteredMonthly}>
               <defs>
                 <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
@@ -168,10 +221,26 @@ function FinOpsPageEnhanced() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tickFormatter={formatMonth} />
-              <YAxis tickFormatter={(value) => `$${value}`} />
-              <Tooltip formatter={(value: any) => formatCurrency(value)} labelFormatter={formatMonth} />
-              <Area type="monotone" dataKey="cost" stroke="#8884d8" fillOpacity={1} fill="url(#colorCost)" />
+              <XAxis
+                dataKey="month"
+                tickFormatter={formatMonth}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis tickFormatter={(value) => `$${value.toLocaleString()}`} />
+              <Tooltip
+                formatter={(value: any) => formatCurrency(value)}
+                labelFormatter={formatMonth}
+              />
+              <Area
+                type="monotone"
+                dataKey="cost"
+                stroke="#8884d8"
+                fillOpacity={1}
+                fill="url(#colorCost)"
+                name="Custo"
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -182,10 +251,10 @@ function FinOpsPageEnhanced() {
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={serviceCosts} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" tickFormatter={(value) => `$${value}`} />
-              <YAxis dataKey="service" type="category" width={150} />
+              <XAxis type="number" tickFormatter={(value) => `$${value.toLocaleString()}`} />
+              <YAxis dataKey="service" type="category" width={200} />
               <Tooltip formatter={(value: any) => formatCurrency(value)} />
-              <Bar dataKey="cost" fill="#00C49F" />
+              <Bar dataKey="cost" fill="#00C49F" name="Custo" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -245,10 +314,10 @@ function FinOpsPageEnhanced() {
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={appCosts.slice(0, 10)}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="tag" />
-                  <YAxis tickFormatter={(value) => `$${value}`} />
+                  <XAxis dataKey="tag" angle={-45} textAnchor="end" height={100} />
+                  <YAxis tickFormatter={(value) => `$${value.toLocaleString()}`} />
                   <Tooltip formatter={(value: any) => formatCurrency(value)} />
-                  <Bar dataKey="cost" fill="#FFBB28" />
+                  <Bar dataKey="cost" fill="#FFBB28" name="Custo" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -258,9 +327,9 @@ function FinOpsPageEnhanced() {
         </div>
 
         {/* 📈 Gráfico 6 — Custo por Recurso (Top Resources) */}
-        {stats?.topCostResources && stats.topCostResources.length > 0 && (
+        {resources && resources.length > 0 && (
           <div className={styles.chartCard}>
-            <h3 className={styles.chartTitle}>💰 Top 5 Recursos Mais Caros</h3>
+            <h3 className={styles.chartTitle}>💰 Top 10 Recursos Mais Caros</h3>
             <div className={styles.resourceTable}>
               <table>
                 <thead>
@@ -273,17 +342,17 @@ function FinOpsPageEnhanced() {
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.topCostResources.map((resource: any, index: number) => (
+                  {resources.map((resource: any, index: number) => (
                     <tr key={index}>
-                      <td>{resource.resourceName}</td>
-                      <td>{resource.resourceType}</td>
-                      <td>{resource.region}</td>
+                      <td>{resource.resourceName || resource.resourceID}</td>
+                      <td>{resource.resourceType || 'N/A'}</td>
+                      <td>{resource.region || 'N/A'}</td>
                       <td>
-                        <span className={`${styles.badge} ${styles[`status${resource.status}`]}`}>
-                          {resource.status}
+                        <span className={`${styles.badge} ${styles[`status${(resource.status || '').toLowerCase()}`]}`}>
+                          {resource.status || 'unknown'}
                         </span>
                       </td>
-                      <td className={styles.costCell}>{formatCurrency(resource.cost)}</td>
+                      <td className={styles.costCell}>{formatCurrency(resource.cost || 0)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -317,6 +386,31 @@ function FinOpsPageEnhanced() {
             <li>Detecção de anomalias de custo (integração com AWS Cost Anomaly Detection)</li>
           </ul>
           <p>📌 Utilize o AWS Cost Explorer para análises detalhadas de otimização.</p>
+        </div>
+      </section>
+
+      {/* Summary Footer */}
+      <section className={styles.summaryFooter}>
+        <div className={styles.summaryCard}>
+          <h4>📊 Resumo do Período ({monthsToShow} meses)</h4>
+          <div className={styles.summaryGrid}>
+            <div>
+              <p className={styles.summaryLabel}>Total de Recursos</p>
+              <p className={styles.summaryValue}>{totalResources}</p>
+            </div>
+            <div>
+              <p className={styles.summaryLabel}>Recursos Ativos</p>
+              <p className={styles.summaryValue}>{activeResources}</p>
+            </div>
+            <div>
+              <p className={styles.summaryLabel}>Serviços Únicos</p>
+              <p className={styles.summaryValue}>{serviceCosts.length}</p>
+            </div>
+            <div>
+              <p className={styles.summaryLabel}>Custo Total</p>
+              <p className={`${styles.summaryValue} ${styles.highlight}`}>{formatCurrency(totalCost)}</p>
+            </div>
+          </div>
         </div>
       </section>
     </div>
