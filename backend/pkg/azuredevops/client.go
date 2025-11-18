@@ -144,15 +144,24 @@ func (c *Client) ListPipelineRuns(pipelineID int) ([]domain.PipelineRun, error) 
 	}
 
 	for _, project := range projects {
+		// First try YAML pipeline runs endpoint
 		runs, err := c.ListPipelineRunsForProject(project.Name, pipelineID)
-		if err == nil {
-			// Pipeline found in this project (200 response)
-			// Return runs even if empty - empty array means pipeline exists but has no runs
-			fmt.Printf("Found pipeline %d in project %s with %d runs\n", pipelineID, project.Name, len(runs))
+		if err == nil && len(runs) > 0 {
+			// Pipeline found in this project with runs
+			fmt.Printf("Found pipeline %d in project %s with %d runs (YAML)\n", pipelineID, project.Name, len(runs))
 			return runs, nil
 		}
-		// If error (likely 404), continue to next project
-		fmt.Printf("Pipeline %d not found in project %s: %v\n", pipelineID, project.Name, err)
+
+		// If no runs found, try classic build definitions endpoint
+		// This converts builds to pipeline runs format
+		runsFromBuilds, err := c.ListBuildsByDefinition(project.Name, pipelineID)
+		if err == nil && len(runsFromBuilds) > 0 {
+			fmt.Printf("Found pipeline %d in project %s with %d runs (Classic)\n", pipelineID, project.Name, len(runsFromBuilds))
+			return runsFromBuilds, nil
+		}
+
+		// Try next project
+		fmt.Printf("Pipeline %d not found in project %s\n", pipelineID, project.Name)
 	}
 
 	return nil, fmt.Errorf("pipeline %d not found in any project", pipelineID)
@@ -256,6 +265,58 @@ func (c *Client) GetBuild(buildID int) (*domain.Build, error) {
 	}
 
 	return &build, nil
+}
+
+// ListBuildsByDefinition fetches builds for a specific pipeline/definition ID
+// and converts them to PipelineRun format for compatibility
+func (c *Client) ListBuildsByDefinition(project string, definitionID int) ([]domain.PipelineRun, error) {
+	url := fmt.Sprintf("%s/%s/%s/_apis/build/builds?definitions=%d&api-version=%s&$top=50",
+		c.baseURL, c.organization, project, definitionID, apiVersion)
+
+	fmt.Printf("Fetching builds by definition from: %s\n", url)
+	body, err := c.doRequest("GET", url)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use same intermediate struct as ListBuildsForProject for project field
+	var response struct {
+		Value []struct {
+			domain.Build
+			ProjectObj struct {
+				ID   string `json:"id"`
+				Name string `json:"name"`
+			} `json:"project"`
+		} `json:"value"`
+		Count int `json:"count"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		fmt.Printf("Failed to unmarshal builds response: %v\n", err)
+		return nil, err
+	}
+
+	fmt.Printf("Builds by definition response: count=%d, len(value)=%d\n", response.Count, len(response.Value))
+
+	// Convert builds to pipeline runs format
+	runs := make([]domain.PipelineRun, len(response.Value))
+	for i, item := range response.Value {
+		build := item.Build
+		runs[i] = domain.PipelineRun{
+			ID:           build.ID,
+			PipelineID:   definitionID,
+			PipelineName: build.Definition.Name,
+			State:        build.Status,
+			Result:       build.Result,
+			CreatedDate:  build.QueueTime,
+			FinishedDate: build.FinishTime,
+			URL:          build.URL,
+			SourceBranch: build.SourceBranch,
+			SourceVersion: build.SourceVersion,
+		}
+	}
+
+	return runs, nil
 }
 
 func (c *Client) ListReleases(top int) ([]domain.Release, error) {
