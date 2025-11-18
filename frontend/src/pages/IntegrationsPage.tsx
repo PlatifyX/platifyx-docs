@@ -3,6 +3,9 @@ import { Plug, CheckCircle, XCircle, Plus } from 'lucide-react'
 import IntegrationCard from '../components/Integrations/IntegrationCard'
 import AzureDevOpsModal from '../components/Integrations/AzureDevOpsModal'
 import SonarQubeModal from '../components/Integrations/SonarQubeModal'
+import AzureCloudModal from '../components/Integrations/AzureCloudModal'
+import GCPModal from '../components/Integrations/GCPModal'
+import AWSModal from '../components/Integrations/AWSModal'
 import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
 import styles from './IntegrationsPage.module.css'
 
@@ -204,6 +207,48 @@ function IntegrationsPage() {
         <SonarQubeModal
           integration={selectedIntegration}
           isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'azure' : selectedIntegration?.type === 'azure') && (
+        <AzureCloudModal
+          isOpen={showModal}
+          integration={selectedIntegration}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'gcp' : selectedIntegration?.type === 'gcp') && (
+        <GCPModal
+          isOpen={showModal}
+          integration={selectedIntegration}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'aws' : selectedIntegration?.type === 'aws') && (
+        <AWSModal
+          isOpen={showModal}
+          integration={selectedIntegration}
           onSave={handleSave}
           onClose={() => {
             setShowModal(false)

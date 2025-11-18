@@ -20,6 +20,24 @@ const integrationTypes = [
     logo: '/logos/sonarqube.png',
   },
   {
+    id: 'azure',
+    name: 'Microsoft Azure',
+    description: 'Gerenciamento de custos e recursos da nuvem Azure',
+    logo: '/logos/azure.png',
+  },
+  {
+    id: 'gcp',
+    name: 'Google Cloud Platform',
+    description: 'Gerenciamento de custos e recursos do GCP',
+    logo: '/logos/gcp.png',
+  },
+  {
+    id: 'aws',
+    name: 'Amazon Web Services',
+    description: 'Gerenciamento de custos e recursos da AWS',
+    logo: '/logos/aws.png',
+  },
+  {
     id: 'github',
     name: 'GitHub',
     description: 'Integração com GitHub Actions (em breve)',
