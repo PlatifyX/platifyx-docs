@@ -19,14 +19,20 @@ type Client struct {
 	organization string
 	project      string
 	pat          string
+	baseURL      string
 	httpClient   *http.Client
 }
 
 func NewClient(config domain.AzureDevOpsConfig) *Client {
+	baseURL := config.URL
+	if baseURL == "" {
+		baseURL = "https://dev.azure.com"
+	}
 	return &Client{
 		organization: config.Organization,
 		project:      config.Project,
 		pat:          config.PAT,
+		baseURL:      baseURL,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -62,8 +68,8 @@ type Project struct {
 }
 
 func (c *Client) ListProjects() ([]Project, error) {
-	url := fmt.Sprintf("https://dev.azure.com/%s/_apis/projects?api-version=%s",
-		c.organization, apiVersion)
+	url := fmt.Sprintf("%s/%s/_apis/projects?api-version=%s",
+		c.baseURL, c.organization, apiVersion)
 
 	body, err := c.doRequest("GET", url)
 	if err != nil {
@@ -86,8 +92,8 @@ func (c *Client) ListPipelines() ([]domain.Pipeline, error) {
 }
 
 func (c *Client) ListPipelinesForProject(project string) ([]domain.Pipeline, error) {
-	url := fmt.Sprintf("https://dev.azure.com/%s/%s/_apis/pipelines?api-version=%s",
-		c.organization, project, apiVersion)
+	url := fmt.Sprintf("%s/%s/%s/_apis/pipelines?api-version=%s",
+		c.baseURL, c.organization, project, apiVersion)
 
 	body, err := c.doRequest("GET", url)
 	if err != nil {
@@ -130,8 +136,8 @@ func (c *Client) ListAllPipelines() ([]domain.Pipeline, error) {
 }
 
 func (c *Client) ListPipelineRuns(pipelineID int) ([]domain.PipelineRun, error) {
-	url := fmt.Sprintf("https://dev.azure.com/%s/%s/_apis/pipelines/%d/runs?api-version=%s",
-		c.organization, c.project, pipelineID, apiVersion)
+	url := fmt.Sprintf("%s/%s/%s/_apis/pipelines/%d/runs?api-version=%s",
+		c.baseURL, c.organization, c.project, pipelineID, apiVersion)
 
 	body, err := c.doRequest("GET", url)
 	if err != nil {
@@ -154,8 +160,8 @@ func (c *Client) ListBuilds(top int) ([]domain.Build, error) {
 }
 
 func (c *Client) ListBuildsForProject(project string, top int) ([]domain.Build, error) {
-	url := fmt.Sprintf("https://dev.azure.com/%s/%s/_apis/build/builds?api-version=%s&$top=%d",
-		c.organization, project, apiVersion, top)
+	url := fmt.Sprintf("%s/%s/%s/_apis/build/builds?api-version=%s&$top=%d",
+		c.baseURL, c.organization, project, apiVersion, top)
 
 	body, err := c.doRequest("GET", url)
 	if err != nil {
@@ -193,8 +199,8 @@ func (c *Client) ListAllBuilds(topPerProject int) ([]domain.Build, error) {
 }
 
 func (c *Client) GetBuild(buildID int) (*domain.Build, error) {
-	url := fmt.Sprintf("https://dev.azure.com/%s/%s/_apis/build/builds/%d?api-version=%s",
-		c.organization, c.project, buildID, apiVersion)
+	url := fmt.Sprintf("%s/%s/%s/_apis/build/builds/%d?api-version=%s",
+		c.baseURL, c.organization, c.project, buildID, apiVersion)
 
 	body, err := c.doRequest("GET", url)
 	if err != nil {
@@ -214,8 +220,13 @@ func (c *Client) ListReleases(top int) ([]domain.Release, error) {
 }
 
 func (c *Client) ListReleasesForProject(project string, top int) ([]domain.Release, error) {
-	url := fmt.Sprintf("https://vsrm.dev.azure.com/%s/%s/_apis/release/releases?api-version=%s&$top=%d",
-		c.organization, project, apiVersion, top)
+	// Releases use vsrm subdomain
+	releaseURL := c.baseURL
+	if c.baseURL == "https://dev.azure.com" {
+		releaseURL = "https://vsrm.dev.azure.com"
+	}
+	url := fmt.Sprintf("%s/%s/%s/_apis/release/releases?api-version=%s&$top=%d",
+		releaseURL, c.organization, project, apiVersion, top)
 
 	body, err := c.doRequest("GET", url)
 	if err != nil {
@@ -253,8 +264,13 @@ func (c *Client) ListAllReleases(topPerProject int) ([]domain.Release, error) {
 }
 
 func (c *Client) GetRelease(releaseID int) (*domain.Release, error) {
-	url := fmt.Sprintf("https://vsrm.dev.azure.com/%s/%s/_apis/release/releases/%d?api-version=%s",
-		c.organization, c.project, releaseID, apiVersion)
+	// Releases use vsrm subdomain
+	releaseURL := c.baseURL
+	if c.baseURL == "https://dev.azure.com" {
+		releaseURL = "https://vsrm.dev.azure.com"
+	}
+	url := fmt.Sprintf("%s/%s/%s/_apis/release/releases/%d?api-version=%s",
+		releaseURL, c.organization, c.project, releaseID, apiVersion)
 
 	body, err := c.doRequest("GET", url)
 	if err != nil {

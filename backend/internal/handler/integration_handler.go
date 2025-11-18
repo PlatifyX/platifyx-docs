@@ -172,6 +172,7 @@ func (h *IntegrationHandler) TestAzureDevOps(c *gin.Context) {
 		Organization: input.Organization,
 		Project:      "",
 		PAT:          input.PAT,
+		URL:          input.URL,
 	}
 
 	// Try to connect and list projects
@@ -197,6 +198,7 @@ func (h *IntegrationHandler) TestAzureDevOps(c *gin.Context) {
 func (h *IntegrationHandler) ListAzureDevOpsProjects(c *gin.Context) {
 	org := c.Query("organization")
 	pat := c.Query("pat")
+	url := c.Query("url")
 
 	if org == "" || pat == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -209,6 +211,7 @@ func (h *IntegrationHandler) ListAzureDevOpsProjects(c *gin.Context) {
 		Organization: org,
 		Project:      "",
 		PAT:          pat,
+		URL:          url,
 	}
 
 	client := azuredevops.NewClient(config)

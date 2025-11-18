@@ -6,6 +6,7 @@ type AzureDevOpsConfig struct {
 	Organization string
 	Project      string
 	PAT          string
+	URL          string
 }
 
 type Pipeline struct {
