@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Package, CheckCircle, XCircle, Clock, GitBranch } from 'lucide-react'
+import { Package, CheckCircle, XCircle, Clock, GitBranch, Plus } from 'lucide-react'
 import BuildLogsModal from './BuildLogsModal'
+import QueueBuildModal from './QueueBuildModal'
 import styles from './AzureDevOpsTabs.module.css'
 
 interface Build {
@@ -26,6 +27,7 @@ function BuildsTab() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedBuild, setSelectedBuild] = useState<Build | null>(null)
+  const [showQueueModal, setShowQueueModal] = useState(false)
 
   useEffect(() => {
     fetchBuilds()
@@ -122,11 +124,25 @@ function BuildsTab() {
         ))}
       </div>
 
+      <button className={styles.fabButton} onClick={() => setShowQueueModal(true)} title="Criar Novo Build">
+        <Plus size={24} />
+      </button>
+
       {selectedBuild && (
         <BuildLogsModal
           buildId={selectedBuild.id}
           buildNumber={selectedBuild.buildNumber}
           onClose={() => setSelectedBuild(null)}
+        />
+      )}
+
+      {showQueueModal && (
+        <QueueBuildModal
+          onClose={() => setShowQueueModal(false)}
+          onSuccess={() => {
+            setShowQueueModal(false)
+            fetchBuilds()
+          }}
         />
       )}
     </>

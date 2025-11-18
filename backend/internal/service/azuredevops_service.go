@@ -156,3 +156,42 @@ func (s *AzureDevOpsService) GetPipelineStats() map[string]interface{} {
 		"successRate":    successRate,
 	}
 }
+
+func (s *AzureDevOpsService) QueueBuild(project string, definitionID int, sourceBranch string) (*domain.Build, error) {
+	s.log.Infow("Queueing build", "project", project, "definitionId", definitionID, "branch", sourceBranch)
+
+	build, err := s.client.QueueBuild(project, definitionID, sourceBranch)
+	if err != nil {
+		s.log.Errorw("Failed to queue build", "error", err, "project", project, "definitionId", definitionID)
+		return nil, err
+	}
+
+	s.log.Infow("Build queued successfully", "buildId", build.ID, "buildNumber", build.BuildNumber)
+	return build, nil
+}
+
+func (s *AzureDevOpsService) ApproveRelease(project string, approvalID int, comments string) error {
+	s.log.Infow("Approving release", "project", project, "approvalId", approvalID)
+
+	err := s.client.UpdateReleaseApproval(project, approvalID, "approved", comments)
+	if err != nil {
+		s.log.Errorw("Failed to approve release", "error", err, "project", project, "approvalId", approvalID)
+		return err
+	}
+
+	s.log.Info("Release approved successfully")
+	return nil
+}
+
+func (s *AzureDevOpsService) RejectRelease(project string, approvalID int, comments string) error {
+	s.log.Infow("Rejecting release", "project", project, "approvalId", approvalID)
+
+	err := s.client.UpdateReleaseApproval(project, approvalID, "rejected", comments)
+	if err != nil {
+		s.log.Errorw("Failed to reject release", "error", err, "project", project, "approvalId", approvalID)
+		return err
+	}
+
+	s.log.Info("Release rejected successfully")
+	return nil
+}

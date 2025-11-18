@@ -127,9 +127,12 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			ci.GET("/builds", handlers.AzureDevOpsHandler.ListBuilds)
 			ci.GET("/builds/:id", handlers.AzureDevOpsHandler.GetBuild)
 			ci.GET("/builds/:id/logs", handlers.AzureDevOpsHandler.GetBuildLogs)
+			ci.POST("/builds", handlers.AzureDevOpsHandler.QueueBuild)
 
 			ci.GET("/releases", handlers.AzureDevOpsHandler.ListReleases)
 			ci.GET("/releases/:id", handlers.AzureDevOpsHandler.GetRelease)
+			ci.POST("/releases/approve", handlers.AzureDevOpsHandler.ApproveRelease)
+			ci.POST("/releases/reject", handlers.AzureDevOpsHandler.RejectRelease)
 		}
 
 		integrations := v1.Group("/integrations")

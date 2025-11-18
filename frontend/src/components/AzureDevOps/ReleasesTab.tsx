@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Rocket, CheckCircle, XCircle, Clock, UserCheck } from 'lucide-react'
+import { Rocket, CheckCircle, XCircle, Clock, UserCheck, Check, X } from 'lucide-react'
 import styles from './AzureDevOpsTabs.module.css'
 
 interface User {
@@ -105,6 +105,78 @@ function ReleasesTab() {
     return null
   }
 
+  const getPendingApproval = (env: ReleaseEnvironment): ReleaseApproval | null => {
+    // Check pre-deploy approvals first
+    const preApproval = env.preDeployApprovals?.find(
+      (a) => a.status === 'pending'
+    )
+    if (preApproval) {
+      return preApproval
+    }
+
+    // Check post-deploy approvals
+    const postApproval = env.postDeployApprovals?.find(
+      (a) => a.status === 'pending'
+    )
+    if (postApproval) {
+      return postApproval
+    }
+
+    return null
+  }
+
+  const handleApproveRelease = async (release: Release, approvalId: number, project: string) => {
+    try {
+      const response = await fetch('http://localhost:8060/api/v1/ci/releases/approve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          integrationName: release.integration,
+          project: project,
+          approvalId: approvalId,
+          comments: 'Approved via PlatifyX',
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to approve release')
+      }
+
+      // Refresh releases list
+      fetchReleases()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to approve release')
+    }
+  }
+
+  const handleRejectRelease = async (release: Release, approvalId: number, project: string) => {
+    try {
+      const response = await fetch('http://localhost:8060/api/v1/ci/releases/reject', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          integrationName: release.integration,
+          project: project,
+          approvalId: approvalId,
+          comments: 'Rejected via PlatifyX',
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to reject release')
+      }
+
+      // Refresh releases list
+      fetchReleases()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reject release')
+    }
+  }
+
   if (loading) {
     return <div className={styles.loading}>Carregando releases...</div>
   }
@@ -158,6 +230,7 @@ function ReleasesTab() {
                 <div className={styles.environmentsList}>
                   {release.environments.map((env) => {
                     const approvedBy = getApprovedBy(env)
+                    const pendingApproval = getPendingApproval(env)
                     return (
                       <div key={env.id} className={styles.environment}>
                         {getEnvironmentIcon(env.deploymentStatus)}
@@ -170,6 +243,24 @@ function ReleasesTab() {
                             <UserCheck size={14} />
                             <span>{approvedBy}</span>
                           </span>
+                        )}
+                        {pendingApproval && (
+                          <div className={styles.approvalActions}>
+                            <button
+                              className={styles.approveButton}
+                              onClick={() => handleApproveRelease(release, pendingApproval.id, release.project || '')}
+                              title="Aprovar"
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              className={styles.rejectButton}
+                              onClick={() => handleRejectRelease(release, pendingApproval.id, release.project || '')}
+                              title="Rejeitar"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
                         )}
                       </div>
                     )

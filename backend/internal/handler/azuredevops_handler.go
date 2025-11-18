@@ -360,3 +360,136 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 	stats := svc.GetPipelineStats()
 	c.JSON(http.StatusOK, stats)
 }
+
+func (h *AzureDevOpsHandler) QueueBuild(c *gin.Context) {
+	var req struct {
+		IntegrationName string `json:"integrationName" binding:"required"`
+		Project         string `json:"project" binding:"required"`
+		DefinitionID    int    `json:"definitionId" binding:"required"`
+		SourceBranch    string `json:"sourceBranch" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configurations",
+		})
+		return
+	}
+
+	config, ok := configs[req.IntegrationName]
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Integration not found",
+		})
+		return
+	}
+
+	svc := service.NewAzureDevOpsService(*config, h.log)
+	build, err := svc.QueueBuild(req.Project, req.DefinitionID, req.SourceBranch)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to queue build",
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, build)
+}
+
+func (h *AzureDevOpsHandler) ApproveRelease(c *gin.Context) {
+	var req struct {
+		IntegrationName string `json:"integrationName" binding:"required"`
+		Project         string `json:"project" binding:"required"`
+		ApprovalID      int    `json:"approvalId" binding:"required"`
+		Comments        string `json:"comments"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configurations",
+		})
+		return
+	}
+
+	config, ok := configs[req.IntegrationName]
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Integration not found",
+		})
+		return
+	}
+
+	svc := service.NewAzureDevOpsService(*config, h.log)
+	err = svc.ApproveRelease(req.Project, req.ApprovalID, req.Comments)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to approve release",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Release approved successfully",
+	})
+}
+
+func (h *AzureDevOpsHandler) RejectRelease(c *gin.Context) {
+	var req struct {
+		IntegrationName string `json:"integrationName" binding:"required"`
+		Project         string `json:"project" binding:"required"`
+		ApprovalID      int    `json:"approvalId" binding:"required"`
+		Comments        string `json:"comments"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configurations",
+		})
+		return
+	}
+
+	config, ok := configs[req.IntegrationName]
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Integration not found",
+		})
+		return
+	}
+
+	svc := service.NewAzureDevOpsService(*config, h.log)
+	err = svc.RejectRelease(req.Project, req.ApprovalID, req.Comments)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to reject release",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Release rejected successfully",
+	})
+}
