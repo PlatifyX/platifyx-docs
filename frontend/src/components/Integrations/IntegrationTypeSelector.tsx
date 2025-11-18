@@ -62,6 +62,18 @@ const integrationTypes = [
     logo: '/logos/jira.png',
   },
   {
+    id: 'slack',
+    name: 'Slack',
+    description: 'Notificações e comunicação via Slack',
+    logo: '/logos/slack.png',
+  },
+  {
+    id: 'teams',
+    name: 'Microsoft Teams',
+    description: 'Notificações e comunicação via Teams',
+    logo: '/logos/teams.png',
+  },
+  {
     id: 'github',
     name: 'GitHub',
     description: 'Integração com GitHub Actions (em breve)',

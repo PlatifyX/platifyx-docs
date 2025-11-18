@@ -79,6 +79,15 @@ type JiraIntegrationConfig struct {
 	APIToken string `json:"apiToken"`
 }
 
+type SlackIntegrationConfig struct {
+	WebhookURL string `json:"webhookUrl"`
+	BotToken   string `json:"botToken,omitempty"`
+}
+
+type TeamsIntegrationConfig struct {
+	WebhookURL string `json:"webhookUrl"`
+}
+
 type IntegrationType string
 
 const (
@@ -95,4 +104,6 @@ const (
 	IntegrationTypeGemini      IntegrationType = "gemini"
 	IntegrationTypeClaude      IntegrationType = "claude"
 	IntegrationTypeJira        IntegrationType = "jira"
+	IntegrationTypeSlack       IntegrationType = "slack"
+	IntegrationTypeTeams       IntegrationType = "teams"
 )

@@ -10,6 +10,8 @@ import OpenAIModal from '../components/Integrations/OpenAIModal'
 import GeminiModal from '../components/Integrations/GeminiModal'
 import ClaudeModal from '../components/Integrations/ClaudeModal'
 import JiraModal from '../components/Integrations/JiraModal'
+import SlackModal from '../components/Integrations/SlackModal'
+import TeamsModal from '../components/Integrations/TeamsModal'
 import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
 import styles from './IntegrationsPage.module.css'
 
@@ -327,6 +329,34 @@ function IntegrationsPage() {
 
       {showModal && (isCreating ? selectedType === 'jira' : selectedIntegration?.type === 'jira') && (
         <JiraModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'slack' : selectedIntegration?.type === 'slack') && (
+        <SlackModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'teams' : selectedIntegration?.type === 'teams') && (
+        <TeamsModal
           integration={selectedIntegration}
           isCreating={isCreating}
           onSave={handleSave}

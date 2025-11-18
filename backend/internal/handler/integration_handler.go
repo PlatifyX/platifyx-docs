@@ -14,7 +14,9 @@ import (
 	"github.com/PlatifyX/platifyx-core/pkg/jira"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/PlatifyX/platifyx-core/pkg/openai"
+	"github.com/PlatifyX/platifyx-core/pkg/slack"
 	"github.com/PlatifyX/platifyx-core/pkg/sonarqube"
+	"github.com/PlatifyX/platifyx-core/pkg/teams"
 	"github.com/gin-gonic/gin"
 )
 
@@ -705,5 +707,79 @@ func (h *IntegrationHandler) TestJira(c *gin.Context) {
 		"message": "Connection successful",
 		"success": true,
 		"user":    user,
+	})
+}
+
+func (h *IntegrationHandler) TestSlack(c *gin.Context) {
+	var input struct {
+		WebhookURL string `json:"webhookUrl" binding:"required"`
+		BotToken   string `json:"botToken"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Create temporary Slack config
+	config := domain.SlackConfig{
+		WebhookURL: input.WebhookURL,
+		BotToken:   input.BotToken,
+	}
+
+	// Test connection by sending a test message
+	client := slack.NewClient(config)
+	if err := client.TestConnection(); err != nil {
+		h.log.Errorw("Failed to test Slack connection",
+			"error", err,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to Slack. Please check your webhook URL.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
+	})
+}
+
+func (h *IntegrationHandler) TestTeams(c *gin.Context) {
+	var input struct {
+		WebhookURL string `json:"webhookUrl" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Create temporary Teams config
+	config := domain.TeamsConfig{
+		WebhookURL: input.WebhookURL,
+	}
+
+	// Test connection by sending a test message
+	client := teams.NewClient(config)
+	if err := client.TestConnection(); err != nil {
+		h.log.Errorw("Failed to test Teams connection",
+			"error", err,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to Microsoft Teams. Please check your webhook URL.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
 	})
 }

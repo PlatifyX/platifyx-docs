@@ -475,3 +475,72 @@ func (s *IntegrationService) GetJiraService() (*JiraService, error) {
 
 	return NewJiraService(*config, s.log), nil
 }
+
+func (s *IntegrationService) GetSlackConfig() (*domain.SlackConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeSlack))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.SlackIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal Slack config", "error", err)
+		return nil, err
+	}
+
+	return &domain.SlackConfig{
+		WebhookURL: config.WebhookURL,
+		BotToken:   config.BotToken,
+	}, nil
+}
+
+func (s *IntegrationService) GetSlackService() (*SlackService, error) {
+	config, err := s.GetSlackConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Slack integration not configured")
+	}
+
+	return NewSlackService(*config, s.log), nil
+}
+
+func (s *IntegrationService) GetTeamsConfig() (*domain.TeamsConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeTeams))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.TeamsIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal Teams config", "error", err)
+		return nil, err
+	}
+
+	return &domain.TeamsConfig{
+		WebhookURL: config.WebhookURL,
+	}, nil
+}
+
+func (s *IntegrationService) GetTeamsService() (*TeamsService, error) {
+	config, err := s.GetTeamsConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Teams integration not configured")
+	}
+
+	return NewTeamsService(*config, s.log), nil
+}

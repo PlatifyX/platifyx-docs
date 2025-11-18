@@ -18,6 +18,8 @@ type HandlerManager struct {
 	GitHubHandler       *GitHubHandler
 	TechDocsHandler     *TechDocsHandler
 	JiraHandler         *JiraHandler
+	SlackHandler        *SlackHandler
+	TeamsHandler        *TeamsHandler
 }
 
 func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *HandlerManager {
@@ -34,5 +36,7 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		GitHubHandler:       NewGitHubHandler(services.IntegrationService, log),
 		TechDocsHandler:     NewTechDocsHandler(services.TechDocsService, log),
 		JiraHandler:         NewJiraHandler(services.IntegrationService, log),
+		SlackHandler:        NewSlackHandler(services.IntegrationService, log),
+		TeamsHandler:        NewTeamsHandler(services.IntegrationService, log),
 	}
 }

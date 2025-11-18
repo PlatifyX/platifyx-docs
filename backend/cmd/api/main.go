@@ -232,6 +232,8 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.POST("/test/gemini", handlers.IntegrationHandler.TestGemini)
 			integrations.POST("/test/claude", handlers.IntegrationHandler.TestClaude)
 			integrations.POST("/test/jira", handlers.IntegrationHandler.TestJira)
+			integrations.POST("/test/slack", handlers.IntegrationHandler.TestSlack)
+			integrations.POST("/test/teams", handlers.IntegrationHandler.TestTeams)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)
 		}
 
@@ -244,6 +246,20 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			jira.GET("/issues/:key", handlers.JiraHandler.GetIssue)
 			jira.GET("/boards", handlers.JiraHandler.GetBoards)
 			jira.GET("/boards/:boardId/sprints", handlers.JiraHandler.GetSprints)
+		}
+
+		slack := v1.Group("/slack")
+		{
+			slack.POST("/message", handlers.SlackHandler.SendMessage)
+			slack.POST("/simple", handlers.SlackHandler.SendSimpleMessage)
+			slack.POST("/alert", handlers.SlackHandler.SendAlert)
+		}
+
+		teams := v1.Group("/teams")
+		{
+			teams.POST("/message", handlers.TeamsHandler.SendMessage)
+			teams.POST("/simple", handlers.TeamsHandler.SendSimpleMessage)
+			teams.POST("/alert", handlers.TeamsHandler.SendAlert)
 		}
 	}
 
