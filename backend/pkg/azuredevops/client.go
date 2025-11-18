@@ -300,11 +300,31 @@ func (c *Client) GetBuild(buildID int) (*domain.Build, error) {
 	return &build, nil
 }
 
-// GetBuildLogs fetches the logs for a specific build
+// GetBuildLogs fetches the logs for a specific build across all projects
 func (c *Client) GetBuildLogs(buildID int) (string, error) {
-	url := fmt.Sprintf("%s/%s/%s/_apis/build/builds/%d/logs?api-version=%s",
-		c.baseURL, c.organization, c.project, buildID, apiVersion)
+	// Try to find which project contains this build
+	projects, err := c.ListProjects()
+	if err != nil {
+		return "", err
+	}
 
+	for _, project := range projects {
+		logs, err := c.GetBuildLogsForProject(project.Name, buildID)
+		if err == nil && logs != "" {
+			fmt.Printf("Found build logs for build %d in project %s\n", buildID, project.Name)
+			return logs, nil
+		}
+	}
+
+	return "No logs available for this build", nil
+}
+
+// GetBuildLogsForProject fetches the logs for a specific build in a specific project
+func (c *Client) GetBuildLogsForProject(project string, buildID int) (string, error) {
+	url := fmt.Sprintf("%s/%s/%s/_apis/build/builds/%d/logs?api-version=%s",
+		c.baseURL, c.organization, project, buildID, apiVersion)
+
+	fmt.Printf("Fetching build logs from: %s\n", url)
 	body, err := c.doRequest("GET", url)
 	if err != nil {
 		return "", err
@@ -323,21 +343,19 @@ func (c *Client) GetBuildLogs(buildID int) (string, error) {
 	}
 
 	if len(response.Value) == 0 {
-		return "No logs available", nil
+		return "", nil
 	}
 
 	// Fetch all logs and concatenate them
 	var allLogs string
 	for _, logRecord := range response.Value {
+		fmt.Printf("Fetching log from URL: %s\n", logRecord.URL)
 		logBody, err := c.doRequest("GET", logRecord.URL)
 		if err != nil {
+			fmt.Printf("Error fetching log %d: %v\n", logRecord.ID, err)
 			continue // Skip failed log fetches
 		}
 		allLogs += string(logBody) + "\n"
-	}
-
-	if allLogs == "" {
-		return "No logs available", nil
 	}
 
 	return allLogs, nil
