@@ -46,8 +46,18 @@ function FinOpsPage() {
       const queryParams = new URLSearchParams()
       if (providerFilter) queryParams.append('provider', providerFilter)
 
+      console.log('Fetching stats from:', `http://localhost:8060/api/v1/finops/stats?${queryParams}`)
       const response = await fetch(`http://localhost:8060/api/v1/finops/stats?${queryParams}`)
+
+      if (!response.ok) {
+        console.error('Stats response not OK:', response.status, response.statusText)
+        const errorText = await response.text()
+        console.error('Error response:', errorText)
+        return
+      }
+
       const data = await response.json()
+      console.log('Stats data:', data)
       setStats(data)
     } catch (error) {
       console.error('Error fetching FinOps stats:', error)
@@ -61,8 +71,16 @@ function FinOpsPage() {
       const queryParams = new URLSearchParams()
       if (providerFilter) queryParams.append('provider', providerFilter)
 
+      console.log('Fetching resources from:', `http://localhost:8060/api/v1/finops/resources?${queryParams}`)
       const response = await fetch(`http://localhost:8060/api/v1/finops/resources?${queryParams}`)
+
+      if (!response.ok) {
+        console.error('Resources response not OK:', response.status, response.statusText)
+        return
+      }
+
       const data = await response.json()
+      console.log('Resources data:', data)
       setResources(data || [])
     } catch (error) {
       console.error('Error fetching resources:', error)
