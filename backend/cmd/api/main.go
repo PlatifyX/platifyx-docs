@@ -150,6 +150,10 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			finops.GET("/stats", handlers.FinOpsHandler.GetStats)
 			finops.GET("/costs", handlers.FinOpsHandler.ListCosts)
 			finops.GET("/resources", handlers.FinOpsHandler.ListResources)
+			finops.GET("/aws/monthly", handlers.FinOpsHandler.GetAWSMonthlyCosts)
+			finops.GET("/aws/by-service", handlers.FinOpsHandler.GetAWSCostsByService)
+			finops.GET("/aws/forecast", handlers.FinOpsHandler.GetAWSCostForecast)
+			finops.GET("/aws/by-tag", handlers.FinOpsHandler.GetAWSCostsByTag)
 		}
 
 		integrations := v1.Group("/integrations")

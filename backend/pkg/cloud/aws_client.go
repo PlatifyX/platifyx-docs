@@ -218,6 +218,215 @@ func (c *AWSClient) GetResources() ([]domain.CloudResource, error) {
 	return resources, nil
 }
 
+// GetCostsByMonth retrieves monthly costs for the last 12 months
+func (c *AWSClient) GetCostsByMonth() ([]map[string]interface{}, error) {
+	ctx := context.Background()
+	ceClient := costexplorer.NewFromConfig(c.awsConfig)
+
+	// Last 12 months
+	endDate := time.Now()
+	startDate := endDate.AddDate(-1, 0, 0)
+
+	input := &costexplorer.GetCostAndUsageInput{
+		TimePeriod: &types.DateInterval{
+			Start: aws.String(startDate.Format("2006-01-02")),
+			End:   aws.String(endDate.Format("2006-01-02")),
+		},
+		Granularity: types.GranularityMonthly,
+		Metrics:     []string{"UnblendedCost"},
+	}
+
+	result, err := ceClient.GetCostAndUsage(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get monthly costs: %w", err)
+	}
+
+	var monthlyCosts []map[string]interface{}
+	for _, period := range result.ResultsByTime {
+		var cost float64
+		if period.Total != nil {
+			if unblendedCost, ok := period.Total["UnblendedCost"]; ok {
+				if unblendedCost.Amount != nil {
+					fmt.Sscanf(*unblendedCost.Amount, "%f", &cost)
+				}
+			}
+		}
+
+		month := ""
+		if period.TimePeriod != nil && period.TimePeriod.Start != nil {
+			month = *period.TimePeriod.Start
+		}
+
+		monthlyCosts = append(monthlyCosts, map[string]interface{}{
+			"month": month,
+			"cost":  cost,
+		})
+	}
+
+	return monthlyCosts, nil
+}
+
+// GetCostsByService retrieves costs grouped by service for the last year
+func (c *AWSClient) GetCostsByService() ([]map[string]interface{}, error) {
+	ctx := context.Background()
+	ceClient := costexplorer.NewFromConfig(c.awsConfig)
+
+	endDate := time.Now()
+	startDate := endDate.AddDate(-1, 0, 0)
+
+	input := &costexplorer.GetCostAndUsageInput{
+		TimePeriod: &types.DateInterval{
+			Start: aws.String(startDate.Format("2006-01-02")),
+			End:   aws.String(endDate.Format("2006-01-02")),
+		},
+		Granularity: types.GranularityMonthly,
+		Metrics:     []string{"UnblendedCost"},
+		GroupBy: []types.GroupDefinition{
+			{
+				Type: types.GroupDefinitionTypeDimension,
+				Key:  aws.String("SERVICE"),
+			},
+		},
+	}
+
+	result, err := ceClient.GetCostAndUsage(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get costs by service: %w", err)
+	}
+
+	// Aggregate costs by service across all months
+	serviceCosts := make(map[string]float64)
+
+	for _, period := range result.ResultsByTime {
+		for _, group := range period.Groups {
+			serviceName := "Unknown"
+			if len(group.Keys) > 0 {
+				serviceName = group.Keys[0]
+			}
+
+			var cost float64
+			if group.Metrics != nil {
+				if unblendedCost, ok := group.Metrics["UnblendedCost"]; ok {
+					if unblendedCost.Amount != nil {
+						fmt.Sscanf(*unblendedCost.Amount, "%f", &cost)
+					}
+				}
+			}
+
+			serviceCosts[serviceName] += cost
+		}
+	}
+
+	// Convert to array and sort by cost
+	var services []map[string]interface{}
+	for service, cost := range serviceCosts {
+		services = append(services, map[string]interface{}{
+			"service": service,
+			"cost":    cost,
+		})
+	}
+
+	return services, nil
+}
+
+// GetCostForecast retrieves cost forecast for the next 3 months
+func (c *AWSClient) GetCostForecast() ([]map[string]interface{}, error) {
+	ctx := context.Background()
+	ceClient := costexplorer.NewFromConfig(c.awsConfig)
+
+	startDate := time.Now()
+	endDate := startDate.AddDate(0, 3, 0)
+
+	input := &costexplorer.GetCostForecastInput{
+		TimePeriod: &types.DateInterval{
+			Start: aws.String(startDate.Format("2006-01-02")),
+			End:   aws.String(endDate.Format("2006-01-02")),
+		},
+		Granularity: types.GranularityMonthly,
+		Metric:      types.MetricUnblendedCost,
+	}
+
+	result, err := ceClient.GetCostForecast(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cost forecast: %w", err)
+	}
+
+	var forecast []map[string]interface{}
+	if result.Total != nil && result.Total.Amount != nil {
+		var totalForecast float64
+		fmt.Sscanf(*result.Total.Amount, "%f", &totalForecast)
+
+		forecast = append(forecast, map[string]interface{}{
+			"period": "forecast",
+			"cost":   totalForecast,
+		})
+	}
+
+	return forecast, nil
+}
+
+// GetCostsByTag retrieves costs grouped by specific tag (e.g., Team, Application)
+func (c *AWSClient) GetCostsByTag(tagKey string) ([]map[string]interface{}, error) {
+	ctx := context.Background()
+	ceClient := costexplorer.NewFromConfig(c.awsConfig)
+
+	endDate := time.Now()
+	startDate := endDate.AddDate(-1, 0, 0)
+
+	input := &costexplorer.GetCostAndUsageInput{
+		TimePeriod: &types.DateInterval{
+			Start: aws.String(startDate.Format("2006-01-02")),
+			End:   aws.String(endDate.Format("2006-01-02")),
+		},
+		Granularity: types.GranularityMonthly,
+		Metrics:     []string{"UnblendedCost"},
+		GroupBy: []types.GroupDefinition{
+			{
+				Type: types.GroupDefinitionTypeTag,
+				Key:  aws.String(tagKey),
+			},
+		},
+	}
+
+	result, err := ceClient.GetCostAndUsage(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get costs by tag %s: %w", tagKey, err)
+	}
+
+	// Aggregate costs by tag value
+	tagCosts := make(map[string]float64)
+
+	for _, period := range result.ResultsByTime {
+		for _, group := range period.Groups {
+			tagValue := "Untagged"
+			if len(group.Keys) > 0 {
+				tagValue = group.Keys[0]
+			}
+
+			var cost float64
+			if group.Metrics != nil {
+				if unblendedCost, ok := group.Metrics["UnblendedCost"]; ok {
+					if unblendedCost.Amount != nil {
+						fmt.Sscanf(*unblendedCost.Amount, "%f", &cost)
+					}
+				}
+			}
+
+			tagCosts[tagValue] += cost
+		}
+	}
+
+	var tags []map[string]interface{}
+	for tag, cost := range tagCosts {
+		tags = append(tags, map[string]interface{}{
+			"tag":  tag,
+			"cost": cost,
+		})
+	}
+
+	return tags, nil
+}
+
 // TestConnection tests the AWS connection using STS GetCallerIdentity
 func (c *AWSClient) TestConnection() error {
 	if c.accessKeyID == "" || c.secretAccessKey == "" || c.region == "" {

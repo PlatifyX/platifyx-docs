@@ -255,3 +255,91 @@ func (s *FinOpsService) GetAllResources(provider, integration string) ([]domain.
 
 	return allResources, nil
 }
+
+// GetAWSCostsByMonth retrieves monthly cost data from AWS for the last year
+func (s *FinOpsService) GetAWSCostsByMonth() ([]map[string]interface{}, error) {
+	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
+	if err != nil {
+		return nil, err
+	}
+
+	allMonthlyData := make([]map[string]interface{}, 0)
+
+	for name, config := range awsConfigs {
+		client := cloud.NewAWSClient(*config)
+		monthlyData, err := client.GetCostsByMonth()
+		if err != nil {
+			s.log.Errorw("Failed to get AWS monthly costs", "error", err, "integration", name)
+			continue
+		}
+		allMonthlyData = append(allMonthlyData, monthlyData...)
+	}
+
+	return allMonthlyData, nil
+}
+
+// GetAWSCostsByService retrieves cost data grouped by service from AWS
+func (s *FinOpsService) GetAWSCostsByService() ([]map[string]interface{}, error) {
+	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
+	if err != nil {
+		return nil, err
+	}
+
+	allServiceData := make([]map[string]interface{}, 0)
+
+	for name, config := range awsConfigs {
+		client := cloud.NewAWSClient(*config)
+		serviceData, err := client.GetCostsByService()
+		if err != nil {
+			s.log.Errorw("Failed to get AWS costs by service", "error", err, "integration", name)
+			continue
+		}
+		allServiceData = append(allServiceData, serviceData...)
+	}
+
+	return allServiceData, nil
+}
+
+// GetAWSCostForecast retrieves cost forecast from AWS
+func (s *FinOpsService) GetAWSCostForecast() ([]map[string]interface{}, error) {
+	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
+	if err != nil {
+		return nil, err
+	}
+
+	allForecastData := make([]map[string]interface{}, 0)
+
+	for name, config := range awsConfigs {
+		client := cloud.NewAWSClient(*config)
+		forecastData, err := client.GetCostForecast()
+		if err != nil {
+			s.log.Errorw("Failed to get AWS cost forecast", "error", err, "integration", name)
+			continue
+		}
+		allForecastData = append(allForecastData, forecastData...)
+	}
+
+	return allForecastData, nil
+}
+
+// GetAWSCostsByTag retrieves cost data grouped by tag from AWS
+func (s *FinOpsService) GetAWSCostsByTag(tagKey string) ([]map[string]interface{}, error) {
+	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
+	if err != nil {
+		return nil, err
+	}
+
+	allTagData := make([]map[string]interface{}, 0)
+
+	for name, config := range awsConfigs {
+		client := cloud.NewAWSClient(*config)
+		tagData, err := client.GetCostsByTag(tagKey)
+		if err != nil {
+			s.log.Errorw("Failed to get AWS costs by tag", "error", err, "integration", name, "tag", tagKey)
+			continue
+		}
+		allTagData = append(allTagData, tagData...)
+	}
+
+	return allTagData, nil
+}

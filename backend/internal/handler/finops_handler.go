@@ -64,3 +64,56 @@ func (h *FinOpsHandler) ListResources(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resources)
 }
+
+// GetAWSMonthlyCosts returns monthly cost data from AWS for the last year
+func (h *FinOpsHandler) GetAWSMonthlyCosts(c *gin.Context) {
+	data, err := h.service.GetAWSCostsByMonth()
+	if err != nil {
+		h.log.Errorw("Failed to get AWS monthly costs", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
+}
+
+// GetAWSCostsByService returns cost data grouped by AWS service
+func (h *FinOpsHandler) GetAWSCostsByService(c *gin.Context) {
+	data, err := h.service.GetAWSCostsByService()
+	if err != nil {
+		h.log.Errorw("Failed to get AWS costs by service", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
+}
+
+// GetAWSCostForecast returns AWS cost forecast
+func (h *FinOpsHandler) GetAWSCostForecast(c *gin.Context) {
+	data, err := h.service.GetAWSCostForecast()
+	if err != nil {
+		h.log.Errorw("Failed to get AWS cost forecast", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
+}
+
+// GetAWSCostsByTag returns cost data grouped by tag
+func (h *FinOpsHandler) GetAWSCostsByTag(c *gin.Context) {
+	tagKey := c.Query("tag")
+	if tagKey == "" {
+		tagKey = "Team" // Default tag
+	}
+
+	data, err := h.service.GetAWSCostsByTag(tagKey)
+	if err != nil {
+		h.log.Errorw("Failed to get AWS costs by tag", "error", err, "tag", tagKey)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
+}
