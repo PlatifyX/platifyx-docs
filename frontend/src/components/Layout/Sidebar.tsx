@@ -11,7 +11,8 @@ import {
   DollarSign,
   BarChart3,
   Plug,
-  FileText
+  FileText,
+  Github
 } from 'lucide-react'
 import styles from './Sidebar.module.css'
 
@@ -26,6 +27,8 @@ const navItems: NavItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
   { path: '/services', label: 'Serviços', icon: <Box size={20} /> },
   { path: '/kubernetes', label: 'Kubernetes', icon: <Server size={20} /> },
+  { path: '/grafana', label: 'Grafana', icon: <Activity size={20} /> },
+  { path: '/github', label: 'GitHub', icon: <Github size={20} /> },
   { path: '/ci', label: 'CI', icon: <GitBranch size={20} /> },
   { path: '/integrations', label: 'Integrações', icon: <Plug size={20} /> },
   { path: '/observability', label: 'Observabilidade', icon: <Activity size={20} /> },
