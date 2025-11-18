@@ -13,8 +13,6 @@ type Config struct {
 
 	DatabaseURL string
 	RedisURL    string
-
-	OTelEndpoint string
 }
 
 func Load() *Config {
@@ -26,7 +24,6 @@ func Load() *Config {
 		Version:      getEnv("VERSION", "0.1.0"),
 		DatabaseURL:  getEnv("DATABASE_URL", ""),
 		RedisURL:     getEnv("REDIS_URL", ""),
-		OTelEndpoint: getEnv("OTEL_ENDPOINT", ""),
 	}
 }
 
