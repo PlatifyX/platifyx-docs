@@ -15,6 +15,7 @@ type HandlerManager struct {
 	IntegrationHandler  *IntegrationHandler
 	FinOpsHandler       *FinOpsHandler
 	GrafanaHandler      *GrafanaHandler
+	GitHubHandler       *GitHubHandler
 }
 
 func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *HandlerManager {
@@ -28,5 +29,6 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		IntegrationHandler:  NewIntegrationHandler(services.IntegrationService, log),
 		FinOpsHandler:       NewFinOpsHandler(services.FinOpsService, log),
 		GrafanaHandler:      NewGrafanaHandler(services.IntegrationService, log),
+		GitHubHandler:       NewGitHubHandler(services.IntegrationService, log),
 	}
 }

@@ -186,6 +186,23 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			observability.GET("/annotations", handlers.GrafanaHandler.GetAnnotations)
 		}
 
+		code := v1.Group("/code")
+		{
+			code.GET("/stats", handlers.GitHubHandler.GetStats)
+			code.GET("/user", handlers.GitHubHandler.GetAuthenticatedUser)
+
+			code.GET("/repositories", handlers.GitHubHandler.ListRepositories)
+			code.GET("/repositories/:owner/:repo", handlers.GitHubHandler.GetRepository)
+
+			code.GET("/repositories/:owner/:repo/commits", handlers.GitHubHandler.ListCommits)
+			code.GET("/repositories/:owner/:repo/pulls", handlers.GitHubHandler.ListPullRequests)
+			code.GET("/repositories/:owner/:repo/issues", handlers.GitHubHandler.ListIssues)
+			code.GET("/repositories/:owner/:repo/branches", handlers.GitHubHandler.ListBranches)
+			code.GET("/repositories/:owner/:repo/actions/runs", handlers.GitHubHandler.ListWorkflowRuns)
+
+			code.GET("/organizations/:org", handlers.GitHubHandler.GetOrganization)
+		}
+
 		integrations := v1.Group("/integrations")
 		{
 			integrations.GET("", handlers.IntegrationHandler.List)
@@ -200,6 +217,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.POST("/test/aws", handlers.IntegrationHandler.TestAWS)
 			integrations.POST("/test/kubernetes", handlers.IntegrationHandler.TestKubernetes)
 			integrations.POST("/test/grafana", handlers.IntegrationHandler.TestGrafana)
+			integrations.POST("/test/github", handlers.IntegrationHandler.TestGitHub)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)
 		}
 	}

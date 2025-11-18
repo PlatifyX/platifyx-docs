@@ -388,3 +388,53 @@ func (s *IntegrationService) GetAllGrafanaConfigs() (map[string]*domain.GrafanaC
 
 	return configs, nil
 }
+
+func (s *IntegrationService) GetGitHubConfig() (*domain.GitHubConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeGitHub))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.GitHubIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal GitHub config", "error", err)
+		return nil, err
+	}
+
+	return &domain.GitHubConfig{
+		Token:        config.Token,
+		Organization: config.Organization,
+	}, nil
+}
+
+func (s *IntegrationService) GetAllGitHubConfigs() (map[string]*domain.GitHubConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGitHub))
+	if err != nil {
+		s.log.Errorw("Failed to fetch GitHub integrations", "error", err)
+		return nil, err
+	}
+
+	configs := make(map[string]*domain.GitHubConfig)
+	for _, integration := range integrations {
+		if !integration.Enabled {
+			continue
+		}
+
+		var config domain.GitHubIntegrationConfig
+		if err := json.Unmarshal(integration.Config, &config); err != nil {
+			s.log.Errorw("Failed to unmarshal GitHub config", "error", err, "integration", integration.Name)
+			continue
+		}
+
+		configs[integration.Name] = &domain.GitHubConfig{
+			Token:        config.Token,
+			Organization: config.Organization,
+		}
+	}
+
+	return configs, nil
+}

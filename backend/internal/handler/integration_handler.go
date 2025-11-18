@@ -521,3 +521,44 @@ func (h *IntegrationHandler) TestGrafana(c *gin.Context) {
 		"health":  health,
 	})
 }
+
+func (h *IntegrationHandler) TestGitHub(c *gin.Context) {
+	var input struct {
+		Token        string `json:"token" binding:"required"`
+		Organization string `json:"organization"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Create temporary GitHub config
+	config := domain.GitHubConfig{
+		Token:        input.Token,
+		Organization: input.Organization,
+	}
+
+	// Test connection by creating a client and fetching user info
+	githubService := service.NewGitHubService(config, h.log)
+	user, err := githubService.GetAuthenticatedUser()
+	if err != nil {
+		h.log.Errorw("Failed to test GitHub connection",
+			"error", err,
+			"organization", input.Organization,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to GitHub. Please check your credentials.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
+		"user":    user,
+	})
+}

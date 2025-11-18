@@ -55,6 +55,11 @@ type GrafanaIntegrationConfig struct {
 	APIKey string `json:"apiKey"`
 }
 
+type GitHubIntegrationConfig struct {
+	Token        string `json:"token"`
+	Organization string `json:"organization,omitempty"`
+}
+
 type IntegrationType string
 
 const (
