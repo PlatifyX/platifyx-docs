@@ -57,6 +57,30 @@ func (s *IntegrationService) GetByType(integrationType string) (*domain.Integrat
 	return integration, nil
 }
 
+func (s *IntegrationService) Create(integration *domain.Integration) error {
+	s.log.Infow("Creating integration", "name", integration.Name, "type", integration.Type)
+
+	var config map[string]interface{}
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal config", "error", err)
+		return err
+	}
+
+	created, err := s.repo.Create(integration.Name, integration.Type, integration.Enabled, config)
+	if err != nil {
+		s.log.Errorw("Failed to create integration", "error", err)
+		return err
+	}
+
+	// Update the integration with the created values
+	integration.ID = created.ID
+	integration.CreatedAt = created.CreatedAt
+	integration.UpdatedAt = created.UpdatedAt
+
+	s.log.Infow("Integration created successfully", "id", integration.ID)
+	return nil
+}
+
 func (s *IntegrationService) Update(id int, enabled bool, config map[string]interface{}) error {
 	s.log.Infow("Updating integration", "id", id, "enabled", enabled)
 
