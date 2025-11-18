@@ -51,28 +51,13 @@ function AzureDevOpsPage() {
     setFilters(newFilters)
   }
 
-  const getIntegrationTitle = () => {
-    switch (integrationType) {
-      case 'azuredevops':
-        return 'Azure DevOps'
-      case 'github':
-        return 'GitHub Actions'
-      case 'jenkins':
-        return 'Jenkins'
-      case 'all':
-        return 'Todas as Integrações CI/CD'
-      default:
-        return 'CI/CD'
-    }
-  }
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.headerContent}>
           <GitBranch size={32} className={styles.headerIcon} />
           <div>
-            <h1 className={styles.title}>{getIntegrationTitle()}</h1>
+            <h1 className={styles.title}>CI</h1>
             <p className={styles.subtitle}>Pipelines, Builds e Releases</p>
           </div>
         </div>

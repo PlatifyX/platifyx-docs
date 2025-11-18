@@ -666,31 +666,10 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 		}
 	}
 
-	// Calculate deploy failure rate
-	deploySuccessCount := 0
-	deployFailedCount := 0
-	for _, release := range filteredReleases {
-		hasFailure := false
-		hasSuccess := false
-		for _, env := range release.Environments {
-			if env.DeploymentStatus == "failed" {
-				hasFailure = true
-			}
-			if env.DeploymentStatus == "succeeded" {
-				hasSuccess = true
-			}
-		}
-		if hasFailure {
-			deployFailedCount++
-		} else if hasSuccess {
-			deploySuccessCount++
-		}
-	}
-
+	// Calculate deploy failure rate (based on failed builds)
 	deployFailureRate := 0.0
-	totalValidReleases := deploySuccessCount + deployFailedCount
-	if totalValidReleases > 0 {
-		deployFailureRate = float64(deployFailedCount) / float64(totalValidReleases) * 100
+	if len(filteredBuilds) > 0 {
+		deployFailureRate = float64(failedCount) / float64(len(filteredBuilds)) * 100
 	}
 
 	stats := map[string]interface{}{
