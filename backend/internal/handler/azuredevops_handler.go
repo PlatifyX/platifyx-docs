@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
@@ -48,14 +49,19 @@ func (h *AzureDevOpsHandler) ListPipelines(c *gin.Context) {
 		return
 	}
 
+	h.log.Infow("Fetching pipelines from all integrations", "integrationCount", len(configs))
+
 	var allPipelines []domain.Pipeline
 	for integrationName, config := range configs {
+		h.log.Infow("Fetching pipelines from integration", "integration", integrationName, "organization", config.Organization)
 		svc := service.NewAzureDevOpsService(*config, h.log)
 		pipelines, err := svc.GetPipelines()
 		if err != nil {
 			h.log.Errorw("Failed to fetch pipelines from integration", "integration", integrationName, "error", err)
 			continue
 		}
+
+		h.log.Infow("Fetched pipelines from integration", "integration", integrationName, "count", len(pipelines))
 
 		// Mark each pipeline with the integration name
 		for i := range pipelines {
@@ -64,6 +70,13 @@ func (h *AzureDevOpsHandler) ListPipelines(c *gin.Context) {
 
 		allPipelines = append(allPipelines, pipelines...)
 	}
+
+	h.log.Infow("Total pipelines fetched from all integrations", "total", len(allPipelines))
+
+	// Sort pipelines by name alphabetically
+	sort.Slice(allPipelines, func(i, j int) bool {
+		return allPipelines[i].Name < allPipelines[j].Name
+	})
 
 	c.JSON(http.StatusOK, gin.H{
 		"pipelines": allPipelines,
@@ -131,14 +144,19 @@ func (h *AzureDevOpsHandler) ListBuilds(c *gin.Context) {
 		return
 	}
 
+	h.log.Infow("Fetching builds from all integrations", "integrationCount", len(configs))
+
 	var allBuilds []domain.Build
 	for integrationName, config := range configs {
+		h.log.Infow("Fetching builds from integration", "integration", integrationName, "organization", config.Organization)
 		svc := service.NewAzureDevOpsService(*config, h.log)
 		builds, err := svc.GetBuilds(limit)
 		if err != nil {
 			h.log.Errorw("Failed to fetch builds from integration", "integration", integrationName, "error", err)
 			continue
 		}
+
+		h.log.Infow("Fetched builds from integration", "integration", integrationName, "count", len(builds))
 
 		// Mark each build with the integration name
 		for i := range builds {
@@ -147,6 +165,13 @@ func (h *AzureDevOpsHandler) ListBuilds(c *gin.Context) {
 
 		allBuilds = append(allBuilds, builds...)
 	}
+
+	h.log.Infow("Total builds fetched from all integrations", "total", len(allBuilds))
+
+	// Sort builds by finish time (most recent first)
+	sort.Slice(allBuilds, func(i, j int) bool {
+		return allBuilds[i].FinishTime.After(allBuilds[j].FinishTime)
+	})
 
 	c.JSON(http.StatusOK, gin.H{
 		"builds": allBuilds,
@@ -247,14 +272,19 @@ func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 		return
 	}
 
+	h.log.Infow("Fetching releases from all integrations", "integrationCount", len(configs))
+
 	var allReleases []domain.Release
 	for integrationName, config := range configs {
+		h.log.Infow("Fetching releases from integration", "integration", integrationName, "organization", config.Organization)
 		svc := service.NewAzureDevOpsService(*config, h.log)
 		releases, err := svc.GetReleases(limit)
 		if err != nil {
 			h.log.Errorw("Failed to fetch releases from integration", "integration", integrationName, "error", err)
 			continue
 		}
+
+		h.log.Infow("Fetched releases from integration", "integration", integrationName, "count", len(releases))
 
 		// Mark each release with the integration name
 		for i := range releases {
@@ -263,6 +293,13 @@ func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 
 		allReleases = append(allReleases, releases...)
 	}
+
+	h.log.Infow("Total releases fetched from all integrations", "total", len(allReleases))
+
+	// Sort releases by created date (most recent first)
+	sort.Slice(allReleases, func(i, j int) bool {
+		return allReleases[i].CreatedOn.After(allReleases[j].CreatedOn)
+	})
 
 	c.JSON(http.StatusOK, gin.H{
 		"releases": allReleases,
