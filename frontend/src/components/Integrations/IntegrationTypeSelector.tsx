@@ -98,11 +98,22 @@ const integrationTypes = [
     logo: '/logos/aws-secrets.png',
   },
   {
+    id: 'kubernetes',
+    name: 'Kubernetes',
+    description: 'Integração com clusters Kubernetes',
+    logo: '/logos/kubernetes.png',
+  },
+  {
+    id: 'grafana',
+    name: 'Grafana',
+    description: 'Visualização de métricas e dashboards',
+    logo: '/logos/grafana.png',
+  },
+  {
     id: 'github',
     name: 'GitHub',
-    description: 'Integração com GitHub Actions (em breve)',
+    description: 'Integração com repositórios e GitHub Actions',
     logo: '/logos/github.png',
-    disabled: true,
   },
   {
     id: 'gitlab',

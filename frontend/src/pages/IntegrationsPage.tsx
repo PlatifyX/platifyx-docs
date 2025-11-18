@@ -6,6 +6,9 @@ import SonarQubeModal from '../components/Integrations/SonarQubeModal'
 import AzureCloudModal from '../components/Integrations/AzureCloudModal'
 import GCPModal from '../components/Integrations/GCPModal'
 import AWSModal from '../components/Integrations/AWSModal'
+import KubernetesModal from '../components/Integrations/KubernetesModal'
+import GrafanaModal from '../components/Integrations/GrafanaModal'
+import GitHubModal from '../components/Integrations/GitHubModal'
 import OpenAIModal from '../components/Integrations/OpenAIModal'
 import GeminiModal from '../components/Integrations/GeminiModal'
 import ClaudeModal from '../components/Integrations/ClaudeModal'
@@ -417,6 +420,48 @@ function IntegrationsPage() {
 
       {showModal && (isCreating ? selectedType === 'awssecrets' : selectedIntegration?.type === 'awssecrets') && (
         <AWSSecretsModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'kubernetes' : selectedIntegration?.type === 'kubernetes') && (
+        <KubernetesModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'grafana' : selectedIntegration?.type === 'grafana') && (
+        <GrafanaModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'github' : selectedIntegration?.type === 'github') && (
+        <GitHubModal
           integration={selectedIntegration}
           isCreating={isCreating}
           onSave={handleSave}
