@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plug, CheckCircle, XCircle, Plus } from 'lucide-react'
 import IntegrationCard from '../components/Integrations/IntegrationCard'
 import AzureDevOpsModal from '../components/Integrations/AzureDevOpsModal'
+import SonarQubeModal from '../components/Integrations/SonarQubeModal'
 import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
 import styles from './IntegrationsPage.module.css'
 
@@ -185,8 +186,22 @@ function IntegrationsPage() {
         />
       )}
 
-      {showModal && (isCreating || selectedIntegration?.type === 'azuredevops') && (
+      {showModal && (isCreating ? selectedType === 'azuredevops' : selectedIntegration?.type === 'azuredevops') && (
         <AzureDevOpsModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'sonarqube' : selectedIntegration?.type === 'sonarqube') && (
+        <SonarQubeModal
           integration={selectedIntegration}
           isCreating={isCreating}
           onSave={handleSave}

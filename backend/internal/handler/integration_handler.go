@@ -9,6 +9,7 @@ import (
 	"github.com/PlatifyX/platifyx-core/internal/service"
 	"github.com/PlatifyX/platifyx-core/pkg/azuredevops"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
+	"github.com/PlatifyX/platifyx-core/pkg/sonarqube"
 	"github.com/gin-gonic/gin"
 )
 
@@ -232,5 +233,49 @@ func (h *IntegrationHandler) ListAzureDevOpsProjects(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"projects": projects,
 		"count":    len(projects),
+	})
+}
+
+func (h *IntegrationHandler) TestSonarQube(c *gin.Context) {
+	var input struct {
+		URL   string `json:"url" binding:"required"`
+		Token string `json:"token" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Create temporary SonarQube config
+	config := domain.SonarQubeConfig{
+		URL:   input.URL,
+		Token: input.Token,
+	}
+
+	// Try to connect and list projects
+	client := sonarqube.NewClient(config)
+
+	// Test by making a simple API call to verify credentials and list projects
+	projects, err := client.GetProjects()
+	if err != nil {
+		h.log.Errorw("Failed to test SonarQube connection",
+			"error", err,
+			"url", input.URL,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to SonarQube. Please check your credentials.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":      "Connection successful",
+		"success":      true,
+		"projectCount": len(projects),
+		"projects":     projects,
 	})
 }

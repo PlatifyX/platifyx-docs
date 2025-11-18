@@ -14,6 +14,12 @@ const integrationTypes = [
     logo: '/logos/azuredevops.png',
   },
   {
+    id: 'sonarqube',
+    name: 'SonarQube',
+    description: 'Análise de qualidade de código',
+    logo: '/logos/sonarqube.png',
+  },
+  {
     id: 'github',
     name: 'GitHub',
     description: 'Integração com GitHub Actions (em breve)',
