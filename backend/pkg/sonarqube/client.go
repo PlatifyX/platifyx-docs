@@ -63,7 +63,8 @@ func (c *Client) doRequest(method, endpoint string, params url.Values) ([]byte, 
 // GetProjects retrieves all projects from SonarQube
 func (c *Client) GetProjects() ([]domain.SonarProject, error) {
 	params := url.Values{}
-	params.Add("ps", "500") // Page size
+	params.Add("qualifiers", "TRK") // TRK = Projects only
+	params.Add("ps", "500")          // Page size
 
 	data, err := c.doRequest("GET", "/api/components/search", params)
 	if err != nil {
