@@ -10,7 +10,8 @@ import {
   Settings,
   DollarSign,
   BarChart3,
-  Plug
+  Plug,
+  FileText
 } from 'lucide-react'
 import styles from './Sidebar.module.css'
 
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
   { path: '/quality', label: 'Qualidade', icon: <Shield size={20} /> },
   { path: '/finops', label: 'FinOps', icon: <DollarSign size={20} /> },
   { path: '/analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
+  { path: '/techdocs', label: 'TechDocs', icon: <FileText size={20} /> },
   { path: '/settings', label: 'Configurações', icon: <Settings size={20} /> },
 ]
 

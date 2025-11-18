@@ -15,6 +15,7 @@ type ServiceManager struct {
 	AzureDevOpsService  *AzureDevOpsService
 	IntegrationService  *IntegrationService
 	FinOpsService       *FinOpsService
+	TechDocsService     *TechDocsService
 }
 
 func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *ServiceManager {
@@ -45,6 +46,9 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	// Initialize FinOps service
 	finOpsService := NewFinOpsService(integrationService, log)
 
+	// Initialize TechDocs service
+	techDocsService := NewTechDocsService("docs", log)
+
 	return &ServiceManager{
 		ServiceService:      NewServiceService(),
 		MetricsService:      NewMetricsService(),
@@ -52,5 +56,6 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		AzureDevOpsService:  azureDevOpsService,
 		IntegrationService:  integrationService,
 		FinOpsService:       finOpsService,
+		TechDocsService:     techDocsService,
 	}
 }

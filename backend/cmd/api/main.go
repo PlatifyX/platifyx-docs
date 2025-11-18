@@ -203,6 +203,16 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			code.GET("/organizations/:org", handlers.GitHubHandler.GetOrganization)
 		}
 
+		techdocs := v1.Group("/techdocs")
+		{
+			techdocs.GET("/tree", handlers.TechDocsHandler.GetTree)
+			techdocs.GET("/document", handlers.TechDocsHandler.GetDocument)
+			techdocs.POST("/document", handlers.TechDocsHandler.SaveDocument)
+			techdocs.DELETE("/document", handlers.TechDocsHandler.DeleteDocument)
+			techdocs.POST("/folder", handlers.TechDocsHandler.CreateFolder)
+			techdocs.GET("/list", handlers.TechDocsHandler.ListDocuments)
+		}
+
 		integrations := v1.Group("/integrations")
 		{
 			integrations.GET("", handlers.IntegrationHandler.List)

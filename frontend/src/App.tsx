@@ -8,6 +8,7 @@ import AzureDevOpsPage from './pages/AzureDevOpsPage'
 import IntegrationsPage from './pages/IntegrationsPage'
 import QualityPage from './pages/QualityPage'
 import FinOpsPageEnhanced from './pages/FinOpsPageEnhanced'
+import TechDocsPage from './pages/TechDocsPage'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/quality" element={<QualityPage />} />
           <Route path="/finops" element={<FinOpsPageEnhanced />} />
           <Route path="/integrations" element={<IntegrationsPage />} />
+          <Route path="/techdocs" element={<TechDocsPage />} />
         </Routes>
       </Layout>
     </Router>
