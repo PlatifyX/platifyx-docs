@@ -27,6 +27,11 @@ if [ -n "$PIDS" ]; then
 kill -9 $PIDS
 fi
 
+docker-compose down
+docker system prune -a -f
+docker volume prune -f -a
+docker-compose up -d
+
 echo "📦 Installing dependencies..."
 echo ""
 

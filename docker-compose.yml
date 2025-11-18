@@ -10,58 +10,8 @@ services:
       - POSTGRES_DB=platifyx
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U platifyx"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - platifyx-network
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: platifyx-backend
-    ports:
-      - "6000:6000"
-    environment:
-      - ENVIRONMENT=development
-      - PORT=6000
-      - VERSION=0.1.0
-      - DATABASE_URL=postgres://platifyx:platifyx123@postgres:5432/platifyx?sslmode=disable
-      - REDIS_URL=redis://localhost:6379
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:6000/api/v1/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    networks:
-      - platifyx-network
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: platifyx-frontend
-    ports:
-      - "7000:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - platifyx-network
-
-volumes:
-  postgres_data:
-    driver: local
-
-networks:
-  platifyx-network:
-    driver: bridge
