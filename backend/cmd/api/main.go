@@ -235,6 +235,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.POST("/test/slack", handlers.IntegrationHandler.TestSlack)
 			integrations.POST("/test/teams", handlers.IntegrationHandler.TestTeams)
 			integrations.POST("/test/argocd", handlers.IntegrationHandler.TestArgoCD)
+			integrations.POST("/test/prometheus", handlers.IntegrationHandler.TestPrometheus)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)
 		}
 
@@ -275,6 +276,20 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			argocd.GET("/projects", handlers.ArgoCDHandler.GetProjects)
 			argocd.GET("/projects/:name", handlers.ArgoCDHandler.GetProject)
 			argocd.GET("/clusters", handlers.ArgoCDHandler.GetClusters)
+		}
+
+		prometheus := v1.Group("/prometheus")
+		{
+			prometheus.GET("/stats", handlers.PrometheusHandler.GetStats)
+			prometheus.GET("/query", handlers.PrometheusHandler.Query)
+			prometheus.GET("/query_range", handlers.PrometheusHandler.QueryRange)
+			prometheus.GET("/targets", handlers.PrometheusHandler.GetTargets)
+			prometheus.GET("/alerts", handlers.PrometheusHandler.GetAlerts)
+			prometheus.GET("/rules", handlers.PrometheusHandler.GetRules)
+			prometheus.GET("/label/:label/values", handlers.PrometheusHandler.GetLabelValues)
+			prometheus.GET("/series", handlers.PrometheusHandler.GetSeries)
+			prometheus.GET("/metadata", handlers.PrometheusHandler.GetMetadata)
+			prometheus.GET("/buildinfo", handlers.PrometheusHandler.GetBuildInfo)
 		}
 	}
 

@@ -94,6 +94,12 @@ type ArgoCDIntegrationConfig struct {
 	Insecure  bool   `json:"insecure,omitempty"`
 }
 
+type PrometheusIntegrationConfig struct {
+	URL      string `json:"url"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
 type IntegrationType string
 
 const (
@@ -113,4 +119,5 @@ const (
 	IntegrationTypeSlack       IntegrationType = "slack"
 	IntegrationTypeTeams       IntegrationType = "teams"
 	IntegrationTypeArgoCD      IntegrationType = "argocd"
+	IntegrationTypePrometheus  IntegrationType = "prometheus"
 )

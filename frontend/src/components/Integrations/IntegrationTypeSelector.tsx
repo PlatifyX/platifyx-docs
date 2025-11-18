@@ -80,6 +80,12 @@ const integrationTypes = [
     logo: '/logos/argocd.png',
   },
   {
+    id: 'prometheus',
+    name: 'Prometheus',
+    description: 'Monitoramento de métricas e alertas',
+    logo: '/logos/prometheus.png',
+  },
+  {
     id: 'github',
     name: 'GitHub',
     description: 'Integração com GitHub Actions (em breve)',

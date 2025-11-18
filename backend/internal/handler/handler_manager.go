@@ -21,6 +21,7 @@ type HandlerManager struct {
 	SlackHandler        *SlackHandler
 	TeamsHandler        *TeamsHandler
 	ArgoCDHandler       *ArgoCDHandler
+	PrometheusHandler   *PrometheusHandler
 }
 
 func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *HandlerManager {
@@ -40,5 +41,6 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		SlackHandler:        NewSlackHandler(services.IntegrationService, log),
 		TeamsHandler:        NewTeamsHandler(services.IntegrationService, log),
 		ArgoCDHandler:       NewArgoCDHandler(services.IntegrationService, log),
+		PrometheusHandler:   NewPrometheusHandler(services.IntegrationService, log),
 	}
 }

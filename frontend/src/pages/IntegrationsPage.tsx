@@ -13,6 +13,7 @@ import JiraModal from '../components/Integrations/JiraModal'
 import SlackModal from '../components/Integrations/SlackModal'
 import TeamsModal from '../components/Integrations/TeamsModal'
 import ArgoCDModal from '../components/Integrations/ArgoCDModal'
+import PrometheusModal from '../components/Integrations/PrometheusModal'
 import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
 import styles from './IntegrationsPage.module.css'
 
@@ -372,6 +373,20 @@ function IntegrationsPage() {
 
       {showModal && (isCreating ? selectedType === 'argocd' : selectedIntegration?.type === 'argocd') && (
         <ArgoCDModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'prometheus' : selectedIntegration?.type === 'prometheus') && (
+        <PrometheusModal
           integration={selectedIntegration}
           isCreating={isCreating}
           onSave={handleSave}

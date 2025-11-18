@@ -580,3 +580,39 @@ func (s *IntegrationService) GetArgoCDService() (*ArgoCDService, error) {
 
 	return NewArgoCDService(*config, s.log), nil
 }
+
+// Prometheus methods
+func (s *IntegrationService) GetPrometheusConfig() (*domain.PrometheusConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypePrometheus))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, nil
+	}
+
+	var config domain.PrometheusIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse Prometheus config: %w", err)
+	}
+
+	return &domain.PrometheusConfig{
+		URL:      config.URL,
+		Username: config.Username,
+		Password: config.Password,
+	}, nil
+}
+
+func (s *IntegrationService) GetPrometheusService() (*PrometheusService, error) {
+	config, err := s.GetPrometheusConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Prometheus integration not configured")
+	}
+
+	return NewPrometheusService(*config, s.log), nil
+}

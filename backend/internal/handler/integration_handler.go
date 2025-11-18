@@ -832,3 +832,55 @@ func (h *IntegrationHandler) TestArgoCD(c *gin.Context) {
 		"applicationsCount": len(apps),
 	})
 }
+
+// TestPrometheus tests the Prometheus connection
+func (h *IntegrationHandler) TestPrometheus(c *gin.Context) {
+	var req domain.PrometheusIntegrationConfig
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	if req.URL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "URL is required",
+		})
+		return
+	}
+
+	// Create Prometheus service for testing
+	config := domain.PrometheusConfig{
+		URL:      req.URL,
+		Username: req.Username,
+		Password: req.Password,
+	}
+
+	prometheusService := service.NewPrometheusService(config, h.log)
+
+	// Test connection
+	if err := prometheusService.TestConnection(); err != nil {
+		h.log.Errorw("Prometheus connection test failed", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Failed to connect to Prometheus. Please check your URL and credentials.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Get build info
+	buildInfo, err := prometheusService.GetBuildInfo()
+	version := ""
+	if err == nil && buildInfo != nil && buildInfo.Data != nil {
+		if v, ok := buildInfo.Data["version"]; ok {
+			version = v
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
+		"version": version,
+	})
+}
