@@ -330,8 +330,8 @@ func (c *AWSClient) GetCostsByService() ([]map[string]interface{}, error) {
 }
 
 // GetCostForecast retrieves the total predicted cost for the current month
-// This includes: accumulated cost (start of month to today) + forecast (today to end of month)
-// This matches AWS Console "Forecast for end of month" behavior
+// The AWS GetCostForecast API returns the TOTAL predicted cost for the entire period,
+// not just the additional cost. This matches AWS Console "Forecast for end of month" behavior
 func (c *AWSClient) GetCostForecast() ([]map[string]interface{}, error) {
 	ctx := context.Background()
 	ceClient := costexplorer.NewFromConfig(c.awsConfig)
@@ -339,36 +339,11 @@ func (c *AWSClient) GetCostForecast() ([]map[string]interface{}, error) {
 	now := time.Now()
 	year, month, _ := now.Date()
 
-	// Start of current month
-	startOfMonth := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
 	// First day of next month
 	firstOfNextMonth := time.Date(year, month+1, 1, 0, 0, 0, 0, time.UTC)
 
-	// 1. Get accumulated cost from start of month to today
-	costInput := &costexplorer.GetCostAndUsageInput{
-		TimePeriod: &types.DateInterval{
-			Start: aws.String(startOfMonth.Format("2006-01-02")),
-			End:   aws.String(now.Format("2006-01-02")),
-		},
-		Granularity: types.GranularityMonthly,
-		Metrics:     []string{"UnblendedCost"},
-	}
-
-	costResult, err := ceClient.GetCostAndUsage(ctx, costInput)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get accumulated cost: %w", err)
-	}
-
-	var accumulatedCost float64
-	if len(costResult.ResultsByTime) > 0 && costResult.ResultsByTime[0].Total != nil {
-		if unblendedCost, ok := costResult.ResultsByTime[0].Total["UnblendedCost"]; ok {
-			if unblendedCost.Amount != nil {
-				fmt.Sscanf(*unblendedCost.Amount, "%f", &accumulatedCost)
-			}
-		}
-	}
-
-	// 2. Get forecast from today to end of month
+	// Get forecast from today to end of current month
+	// The API returns the TOTAL predicted cost for the month, not just the remaining cost
 	forecastInput := &costexplorer.GetCostForecastInput{
 		TimePeriod: &types.DateInterval{
 			Start: aws.String(now.Format("2006-01-02")),
@@ -383,20 +358,15 @@ func (c *AWSClient) GetCostForecast() ([]map[string]interface{}, error) {
 		return nil, fmt.Errorf("failed to get cost forecast: %w", err)
 	}
 
-	var forecastCost float64
+	var totalPredictedCost float64
 	if forecastResult.Total != nil && forecastResult.Total.Amount != nil {
-		fmt.Sscanf(*forecastResult.Total.Amount, "%f", &forecastCost)
+		fmt.Sscanf(*forecastResult.Total.Amount, "%f", &totalPredictedCost)
 	}
-
-	// 3. Total predicted cost for the month = accumulated + forecast
-	totalPredictedCost := accumulatedCost + forecastCost
 
 	var forecast []map[string]interface{}
 	forecast = append(forecast, map[string]interface{}{
-		"period":           "current_month",
-		"cost":             totalPredictedCost,
-		"accumulated":      accumulatedCost,
-		"forecast_remaining": forecastCost,
+		"period": "current_month",
+		"cost":   totalPredictedCost,
 	})
 
 	return forecast, nil
