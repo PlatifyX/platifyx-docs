@@ -33,6 +33,7 @@ const navItems: NavItem[] = [
   { path: '/finops', label: 'FinOps', icon: <DollarSign size={20} /> },
   { path: '/analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
   { path: '/techdocs', label: 'TechDocs', icon: <FileText size={20} /> },
+  { path: '/templates', label: 'Templates', icon: <FileText size={20} /> },
   { path: '/settings', label: 'Configurações', icon: <Settings size={20} /> },
 ]
 

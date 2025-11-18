@@ -34,7 +34,7 @@ func main() {
 	db, err := database.NewPostgresConnection(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatal("Failed to connect to database", "error", err)
-	}
+
 	defer db.Close()
 
 	log.Info("Connected to PostgreSQL database")
@@ -42,7 +42,7 @@ func main() {
 	// Run migrations
 	if err := database.RunMigrations(db, "migrations"); err != nil {
 		log.Fatal("Failed to run migrations", "error", err)
-	}
+
 
 	log.Info("Migrations completed successfully")
 
@@ -57,7 +57,7 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
-	}
+
 
 	go func() {
 		log.Info("Server listening", "address", srv.Addr)
@@ -77,7 +77,7 @@ func main() {
 
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server forced to shutdown", "error", err)
-	}
+
 
 	log.Info("Server exited")
 }
@@ -85,7 +85,7 @@ func main() {
 func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logger.Logger) *gin.Engine {
 	if cfg.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
-	}
+
 
 	router := gin.New()
 
@@ -314,7 +314,24 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			awssecrets.PUT("/update/:name", handlers.AWSSecretsHandler.UpdateSecret)
 			awssecrets.DELETE("/delete/:name", handlers.AWSSecretsHandler.DeleteSecret)
 		}
-	}
+
 
 	return router
 }
+
+		// Service Templates routes
+		templates := v1.Group("/templates")
+		{
+			templates.GET("", handlers.ServiceTemplateHandler.GetAllTemplates)
+			templates.GET("/:id", handlers.ServiceTemplateHandler.GetTemplateByID)
+			templates.GET("/stats", handlers.ServiceTemplateHandler.GetStats)
+			templates.POST("/initialize", handlers.ServiceTemplateHandler.InitializeTemplates)
+		}
+
+		services := v1.Group("/services")
+		{
+			services.GET("", handlers.ServiceTemplateHandler.GetAllServices)
+			services.GET("/:id", handlers.ServiceTemplateHandler.GetServiceByID)
+			services.POST("/create", handlers.ServiceTemplateHandler.CreateService)
+		}
+	}

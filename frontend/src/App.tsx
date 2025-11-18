@@ -6,6 +6,7 @@ import ServicesPage from './pages/ServicesPage'
 import KubernetesPage from './pages/KubernetesPage'
 import AzureDevOpsPage from './pages/AzureDevOpsPage'
 import IntegrationsPage from './pages/IntegrationsPage'
+import ServiceTemplatesPage from './pages/ServiceTemplatesPage'
 import QualityPage from './pages/QualityPage'
 import FinOpsPageEnhanced from './pages/FinOpsPageEnhanced'
 import TechDocsPage from './pages/TechDocsPage'
@@ -24,6 +25,7 @@ function App() {
           <Route path="/finops" element={<FinOpsPageEnhanced />} />
           <Route path="/integrations" element={<IntegrationsPage />} />
           <Route path="/techdocs" element={<TechDocsPage />} />
+          <Route path="/templates" element={<ServiceTemplatesPage />} />
         </Routes>
       </Layout>
     </Router>
