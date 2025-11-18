@@ -41,13 +41,19 @@ type Build struct {
 	FinishTime    time.Time `json:"finishTime"`
 	SourceBranch  string    `json:"sourceBranch"`
 	SourceVersion string    `json:"sourceVersion"`
-	RequestedFor  string    `json:"requestedFor"`
+	RequestedFor  User      `json:"requestedFor"`
 	URL           string    `json:"url"`
 	Project       string    `json:"project,omitempty"`
 	Definition    struct {
 		ID   int    `json:"id"`
 		Name string `json:"name"`
 	} `json:"definition"`
+}
+
+type User struct {
+	ID          string `json:"id"`
+	DisplayName string `json:"displayName"`
+	UniqueName  string `json:"uniqueName"`
 }
 
 type Release struct {
