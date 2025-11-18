@@ -44,6 +44,15 @@
   transform: translateY(-2px);
 }
 
+.card.clickable {
+  cursor: pointer;
+}
+
+.card.clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.2);
+}
+
 .cardHeader {
   display: flex;
   align-items: center;
