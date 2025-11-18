@@ -334,7 +334,11 @@ func (c *AWSClient) GetCostForecast() ([]map[string]interface{}, error) {
 	ctx := context.Background()
 	ceClient := costexplorer.NewFromConfig(c.awsConfig)
 
-	startDate := time.Now()
+	// Start from the first day of next month
+	now := time.Now()
+	nextMonth := now.AddDate(0, 1, 0)
+	startDate := time.Date(nextMonth.Year(), nextMonth.Month(), 1, 0, 0, 0, 0, time.UTC)
+	// End 3 months after start date
 	endDate := startDate.AddDate(0, 3, 0)
 
 	input := &costexplorer.GetCostForecastInput{
