@@ -92,7 +92,7 @@ function AWSSecretsModal({ integration, isCreating, onSave, onClose }: AWSSecret
     setSaving(true)
     try {
       await onSave({
-        name: name || 'AWS Secrets Manager',
+        name: name || integration?.name,
         config: {
           accessKeyId,
           secretAccessKey,
@@ -100,43 +100,87 @@ function AWSSecretsModal({ integration, isCreating, onSave, onClose }: AWSSecret
           sessionToken: sessionToken || undefined,
         },
       })
-      onClose()
     } catch (err) {
-      console.error('Error saving integration:', err)
+      // Error handled by parent
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{isCreating ? 'Nova Integração AWS Secrets Manager' : 'Editar Integração AWS Secrets Manager'}</h2>
+        <div className={styles.header}>
+          <h2 className={styles.title}>
+            {isCreating ? 'Nova Integração AWS Secrets Manager' : 'Configurar AWS Secrets Manager'}
+          </h2>
           <button className={styles.closeButton} onClick={onClose}>
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          {isCreating && (
+            <div className={styles.formGroup}>
+              <label htmlFor="name" className={styles.label}>
+                Nome da Integração *
+              </label>
+              <input
+                id="name"
+                type="text"
+                className={styles.input}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: AWS Secrets - Produção"
+                required
+              />
+              <p className={styles.hint}>
+                Nome identificador desta integração
+              </p>
+            </div>
+          )}
+
           <div className={styles.formGroup}>
-            <label htmlFor="name">Nome da Integração *</label>
-            <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="ex: AWS Secrets Production" required={isCreating} />
+            <label htmlFor="accessKeyId" className={styles.label}>
+              Access Key ID *
+            </label>
+            <input
+              id="accessKeyId"
+              type="text"
+              className={styles.input}
+              value={accessKeyId}
+              onChange={(e) => setAccessKeyId(e.target.value)}
+              placeholder="AKIAIOSFODNN7EXAMPLE"
+              required
+            />
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="accessKeyId">Access Key ID *</label>
-            <input type="text" id="accessKeyId" value={accessKeyId} onChange={(e) => setAccessKeyId(e.target.value)} placeholder="AKIAIOSFODNN7EXAMPLE" required />
+            <label htmlFor="secretAccessKey" className={styles.label}>
+              Secret Access Key *
+            </label>
+            <input
+              id="secretAccessKey"
+              type="password"
+              className={styles.input}
+              value={secretAccessKey}
+              onChange={(e) => setSecretAccessKey(e.target.value)}
+              placeholder="••••••••••••••••"
+              required
+            />
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="secretAccessKey">Secret Access Key *</label>
-            <input type="password" id="secretAccessKey" value={secretAccessKey} onChange={(e) => setSecretAccessKey(e.target.value)} placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" required />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="region">AWS Region *</label>
-            <select id="region" value={region} onChange={(e) => setRegion(e.target.value)} required>
+            <label htmlFor="region" className={styles.label}>
+              AWS Region *
+            </label>
+            <select
+              id="region"
+              className={styles.input}
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              required
+            >
               <option value="us-east-1">US East (N. Virginia) - us-east-1</option>
               <option value="us-east-2">US East (Ohio) - us-east-2</option>
               <option value="us-west-1">US West (N. California) - us-west-1</option>
@@ -150,29 +194,60 @@ function AWSSecretsModal({ integration, isCreating, onSave, onClose }: AWSSecret
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="sessionToken">Session Token (opcional)</label>
-            <input type="password" id="sessionToken" value={sessionToken} onChange={(e) => setSessionToken(e.target.value)} placeholder="Para temporary credentials" />
-            <small>Apenas necessário para credenciais temporárias</small>
+            <label htmlFor="sessionToken" className={styles.label}>
+              Session Token (opcional)
+            </label>
+            <input
+              id="sessionToken"
+              type="password"
+              className={styles.input}
+              value={sessionToken}
+              onChange={(e) => setSessionToken(e.target.value)}
+              placeholder="Para temporary credentials"
+            />
+            <p className={styles.hint}>
+              Apenas necessário para credenciais temporárias
+            </p>
           </div>
 
-          {testResult && (
-            <div className={`${styles.testResult} ${testResult.success ? styles.success : styles.error}`}>
-              {testResult.success ? <CheckCircle size={20} /> : <XCircle size={20} />}
-              <span>{testResult.message}</span>
-            </div>
-          )}
-
-          <div className={styles.modalActions}>
-            <button type="button" className={styles.testButton} onClick={handleTestConnection} disabled={testing || !accessKeyId || !secretAccessKey || !region}>
+          <div className={styles.testSection}>
+            <button
+              type="button"
+              className={styles.testButton}
+              onClick={handleTestConnection}
+              disabled={testing || !accessKeyId || !secretAccessKey || !region}
+            >
               {testing ? 'Testando...' : 'Testar Conexão'}
             </button>
 
-            <div className={styles.actionButtons}>
-              <button type="button" className={styles.cancelButton} onClick={onClose}>Cancelar</button>
-              <button type="submit" className={styles.saveButton} disabled={saving || !testResult?.success}>
-                {saving ? 'Salvando...' : 'Salvar'}
-              </button>
-            </div>
+            {testResult && (
+              <div className={testResult.success ? styles.testSuccess : styles.testError}>
+                {testResult.success ? (
+                  <CheckCircle size={16} />
+                ) : (
+                  <XCircle size={16} />
+                )}
+                <span>{testResult.message}</span>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.footer}>
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className={styles.saveButton}
+              disabled={saving}
+            >
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
           </div>
         </form>
       </div>

@@ -92,73 +92,144 @@ function VaultModal({ integration, isCreating, onSave, onClose }: VaultModalProp
     setSaving(true)
     try {
       await onSave({
-        name: name || 'Vault Integration',
+        name: name || integration?.name,
         config: {
           address,
           token,
           namespace: namespace || undefined,
         },
       })
-      onClose()
     } catch (err) {
-      console.error('Error saving integration:', err)
+      // Error handled by parent
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{isCreating ? 'Nova Integração Vault' : 'Editar Integração Vault'}</h2>
+        <div className={styles.header}>
+          <h2 className={styles.title}>
+            {isCreating ? 'Nova Integração Vault' : 'Configurar Vault'}
+          </h2>
           <button className={styles.closeButton} onClick={onClose}>
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label htmlFor="name">Nome da Integração *</label>
-            <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="ex: Vault Production" required={isCreating} />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="address">Vault Address *</label>
-            <input type="url" id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="https://vault.example.com:8200" required />
-            <small>URL completa do Vault (ex: https://vault.example.com:8200)</small>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="token">Vault Token *</label>
-            <input type="password" id="token" value={token} onChange={(e) => setToken(e.target.value)} placeholder="s.xxxxxxxxxxxxxxxxxxxxxxxx" required />
-            <small>Token de autenticação do Vault</small>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="namespace">Namespace (opcional)</label>
-            <input type="text" id="namespace" value={namespace} onChange={(e) => setNamespace(e.target.value)} placeholder="my-namespace" />
-            <small>Vault Enterprise namespace (deixe vazio se não usar)</small>
-          </div>
-
-          {testResult && (
-            <div className={`${styles.testResult} ${testResult.success ? styles.success : styles.error}`}>
-              {testResult.success ? <CheckCircle size={20} /> : <XCircle size={20} />}
-              <span>{testResult.message}</span>
+          {isCreating && (
+            <div className={styles.formGroup}>
+              <label htmlFor="name" className={styles.label}>
+                Nome da Integração *
+              </label>
+              <input
+                id="name"
+                type="text"
+                className={styles.input}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: Vault - Produção"
+                required
+              />
+              <p className={styles.hint}>
+                Nome identificador desta integração
+              </p>
             </div>
           )}
 
-          <div className={styles.modalActions}>
-            <button type="button" className={styles.testButton} onClick={handleTestConnection} disabled={testing || !address || !token}>
+          <div className={styles.formGroup}>
+            <label htmlFor="address" className={styles.label}>
+              Vault Address *
+            </label>
+            <input
+              id="address"
+              type="url"
+              className={styles.input}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="https://vault.example.com:8200"
+              required
+            />
+            <p className={styles.hint}>
+              URL completa do Vault (ex: https://vault.example.com:8200)
+            </p>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="token" className={styles.label}>
+              Vault Token *
+            </label>
+            <input
+              id="token"
+              type="password"
+              className={styles.input}
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder="s.xxxxxxxxxxxxxxxxxxxxxxxx"
+              required
+            />
+            <p className={styles.hint}>
+              Token de autenticação do Vault
+            </p>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="namespace" className={styles.label}>
+              Namespace (opcional)
+            </label>
+            <input
+              id="namespace"
+              type="text"
+              className={styles.input}
+              value={namespace}
+              onChange={(e) => setNamespace(e.target.value)}
+              placeholder="my-namespace"
+            />
+            <p className={styles.hint}>
+              Vault Enterprise namespace (deixe vazio se não usar)
+            </p>
+          </div>
+
+          <div className={styles.testSection}>
+            <button
+              type="button"
+              className={styles.testButton}
+              onClick={handleTestConnection}
+              disabled={testing || !address || !token}
+            >
               {testing ? 'Testando...' : 'Testar Conexão'}
             </button>
 
-            <div className={styles.actionButtons}>
-              <button type="button" className={styles.cancelButton} onClick={onClose}>Cancelar</button>
-              <button type="submit" className={styles.saveButton} disabled={saving || !testResult?.success}>
-                {saving ? 'Salvando...' : 'Salvar'}
-              </button>
-            </div>
+            {testResult && (
+              <div className={testResult.success ? styles.testSuccess : styles.testError}>
+                {testResult.success ? (
+                  <CheckCircle size={16} />
+                ) : (
+                  <XCircle size={16} />
+                )}
+                <span>{testResult.message}</span>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.footer}>
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className={styles.saveButton}
+              disabled={saving}
+            >
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
           </div>
         </form>
       </div>

@@ -92,93 +92,106 @@ function PrometheusModal({ integration, isCreating, onSave, onClose }: Prometheu
     setSaving(true)
     try {
       await onSave({
-        name: name || 'Prometheus Integration',
+        name: name || integration?.name,
         config: {
           url,
           username: username || undefined,
           password: password || undefined,
         },
       })
-      onClose()
     } catch (err) {
-      console.error('Error saving integration:', err)
+      // Error handled by parent
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{isCreating ? 'Nova Integração Prometheus' : 'Editar Integração Prometheus'}</h2>
+        <div className={styles.header}>
+          <h2 className={styles.title}>
+            {isCreating ? 'Nova Integração Prometheus' : 'Configurar Prometheus'}
+          </h2>
           <button className={styles.closeButton} onClick={onClose}>
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label htmlFor="name">Nome da Integração *</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="ex: Prometheus Production"
-              required={isCreating}
-            />
-          </div>
+          {isCreating && (
+            <div className={styles.formGroup}>
+              <label htmlFor="name" className={styles.label}>
+                Nome da Integração *
+              </label>
+              <input
+                id="name"
+                type="text"
+                className={styles.input}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: Prometheus - Produção"
+                required
+              />
+              <p className={styles.hint}>
+                Nome identificador desta integração
+              </p>
+            </div>
+          )}
 
           <div className={styles.formGroup}>
-            <label htmlFor="url">URL do Prometheus *</label>
+            <label htmlFor="url" className={styles.label}>
+              URL do Prometheus *
+            </label>
             <input
-              type="url"
               id="url"
+              type="url"
+              className={styles.input}
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="http://prometheus.example.com:9090"
               required
             />
-            <small>URL do servidor Prometheus (ex: http://localhost:9090)</small>
+            <p className={styles.hint}>
+              URL do servidor Prometheus (ex: http://localhost:9090)
+            </p>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="username">Usuário (opcional)</label>
+            <label htmlFor="username" className={styles.label}>
+              Usuário (opcional)
+            </label>
             <input
-              type="text"
               id="username"
+              type="text"
+              className={styles.input}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Usuário para autenticação básica"
             />
-            <small>Deixe em branco se não houver autenticação</small>
+            <p className={styles.hint}>
+              Deixe em branco se não houver autenticação
+            </p>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="password">Senha (opcional)</label>
+            <label htmlFor="password" className={styles.label}>
+              Senha (opcional)
+            </label>
             <input
-              type="password"
               id="password"
+              type="password"
+              className={styles.input}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Senha para autenticação básica"
+              placeholder="••••••••••••••••"
             />
-            <small>Deixe em branco se não houver autenticação</small>
+            <p className={styles.hint}>
+              Deixe em branco se não houver autenticação
+            </p>
           </div>
 
-          {testResult && (
-            <div className={`${styles.testResult} ${testResult.success ? styles.success : styles.error}`}>
-              {testResult.success ? (
-                <CheckCircle size={20} />
-              ) : (
-                <XCircle size={20} />
-              )}
-              <span>{testResult.message}</span>
-            </div>
-          )}
-
-          <div className={styles.modalActions}>
+          <div className={styles.testSection}>
             <button
               type="button"
               className={styles.testButton}
@@ -188,18 +201,34 @@ function PrometheusModal({ integration, isCreating, onSave, onClose }: Prometheu
               {testing ? 'Testando...' : 'Testar Conexão'}
             </button>
 
-            <div className={styles.actionButtons}>
-              <button type="button" className={styles.cancelButton} onClick={onClose}>
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className={styles.saveButton}
-                disabled={saving || !testResult?.success}
-              >
-                {saving ? 'Salvando...' : 'Salvar'}
-              </button>
-            </div>
+            {testResult && (
+              <div className={testResult.success ? styles.testSuccess : styles.testError}>
+                {testResult.success ? (
+                  <CheckCircle size={16} />
+                ) : (
+                  <XCircle size={16} />
+                )}
+                <span>{testResult.message}</span>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.footer}>
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className={styles.saveButton}
+              disabled={saving}
+            >
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
           </div>
         </form>
       </div>

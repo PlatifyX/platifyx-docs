@@ -91,68 +91,87 @@ function ArgoCDModal({ integration, isCreating, onSave, onClose }: ArgoCDModalPr
     setSaving(true)
     try {
       await onSave({
-        name: name || 'ArgoCD Integration',
+        name: name || integration?.name,
         config: {
           serverUrl,
           authToken,
           insecure,
         },
       })
-      onClose()
     } catch (err) {
-      console.error('Error saving integration:', err)
+      // Error handled by parent
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{isCreating ? 'Nova Integração ArgoCD' : 'Editar Integração ArgoCD'}</h2>
+        <div className={styles.header}>
+          <h2 className={styles.title}>
+            {isCreating ? 'Nova Integração ArgoCD' : 'Configurar ArgoCD'}
+          </h2>
           <button className={styles.closeButton} onClick={onClose}>
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label htmlFor="name">Nome da Integração *</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="ex: ArgoCD Production"
-              required={isCreating}
-            />
-          </div>
+          {isCreating && (
+            <div className={styles.formGroup}>
+              <label htmlFor="name" className={styles.label}>
+                Nome da Integração *
+              </label>
+              <input
+                id="name"
+                type="text"
+                className={styles.input}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: ArgoCD - Produção"
+                required
+              />
+              <p className={styles.hint}>
+                Nome identificador desta integração
+              </p>
+            </div>
+          )}
 
           <div className={styles.formGroup}>
-            <label htmlFor="serverUrl">Server URL *</label>
+            <label htmlFor="serverUrl" className={styles.label}>
+              Server URL *
+            </label>
             <input
-              type="url"
               id="serverUrl"
+              type="url"
+              className={styles.input}
               value={serverUrl}
               onChange={(e) => setServerUrl(e.target.value)}
               placeholder="https://argocd.example.com"
               required
             />
-            <small>URL do servidor ArgoCD (ex: https://argocd.example.com)</small>
+            <p className={styles.hint}>
+              URL do servidor ArgoCD (ex: https://argocd.example.com)
+            </p>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="authToken">Auth Token *</label>
+            <label htmlFor="authToken" className={styles.label}>
+              Auth Token *
+            </label>
             <input
-              type="password"
               id="authToken"
+              type="password"
+              className={styles.input}
               value={authToken}
               onChange={(e) => setAuthToken(e.target.value)}
-              placeholder="Token de autenticação do ArgoCD"
+              placeholder="••••••••••••••••"
               required
             />
-            <small>Obtenha o token em: ArgoCD UI → User Info → Generate New Token</small>
+            <p className={styles.hint}>
+              Obtenha o token em: ArgoCD UI → User Info → Generate New Token
+            </p>
           </div>
 
           <div className={styles.formGroup}>
@@ -166,18 +185,7 @@ function ArgoCDModal({ integration, isCreating, onSave, onClose }: ArgoCDModalPr
             </label>
           </div>
 
-          {testResult && (
-            <div className={`${styles.testResult} ${testResult.success ? styles.success : styles.error}`}>
-              {testResult.success ? (
-                <CheckCircle size={20} />
-              ) : (
-                <XCircle size={20} />
-              )}
-              <span>{testResult.message}</span>
-            </div>
-          )}
-
-          <div className={styles.modalActions}>
+          <div className={styles.testSection}>
             <button
               type="button"
               className={styles.testButton}
@@ -187,18 +195,34 @@ function ArgoCDModal({ integration, isCreating, onSave, onClose }: ArgoCDModalPr
               {testing ? 'Testando...' : 'Testar Conexão'}
             </button>
 
-            <div className={styles.actionButtons}>
-              <button type="button" className={styles.cancelButton} onClick={onClose}>
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className={styles.saveButton}
-                disabled={saving || !testResult?.success}
-              >
-                {saving ? 'Salvando...' : 'Salvar'}
-              </button>
-            </div>
+            {testResult && (
+              <div className={testResult.success ? styles.testSuccess : styles.testError}>
+                {testResult.success ? (
+                  <CheckCircle size={16} />
+                ) : (
+                  <XCircle size={16} />
+                )}
+                <span>{testResult.message}</span>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.footer}>
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className={styles.saveButton}
+              disabled={saving}
+            >
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
           </div>
         </form>
       </div>

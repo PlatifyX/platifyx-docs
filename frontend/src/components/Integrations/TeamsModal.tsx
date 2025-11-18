@@ -87,67 +87,70 @@ function TeamsModal({ integration, isCreating, onSave, onClose }: TeamsModalProp
     setSaving(true)
     try {
       await onSave({
-        name: name || 'Teams Integration',
+        name: name || integration?.name,
         config: {
           webhookUrl,
         },
       })
-      onClose()
     } catch (err) {
-      console.error('Error saving integration:', err)
+      // Error handled by parent
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{isCreating ? 'Nova Integração Teams' : 'Editar Integração Teams'}</h2>
+        <div className={styles.header}>
+          <h2 className={styles.title}>
+            {isCreating ? 'Nova Integração Teams' : 'Configurar Teams'}
+          </h2>
           <button className={styles.closeButton} onClick={onClose}>
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label htmlFor="name">Nome da Integração *</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="ex: Teams Notifications"
-              required={isCreating}
-            />
-          </div>
+          {isCreating && (
+            <div className={styles.formGroup}>
+              <label htmlFor="name" className={styles.label}>
+                Nome da Integração *
+              </label>
+              <input
+                id="name"
+                type="text"
+                className={styles.input}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: Teams - Notificações"
+                required
+              />
+              <p className={styles.hint}>
+                Nome identificador desta integração
+              </p>
+            </div>
+          )}
 
           <div className={styles.formGroup}>
-            <label htmlFor="webhookUrl">Webhook URL *</label>
+            <label htmlFor="webhookUrl" className={styles.label}>
+              Webhook URL *
+            </label>
             <input
-              type="url"
               id="webhookUrl"
+              type="url"
+              className={styles.input}
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
               placeholder="https://outlook.office.com/webhook/..."
               required
             />
-            <small>Crie um Incoming Webhook no Teams: Canal → Conectores → Incoming Webhook</small>
+            <p className={styles.hint}>
+              Crie um Incoming Webhook no Teams: <strong>Canal → Conectores → Incoming Webhook</strong>
+            </p>
           </div>
 
-          {testResult && (
-            <div className={`${styles.testResult} ${testResult.success ? styles.success : styles.error}`}>
-              {testResult.success ? (
-                <CheckCircle size={20} />
-              ) : (
-                <XCircle size={20} />
-              )}
-              <span>{testResult.message}</span>
-            </div>
-          )}
-
-          <div className={styles.modalActions}>
+          <div className={styles.testSection}>
             <button
               type="button"
               className={styles.testButton}
@@ -157,18 +160,34 @@ function TeamsModal({ integration, isCreating, onSave, onClose }: TeamsModalProp
               {testing ? 'Testando...' : 'Testar Conexão'}
             </button>
 
-            <div className={styles.actionButtons}>
-              <button type="button" className={styles.cancelButton} onClick={onClose}>
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className={styles.saveButton}
-                disabled={saving || !testResult?.success}
-              >
-                {saving ? 'Salvando...' : 'Salvar'}
-              </button>
-            </div>
+            {testResult && (
+              <div className={testResult.success ? styles.testSuccess : styles.testError}>
+                {testResult.success ? (
+                  <CheckCircle size={16} />
+                ) : (
+                  <XCircle size={16} />
+                )}
+                <span>{testResult.message}</span>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.footer}>
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className={styles.saveButton}
+              disabled={saving}
+            >
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
           </div>
         </form>
       </div>

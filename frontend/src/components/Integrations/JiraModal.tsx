@@ -91,95 +91,108 @@ function JiraModal({ integration, isCreating, onSave, onClose }: JiraModalProps)
     setSaving(true)
     try {
       await onSave({
-        name: name || 'Jira Integration',
+        name: name || integration?.name,
         config: {
           url,
           email,
           apiToken,
         },
       })
-      onClose()
     } catch (err) {
-      console.error('Error saving integration:', err)
+      // Error handled by parent
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{isCreating ? 'Nova Integração Jira' : 'Editar Integração Jira'}</h2>
+        <div className={styles.header}>
+          <h2 className={styles.title}>
+            {isCreating ? 'Nova Integração Jira' : 'Configurar Jira'}
+          </h2>
           <button className={styles.closeButton} onClick={onClose}>
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label htmlFor="name">Nome da Integração *</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="ex: Jira Production"
-              required={isCreating}
-            />
-          </div>
+          {isCreating && (
+            <div className={styles.formGroup}>
+              <label htmlFor="name" className={styles.label}>
+                Nome da Integração *
+              </label>
+              <input
+                id="name"
+                type="text"
+                className={styles.input}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: Jira - Produção"
+                required
+              />
+              <p className={styles.hint}>
+                Nome identificador desta integração
+              </p>
+            </div>
+          )}
 
           <div className={styles.formGroup}>
-            <label htmlFor="url">URL do Jira *</label>
+            <label htmlFor="url" className={styles.label}>
+              URL do Jira *
+            </label>
             <input
-              type="url"
               id="url"
+              type="url"
+              className={styles.input}
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://your-domain.atlassian.net"
               required
             />
-            <small>URL da sua instância do Jira (ex: https://company.atlassian.net)</small>
+            <p className={styles.hint}>
+              URL da sua instância do Jira (ex: <strong>https://company.atlassian.net</strong>)
+            </p>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="email">Email *</label>
+            <label htmlFor="email" className={styles.label}>
+              Email *
+            </label>
             <input
-              type="email"
               id="email"
+              type="email"
+              className={styles.input}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="seu.email@empresa.com"
               required
             />
-            <small>Email da conta Atlassian</small>
+            <p className={styles.hint}>
+              Email da conta Atlassian
+            </p>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="apiToken">API Token *</label>
+            <label htmlFor="apiToken" className={styles.label}>
+              API Token *
+            </label>
             <input
-              type="password"
               id="apiToken"
+              type="password"
+              className={styles.input}
               value={apiToken}
               onChange={(e) => setApiToken(e.target.value)}
-              placeholder="API Token do Jira"
+              placeholder="••••••••••••••••"
               required
             />
-            <small>Crie um API token em https://id.atlassian.com/manage-profile/security/api-tokens</small>
+            <p className={styles.hint}>
+              Crie um API token em <strong>https://id.atlassian.com/manage-profile/security/api-tokens</strong>
+            </p>
           </div>
 
-          {testResult && (
-            <div className={`${styles.testResult} ${testResult.success ? styles.success : styles.error}`}>
-              {testResult.success ? (
-                <CheckCircle size={20} />
-              ) : (
-                <XCircle size={20} />
-              )}
-              <span>{testResult.message}</span>
-            </div>
-          )}
-
-          <div className={styles.modalActions}>
+          <div className={styles.testSection}>
             <button
               type="button"
               className={styles.testButton}
@@ -189,18 +202,34 @@ function JiraModal({ integration, isCreating, onSave, onClose }: JiraModalProps)
               {testing ? 'Testando...' : 'Testar Conexão'}
             </button>
 
-            <div className={styles.actionButtons}>
-              <button type="button" className={styles.cancelButton} onClick={onClose}>
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className={styles.saveButton}
-                disabled={saving || !testResult?.success}
-              >
-                {saving ? 'Salvando...' : 'Salvar'}
-              </button>
-            </div>
+            {testResult && (
+              <div className={testResult.success ? styles.testSuccess : styles.testError}>
+                {testResult.success ? (
+                  <CheckCircle size={16} />
+                ) : (
+                  <XCircle size={16} />
+                )}
+                <span>{testResult.message}</span>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.footer}>
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className={styles.saveButton}
+              disabled={saving}
+            >
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
           </div>
         </form>
       </div>
