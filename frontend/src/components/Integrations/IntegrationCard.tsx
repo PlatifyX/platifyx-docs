@@ -25,12 +25,18 @@ function IntegrationCard({ integration, onConfigure, onToggle }: IntegrationCard
     }
   }
 
-  const getIntegrationIcon = (type: string) => {
+  const getIntegrationLogo = (type: string) => {
     switch (type) {
       case 'azuredevops':
-        return '🔵'
+        return '/logos/azuredevops.png'
+      case 'github':
+        return '/logos/github.png'
+      case 'gitlab':
+        return '/logos/gitlab.png'
+      case 'jenkins':
+        return '/logos/jenkins.png'
       default:
-        return '🔌'
+        return '/logos/platifyx.png'
     }
   }
 
@@ -38,7 +44,11 @@ function IntegrationCard({ integration, onConfigure, onToggle }: IntegrationCard
     <div className={styles.card}>
       <div className={styles.cardHeader}>
         <div className={styles.iconWrapper}>
-          <span className={styles.icon}>{getIntegrationIcon(integration.type)}</span>
+          <img
+            src={getIntegrationLogo(integration.type)}
+            alt={integration.name}
+            className={styles.icon}
+          />
         </div>
         <div className={styles.status}>
           {integration.enabled ? (

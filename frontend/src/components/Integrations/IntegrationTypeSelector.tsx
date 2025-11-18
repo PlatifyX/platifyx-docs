@@ -11,27 +11,27 @@ const integrationTypes = [
     id: 'azuredevops',
     name: 'Azure DevOps',
     description: 'Conecte com pipelines, builds e releases',
-    icon: '🔷',
+    logo: '/logos/azuredevops.png',
   },
   {
     id: 'github',
     name: 'GitHub',
     description: 'Integração com GitHub Actions (em breve)',
-    icon: '🐙',
+    logo: '/logos/github.png',
     disabled: true,
   },
   {
     id: 'gitlab',
     name: 'GitLab',
     description: 'Integração com GitLab CI/CD (em breve)',
-    icon: '🦊',
+    logo: '/logos/gitlab.png',
     disabled: true,
   },
   {
     id: 'jenkins',
     name: 'Jenkins',
     description: 'Integração com Jenkins (em breve)',
-    icon: '👨‍🔧',
+    logo: '/logos/jenkins.png',
     disabled: true,
   },
 ]
@@ -56,7 +56,9 @@ function IntegrationTypeSelector({ onSelect, onClose }: IntegrationTypeSelectorP
                 onClick={() => !type.disabled && onSelect(type.id)}
                 disabled={type.disabled}
               >
-                <div className={styles.typeIcon}>{type.icon}</div>
+                <div className={styles.typeIcon}>
+                  <img src={type.logo} alt={type.name} />
+                </div>
                 <div className={styles.typeInfo}>
                   <h3 className={styles.typeName}>{type.name}</h3>
                   <p className={styles.typeDescription}>{type.description}</p>
