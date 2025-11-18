@@ -20,6 +20,8 @@ function IntegrationCard({ integration, onConfigure, onToggle }: IntegrationCard
     switch (type) {
       case 'azuredevops':
         return 'Integração com Azure DevOps para pipelines, builds e releases'
+      case 'sonarqube':
+        return 'Análise de qualidade de código com SonarQube'
       default:
         return 'Integração externa'
     }
@@ -29,6 +31,8 @@ function IntegrationCard({ integration, onConfigure, onToggle }: IntegrationCard
     switch (type) {
       case 'azuredevops':
         return '/logos/azuredevops.png'
+      case 'sonarqube':
+        return '/logos/sonarqube.png'
       case 'github':
         return '/logos/github.png'
       case 'gitlab':
