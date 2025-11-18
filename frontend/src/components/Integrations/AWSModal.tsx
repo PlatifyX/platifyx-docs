@@ -1,23 +1,44 @@
 import { useState } from 'react'
-import styles from './IntegrationModal.module.css'
+import { X, CheckCircle, XCircle } from 'lucide-react'
+import styles from './AzureDevOpsModal.module.css'
 
-interface AWSModalProps {
-  integration: any | null
-  isCreating: boolean
-  onClose: () => void
-  onSave: (data: any) => Promise<void>
+interface Integration {
+  id: number
+  name: string
+  type: string
+  enabled: boolean
+  config: any
 }
 
-function AWSModal({ integration, isCreating, onClose, onSave }: AWSModalProps) {
+interface AWSModalProps {
+  integration: Integration | null
+  isCreating: boolean
+  onSave: (data: any) => Promise<void>
+  onClose: () => void
+}
+
+function AWSModal({ integration, isCreating, onSave, onClose }: AWSModalProps) {
   const [name, setName] = useState(integration?.name || '')
   const [accessKeyId, setAccessKeyId] = useState(integration?.config?.accessKeyId || '')
   const [secretAccessKey, setSecretAccessKey] = useState(integration?.config?.secretAccessKey || '')
   const [region, setRegion] = useState(integration?.config?.region || 'us-east-1')
-  const [testing, setTesting] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
 
+  const awsRegions = [
+    'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
+    'eu-west-1', 'eu-west-2', 'eu-west-3', 'eu-central-1',
+    'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1', 'ap-northeast-2',
+    'sa-east-1', 'ca-central-1'
+  ]
+
   const handleTestConnection = async () => {
+    if (!accessKeyId || !secretAccessKey || !region) {
+      alert('Preencha Access Key ID, Secret Access Key e Região para testar a conexão')
+      return
+    }
+
     setTesting(true)
     setTestResult(null)
 
@@ -39,122 +60,137 @@ function AWSModal({ integration, isCreating, onClose, onSave }: AWSModalProps) {
       if (response.ok) {
         setTestResult({
           success: true,
-          message: 'Conexão realizada com sucesso!',
+          message: 'Conexão estabelecida! Credenciais validadas com sucesso'
         })
       } else {
-        setTestResult({
-          success: false,
-          message: data.error || 'Falha ao conectar',
-        })
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error || 'Falha ao conectar'
+        setTestResult({ success: false, message: errorMsg })
       }
-    } catch (error) {
+    } catch (err: any) {
+      console.error('Connection test error:', err)
       setTestResult({
         success: false,
-        message: 'Erro ao testar conexão: ' + (error as Error).message,
+        message: `Erro ao testar conexão: ${err.message || 'Verifique se o backend está rodando'}`
       })
     } finally {
       setTesting(false)
     }
   }
 
-  const handleSave = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (isCreating && !name) {
+      alert('Nome da integração é obrigatório')
+      return
+    }
+
+    if (!accessKeyId || !secretAccessKey || !region) {
+      alert('Access Key ID, Secret Access Key e Região são obrigatórios')
+      return
+    }
+
+    if (!testResult?.success) {
+      alert('Por favor, teste a conexão antes de salvar')
+      return
+    }
+
     setSaving(true)
     try {
-      const config = {
-        accessKeyId,
-        secretAccessKey,
-        region,
-      }
-
       await onSave({
-        name,
-        type: 'aws',
-        config,
-        enabled: true,
+        name: name || integration?.name,
+        config: {
+          accessKeyId,
+          secretAccessKey,
+          region,
+        },
       })
-    } catch (error) {
-      console.error('Error saving:', error)
+    } catch (err) {
+      // Error handled by parent
     } finally {
       setSaving(false)
     }
   }
 
-  const awsRegions = [
-    'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
-    'eu-west-1', 'eu-west-2', 'eu-west-3', 'eu-central-1',
-    'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1', 'ap-northeast-2',
-    'sa-east-1', 'ca-central-1'
-  ]
-
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{integration ? 'Editar' : 'Adicionar'} Integração - Amazon Web Services</h2>
+        <div className={styles.header}>
+          <h2 className={styles.title}>
+            {isCreating ? 'Nova Integração AWS' : 'Configurar AWS'}
+          </h2>
           <button className={styles.closeButton} onClick={onClose}>
-            ×
+            <X size={20} />
           </button>
         </div>
 
-        <div className={styles.modalBody}>
-          <div className={styles.formGroup}>
-            <label htmlFor="name">Nome da Integração</label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: AWS Produção"
-              className={styles.input}
-            />
-          </div>
+        <form onSubmit={handleSubmit} className={styles.form}>
+          {isCreating && (
+            <div className={styles.formGroup}>
+              <label htmlFor="name" className={styles.label}>
+                Nome da Integração *
+              </label>
+              <input
+                id="name"
+                type="text"
+                className={styles.input}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: AWS - Produção"
+                required
+              />
+              <p className={styles.hint}>
+                Nome identificador desta integração
+              </p>
+            </div>
+          )}
 
           <div className={styles.formGroup}>
-            <label htmlFor="accessKeyId">
-              Access Key ID
-              <span className={styles.tooltip}>
-                Chave de acesso AWS (IAM &gt; Users &gt; Security credentials)
-              </span>
+            <label htmlFor="accessKeyId" className={styles.label}>
+              Access Key ID *
             </label>
             <input
               id="accessKeyId"
               type="text"
+              className={styles.input}
               value={accessKeyId}
               onChange={(e) => setAccessKeyId(e.target.value)}
               placeholder="AKIAIOSFODNN7EXAMPLE"
-              className={styles.input}
+              required
             />
+            <p className={styles.hint}>
+              Chave de acesso AWS (IAM &gt; Users &gt; Security credentials)
+            </p>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="secretAccessKey">
-              Secret Access Key
-              <span className={styles.tooltip}>
-                Chave secreta de acesso AWS
-              </span>
+            <label htmlFor="secretAccessKey" className={styles.label}>
+              Secret Access Key *
             </label>
             <input
               id="secretAccessKey"
               type="password"
+              className={styles.input}
               value={secretAccessKey}
               onChange={(e) => setSecretAccessKey(e.target.value)}
-              placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-              className={styles.input}
+              placeholder="••••••••••••••••"
+              required
             />
+            <p className={styles.hint}>
+              Chave secreta de acesso AWS (disponível apenas na criação da chave)
+            </p>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="region">
-              Região
-              <span className={styles.tooltip}>
-                Região principal da AWS
-              </span>
+            <label htmlFor="region" className={styles.label}>
+              Região *
             </label>
             <select
               id="region"
+              className={styles.input}
               value={region}
               onChange={(e) => setRegion(e.target.value)}
-              className={styles.select}
+              required
             >
               {awsRegions.map((r) => (
                 <option key={r} value={r}>
@@ -162,34 +198,55 @@ function AWSModal({ integration, isCreating, onClose, onSave }: AWSModalProps) {
                 </option>
               ))}
             </select>
+            <p className={styles.hint}>
+              Região principal da AWS para consultas de custo e recursos
+            </p>
           </div>
 
-          {testResult && (
-            <div className={`${styles.testResult} ${testResult.success ? styles.success : styles.error}`}>
-              {testResult.message}
-            </div>
-          )}
-        </div>
+          <div className={styles.infoBox}>
+            <p>ℹ️ As credenciais AWS devem ter permissões para <strong>Cost Explorer</strong> e <strong>Resource Groups Tagging API</strong>.</p>
+          </div>
 
-        <div className={styles.modalFooter}>
-          <button
-            className={styles.testButton}
-            onClick={handleTestConnection}
-            disabled={testing || !accessKeyId || !secretAccessKey || !region}
-          >
-            {testing ? 'Testando...' : 'Testar Conexão'}
-          </button>
-          <button className={styles.cancelButton} onClick={onClose}>
-            Cancelar
-          </button>
-          <button
-            className={styles.saveButton}
-            onClick={handleSave}
-            disabled={saving || !name || !accessKeyId || !secretAccessKey || !region}
-          >
-            {saving ? 'Salvando...' : 'Salvar'}
-          </button>
-        </div>
+          <div className={styles.testSection}>
+            <button
+              type="button"
+              className={styles.testButton}
+              onClick={handleTestConnection}
+              disabled={testing || !accessKeyId || !secretAccessKey || !region}
+            >
+              {testing ? 'Testando...' : 'Testar Conexão'}
+            </button>
+
+            {testResult && (
+              <div className={testResult.success ? styles.testSuccess : styles.testError}>
+                {testResult.success ? (
+                  <CheckCircle size={16} />
+                ) : (
+                  <XCircle size={16} />
+                )}
+                <span>{testResult.message}</span>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.footer}>
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className={styles.saveButton}
+              disabled={saving}
+            >
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

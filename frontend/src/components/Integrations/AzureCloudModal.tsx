@@ -1,24 +1,38 @@
 import { useState } from 'react'
-import styles from './IntegrationModal.module.css'
+import { X, CheckCircle, XCircle } from 'lucide-react'
+import styles from './AzureDevOpsModal.module.css'
 
-interface AzureCloudModalProps {
-  integration: any | null
-  isCreating: boolean
-  onClose: () => void
-  onSave: (data: any) => Promise<void>
+interface Integration {
+  id: number
+  name: string
+  type: string
+  enabled: boolean
+  config: any
 }
 
-function AzureCloudModal({ integration, isCreating, onClose, onSave }: AzureCloudModalProps) {
+interface AzureCloudModalProps {
+  integration: Integration | null
+  isCreating: boolean
+  onSave: (data: any) => Promise<void>
+  onClose: () => void
+}
+
+function AzureCloudModal({ integration, isCreating, onSave, onClose }: AzureCloudModalProps) {
   const [name, setName] = useState(integration?.name || '')
   const [subscriptionId, setSubscriptionId] = useState(integration?.config?.subscriptionId || '')
   const [tenantId, setTenantId] = useState(integration?.config?.tenantId || '')
   const [clientId, setClientId] = useState(integration?.config?.clientId || '')
   const [clientSecret, setClientSecret] = useState(integration?.config?.clientSecret || '')
-  const [testing, setTesting] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
 
   const handleTestConnection = async () => {
+    if (!subscriptionId || !tenantId || !clientId || !clientSecret) {
+      alert('Preencha todos os campos para testar a conexão')
+      return
+    }
+
     setTesting(true)
     setTestResult(null)
 
@@ -41,164 +55,208 @@ function AzureCloudModal({ integration, isCreating, onClose, onSave }: AzureClou
       if (response.ok) {
         setTestResult({
           success: true,
-          message: 'Conexão realizada com sucesso!',
+          message: 'Conexão estabelecida! Credenciais validadas com sucesso'
         })
       } else {
-        setTestResult({
-          success: false,
-          message: data.error || 'Falha ao conectar',
-        })
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error || 'Falha ao conectar'
+        setTestResult({ success: false, message: errorMsg })
       }
-    } catch (error) {
+    } catch (err: any) {
+      console.error('Connection test error:', err)
       setTestResult({
         success: false,
-        message: 'Erro ao testar conexão: ' + (error as Error).message,
+        message: `Erro ao testar conexão: ${err.message || 'Verifique se o backend está rodando'}`
       })
     } finally {
       setTesting(false)
     }
   }
 
-  const handleSave = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (isCreating && !name) {
+      alert('Nome da integração é obrigatório')
+      return
+    }
+
+    if (!subscriptionId || !tenantId || !clientId || !clientSecret) {
+      alert('Todos os campos são obrigatórios')
+      return
+    }
+
+    if (!testResult?.success) {
+      alert('Por favor, teste a conexão antes de salvar')
+      return
+    }
+
     setSaving(true)
     try {
-      const config = {
-        subscriptionId,
-        tenantId,
-        clientId,
-        clientSecret,
-      }
-
       await onSave({
-        name,
-        type: 'azure',
-        config,
-        enabled: true,
+        name: name || integration?.name,
+        config: {
+          subscriptionId,
+          tenantId,
+          clientId,
+          clientSecret,
+        },
       })
-    } catch (error) {
-      console.error('Error saving:', error)
+    } catch (err) {
+      // Error handled by parent
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{integration ? 'Editar' : 'Adicionar'} Integração - Microsoft Azure</h2>
+        <div className={styles.header}>
+          <h2 className={styles.title}>
+            {isCreating ? 'Nova Integração Azure Cloud' : 'Configurar Azure Cloud'}
+          </h2>
           <button className={styles.closeButton} onClick={onClose}>
-            ×
+            <X size={20} />
           </button>
         </div>
 
-        <div className={styles.modalBody}>
-          <div className={styles.formGroup}>
-            <label htmlFor="name">Nome da Integração</label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Azure Produção"
-              className={styles.input}
-            />
-          </div>
+        <form onSubmit={handleSubmit} className={styles.form}>
+          {isCreating && (
+            <div className={styles.formGroup}>
+              <label htmlFor="name" className={styles.label}>
+                Nome da Integração *
+              </label>
+              <input
+                id="name"
+                type="text"
+                className={styles.input}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: Azure - Produção"
+                required
+              />
+              <p className={styles.hint}>
+                Nome identificador desta integração
+              </p>
+            </div>
+          )}
 
           <div className={styles.formGroup}>
-            <label htmlFor="subscriptionId">
-              Subscription ID
-              <span className={styles.tooltip}>
-                ID da assinatura Azure (encontrado no Portal Azure)
-              </span>
+            <label htmlFor="subscriptionId" className={styles.label}>
+              Subscription ID *
             </label>
             <input
               id="subscriptionId"
               type="text"
+              className={styles.input}
               value={subscriptionId}
               onChange={(e) => setSubscriptionId(e.target.value)}
               placeholder="00000000-0000-0000-0000-000000000000"
-              className={styles.input}
+              required
             />
+            <p className={styles.hint}>
+              ID da assinatura Azure (encontrado no Portal Azure)
+            </p>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="tenantId">
-              Tenant ID
-              <span className={styles.tooltip}>
-                ID do inquilino Azure AD
-              </span>
+            <label htmlFor="tenantId" className={styles.label}>
+              Tenant ID *
             </label>
             <input
               id="tenantId"
               type="text"
+              className={styles.input}
               value={tenantId}
               onChange={(e) => setTenantId(e.target.value)}
               placeholder="00000000-0000-0000-0000-000000000000"
-              className={styles.input}
+              required
             />
+            <p className={styles.hint}>
+              ID do inquilino Azure Active Directory
+            </p>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="clientId">
-              Client ID
-              <span className={styles.tooltip}>
-                ID do aplicativo (App Registration)
-              </span>
+            <label htmlFor="clientId" className={styles.label}>
+              Client ID *
             </label>
             <input
               id="clientId"
               type="text"
+              className={styles.input}
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
               placeholder="00000000-0000-0000-0000-000000000000"
-              className={styles.input}
+              required
             />
+            <p className={styles.hint}>
+              ID do aplicativo (App Registration no Azure AD)
+            </p>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="clientSecret">
-              Client Secret
-              <span className={styles.tooltip}>
-                Segredo do aplicativo (App Registration &gt; Certificates & secrets)
-              </span>
+            <label htmlFor="clientSecret" className={styles.label}>
+              Client Secret *
             </label>
             <input
               id="clientSecret"
               type="password"
+              className={styles.input}
               value={clientSecret}
               onChange={(e) => setClientSecret(e.target.value)}
               placeholder="••••••••••••••••"
-              className={styles.input}
+              required
             />
+            <p className={styles.hint}>
+              Segredo do aplicativo (App Registration &gt; Certificates & secrets)
+            </p>
           </div>
 
-          {testResult && (
-            <div className={`${styles.testResult} ${testResult.success ? styles.success : styles.error}`}>
-              {testResult.message}
-            </div>
-          )}
-        </div>
+          <div className={styles.infoBox}>
+            <p>ℹ️ O aplicativo deve ter permissões de <strong>Reader</strong> na assinatura e acesso ao <strong>Cost Management</strong>.</p>
+          </div>
 
-        <div className={styles.modalFooter}>
-          <button
-            className={styles.testButton}
-            onClick={handleTestConnection}
-            disabled={testing || !subscriptionId || !tenantId || !clientId || !clientSecret}
-          >
-            {testing ? 'Testando...' : 'Testar Conexão'}
-          </button>
-          <button className={styles.cancelButton} onClick={onClose}>
-            Cancelar
-          </button>
-          <button
-            className={styles.saveButton}
-            onClick={handleSave}
-            disabled={saving || !name || !subscriptionId || !tenantId || !clientId || !clientSecret}
-          >
-            {saving ? 'Salvando...' : 'Salvar'}
-          </button>
-        </div>
+          <div className={styles.testSection}>
+            <button
+              type="button"
+              className={styles.testButton}
+              onClick={handleTestConnection}
+              disabled={testing || !subscriptionId || !tenantId || !clientId || !clientSecret}
+            >
+              {testing ? 'Testando...' : 'Testar Conexão'}
+            </button>
+
+            {testResult && (
+              <div className={testResult.success ? styles.testSuccess : styles.testError}>
+                {testResult.success ? (
+                  <CheckCircle size={16} />
+                ) : (
+                  <XCircle size={16} />
+                )}
+                <span>{testResult.message}</span>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.footer}>
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className={styles.saveButton}
+              disabled={saving}
+            >
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
