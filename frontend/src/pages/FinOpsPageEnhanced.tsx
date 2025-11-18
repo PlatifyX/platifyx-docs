@@ -242,9 +242,9 @@ function FinOpsPageEnhanced() {
             <div className={styles.forecastBox}>
               <AlertTriangle size={48} className={styles.forecastIcon} />
               <div>
-                <p className={styles.forecastLabel}>Previsão para os Próximos 3 Meses</p>
+                <p className={styles.forecastLabel}>Previsão para o Final do Mês</p>
                 <p className={styles.forecastValue}>{formatCurrency(forecast[0]?.cost || 0)}</p>
-                <p className={styles.forecastHint}>Inclui o restante do mês atual + próximos meses</p>
+                <p className={styles.forecastHint}>Baseado no consumo atual</p>
               </div>
             </div>
           </div>

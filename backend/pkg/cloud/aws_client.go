@@ -329,16 +329,22 @@ func (c *AWSClient) GetCostsByService() ([]map[string]interface{}, error) {
 	return services, nil
 }
 
-// GetCostForecast retrieves cost forecast starting from current date
-// This includes the forecast for the rest of the current month
+// GetCostForecast retrieves cost forecast for the end of current month
+// This matches AWS Console "Forecast for end of month" behavior
 func (c *AWSClient) GetCostForecast() ([]map[string]interface{}, error) {
 	ctx := context.Background()
 	ceClient := costexplorer.NewFromConfig(c.awsConfig)
 
-	// Start from today to get forecast for rest of current month + future months
-	startDate := time.Now()
-	// End 3 months from now
-	endDate := startDate.AddDate(0, 3, 0)
+	// Start from today
+	now := time.Now()
+	startDate := now
+
+	// End at the last day of current month
+	year, month, _ := now.Date()
+	// First day of next month
+	firstOfNextMonth := time.Date(year, month+1, 1, 0, 0, 0, 0, time.UTC)
+	// Last day of current month is one day before first day of next month
+	endDate := firstOfNextMonth.AddDate(0, 0, 1) // AWS requires end date to be exclusive, so add 1 day
 
 	input := &costexplorer.GetCostForecastInput{
 		TimePeriod: &types.DateInterval{
