@@ -4,6 +4,7 @@ import StatsCard from '../components/AzureDevOps/StatsCard'
 import PipelinesTab from '../components/AzureDevOps/PipelinesTab'
 import BuildsTab from '../components/AzureDevOps/BuildsTab'
 import ReleasesTab from '../components/AzureDevOps/ReleasesTab'
+import CIFilters, { FilterValues } from '../components/AzureDevOps/CIFilters'
 import styles from './AzureDevOpsPage.module.css'
 
 type TabType = 'pipelines' | 'builds' | 'releases'
@@ -13,14 +14,27 @@ function AzureDevOpsPage() {
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [filters, setFilters] = useState<FilterValues>({
+    integration: '',
+    startDate: '',
+    endDate: '',
+    project: '',
+  })
 
   useEffect(() => {
     fetchStats()
-  }, [])
+  }, [filters])
 
   const fetchStats = async () => {
+    setLoading(true)
     try {
-      const response = await fetch('http://localhost:8060/api/v1/ci/stats')
+      const params = new URLSearchParams()
+      if (filters.integration) params.append('integration', filters.integration)
+      if (filters.project) params.append('project', filters.project)
+      if (filters.startDate) params.append('startDate', filters.startDate)
+      if (filters.endDate) params.append('endDate', filters.endDate)
+
+      const response = await fetch(`http://localhost:8060/api/v1/ci/stats?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch stats')
       const data = await response.json()
       setStats(data)
@@ -29,6 +43,10 @@ function AzureDevOpsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleFilterChange = (newFilters: FilterValues) => {
+    setFilters(newFilters)
   }
 
   return (
@@ -56,6 +74,8 @@ function AzureDevOpsPage() {
         </div>
       )}
 
+      <CIFilters onFilterChange={handleFilterChange} initialFilters={filters} />
+
       <div className={styles.tabs}>
         <button
           className={`${styles.tab} ${activeTab === 'pipelines' ? styles.tabActive : ''}`}
@@ -78,9 +98,9 @@ function AzureDevOpsPage() {
       </div>
 
       <div className={styles.tabContent}>
-        {activeTab === 'pipelines' && <PipelinesTab />}
-        {activeTab === 'builds' && <BuildsTab />}
-        {activeTab === 'releases' && <ReleasesTab />}
+        {activeTab === 'pipelines' && <PipelinesTab filters={filters} />}
+        {activeTab === 'builds' && <BuildsTab filters={filters} />}
+        {activeTab === 'releases' && <ReleasesTab filters={filters} />}
       </div>
     </div>
   )

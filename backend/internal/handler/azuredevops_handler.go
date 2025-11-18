@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/service"
@@ -35,6 +36,10 @@ func (h *AzureDevOpsHandler) getService() (*service.AzureDevOpsService, error) {
 }
 
 func (h *AzureDevOpsHandler) ListPipelines(c *gin.Context) {
+	// Get filter parameters
+	filterIntegration := c.Query("integration")
+	filterProject := c.Query("project")
+
 	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -53,6 +58,11 @@ func (h *AzureDevOpsHandler) ListPipelines(c *gin.Context) {
 
 	var allPipelines []domain.Pipeline
 	for integrationName, config := range configs {
+		// Skip if integration filter is set and doesn't match
+		if filterIntegration != "" && integrationName != filterIntegration {
+			continue
+		}
+
 		h.log.Infow("Fetching pipelines from integration", "integration", integrationName, "organization", config.Organization)
 		svc := service.NewAzureDevOpsService(*config, h.log)
 		pipelines, err := svc.GetPipelines()
@@ -71,16 +81,27 @@ func (h *AzureDevOpsHandler) ListPipelines(c *gin.Context) {
 		allPipelines = append(allPipelines, pipelines...)
 	}
 
-	h.log.Infow("Total pipelines fetched from all integrations", "total", len(allPipelines))
+	// Apply additional filters
+	filteredPipelines := make([]domain.Pipeline, 0)
+	for _, pipeline := range allPipelines {
+		// Filter by project
+		if filterProject != "" && pipeline.Project != filterProject {
+			continue
+		}
+
+		filteredPipelines = append(filteredPipelines, pipeline)
+	}
+
+	h.log.Infow("Total pipelines after filtering", "total", len(filteredPipelines))
 
 	// Sort pipelines by name alphabetically
-	sort.Slice(allPipelines, func(i, j int) bool {
-		return allPipelines[i].Name < allPipelines[j].Name
+	sort.Slice(filteredPipelines, func(i, j int) bool {
+		return filteredPipelines[i].Name < filteredPipelines[j].Name
 	})
 
 	c.JSON(http.StatusOK, gin.H{
-		"pipelines": allPipelines,
-		"total":     len(allPipelines),
+		"pipelines": filteredPipelines,
+		"total":     len(filteredPipelines),
 	})
 }
 
@@ -130,6 +151,12 @@ func (h *AzureDevOpsHandler) ListBuilds(c *gin.Context) {
 		limit = 50
 	}
 
+	// Get filter parameters
+	filterIntegration := c.Query("integration")
+	filterProject := c.Query("project")
+	filterStartDate := c.Query("startDate")
+	filterEndDate := c.Query("endDate")
+
 	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -148,6 +175,11 @@ func (h *AzureDevOpsHandler) ListBuilds(c *gin.Context) {
 
 	var allBuilds []domain.Build
 	for integrationName, config := range configs {
+		// Skip if integration filter is set and doesn't match
+		if filterIntegration != "" && integrationName != filterIntegration {
+			continue
+		}
+
 		h.log.Infow("Fetching builds from integration", "integration", integrationName, "organization", config.Organization)
 		svc := service.NewAzureDevOpsService(*config, h.log)
 		builds, err := svc.GetBuilds(limit)
@@ -166,16 +198,45 @@ func (h *AzureDevOpsHandler) ListBuilds(c *gin.Context) {
 		allBuilds = append(allBuilds, builds...)
 	}
 
-	h.log.Infow("Total builds fetched from all integrations", "total", len(allBuilds))
+	// Apply additional filters
+	filteredBuilds := make([]domain.Build, 0)
+	for _, build := range allBuilds {
+		// Filter by project
+		if filterProject != "" && build.Project != filterProject {
+			continue
+		}
+
+		// Filter by date range
+		if filterStartDate != "" {
+			startDate, err := time.Parse("2006-01-02", filterStartDate)
+			if err == nil && build.FinishTime.Before(startDate) {
+				continue
+			}
+		}
+		if filterEndDate != "" {
+			endDate, err := time.Parse("2006-01-02", filterEndDate)
+			if err == nil {
+				// Add one day to endDate to include the entire day
+				endDate = endDate.Add(24 * time.Hour)
+				if build.FinishTime.After(endDate) {
+					continue
+				}
+			}
+		}
+
+		filteredBuilds = append(filteredBuilds, build)
+	}
+
+	h.log.Infow("Total builds after filtering", "total", len(filteredBuilds))
 
 	// Sort builds by finish time (most recent first)
-	sort.Slice(allBuilds, func(i, j int) bool {
-		return allBuilds[i].FinishTime.After(allBuilds[j].FinishTime)
+	sort.Slice(filteredBuilds, func(i, j int) bool {
+		return filteredBuilds[i].FinishTime.After(filteredBuilds[j].FinishTime)
 	})
 
 	c.JSON(http.StatusOK, gin.H{
-		"builds": allBuilds,
-		"total":  len(allBuilds),
+		"builds": filteredBuilds,
+		"total":  len(filteredBuilds),
 	})
 }
 
@@ -258,6 +319,12 @@ func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 		limit = 50
 	}
 
+	// Get filter parameters
+	filterIntegration := c.Query("integration")
+	filterProject := c.Query("project")
+	filterStartDate := c.Query("startDate")
+	filterEndDate := c.Query("endDate")
+
 	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -276,6 +343,11 @@ func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 
 	var allReleases []domain.Release
 	for integrationName, config := range configs {
+		// Skip if integration filter is set and doesn't match
+		if filterIntegration != "" && integrationName != filterIntegration {
+			continue
+		}
+
 		h.log.Infow("Fetching releases from integration", "integration", integrationName, "organization", config.Organization)
 		svc := service.NewAzureDevOpsService(*config, h.log)
 		releases, err := svc.GetReleases(limit)
@@ -294,16 +366,45 @@ func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 		allReleases = append(allReleases, releases...)
 	}
 
-	h.log.Infow("Total releases fetched from all integrations", "total", len(allReleases))
+	// Apply additional filters
+	filteredReleases := make([]domain.Release, 0)
+	for _, release := range allReleases {
+		// Filter by project
+		if filterProject != "" && release.Project != filterProject {
+			continue
+		}
+
+		// Filter by date range
+		if filterStartDate != "" {
+			startDate, err := time.Parse("2006-01-02", filterStartDate)
+			if err == nil && release.CreatedOn.Before(startDate) {
+				continue
+			}
+		}
+		if filterEndDate != "" {
+			endDate, err := time.Parse("2006-01-02", filterEndDate)
+			if err == nil {
+				// Add one day to endDate to include the entire day
+				endDate = endDate.Add(24 * time.Hour)
+				if release.CreatedOn.After(endDate) {
+					continue
+				}
+			}
+		}
+
+		filteredReleases = append(filteredReleases, release)
+	}
+
+	h.log.Infow("Total releases after filtering", "total", len(filteredReleases))
 
 	// Sort releases by created date (most recent first)
-	sort.Slice(allReleases, func(i, j int) bool {
-		return allReleases[i].CreatedOn.After(allReleases[j].CreatedOn)
+	sort.Slice(filteredReleases, func(i, j int) bool {
+		return filteredReleases[i].CreatedOn.After(filteredReleases[j].CreatedOn)
 	})
 
 	c.JSON(http.StatusOK, gin.H{
-		"releases": allReleases,
-		"total":    len(allReleases),
+		"releases": filteredReleases,
+		"total":    len(filteredReleases),
 	})
 }
 
@@ -343,21 +444,133 @@ func (h *AzureDevOpsHandler) GetRelease(c *gin.Context) {
 }
 
 func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
-	svc, err := h.getService()
+	// Get filter parameters (same as ListBuilds)
+	filterIntegration := c.Query("integration")
+	filterProject := c.Query("project")
+	filterStartDate := c.Query("startDate")
+	filterEndDate := c.Query("endDate")
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Azure DevOps configuration",
+			"error": "Failed to get Azure DevOps configurations",
 		})
 		return
 	}
-	if svc == nil {
+	if len(configs) == 0 {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Azure DevOps integration not configured",
+			"error": "No Azure DevOps integrations configured",
 		})
 		return
 	}
 
-	stats := svc.GetPipelineStats()
+	// Fetch pipelines with filters
+	var allPipelines []domain.Pipeline
+	for integrationName, config := range configs {
+		if filterIntegration != "" && integrationName != filterIntegration {
+			continue
+		}
+
+		svc := service.NewAzureDevOpsService(*config, h.log)
+		pipelines, err := svc.GetPipelines()
+		if err != nil {
+			continue
+		}
+
+		for i := range pipelines {
+			pipelines[i].Integration = integrationName
+		}
+
+		allPipelines = append(allPipelines, pipelines...)
+	}
+
+	// Filter pipelines by project
+	filteredPipelines := make([]domain.Pipeline, 0)
+	for _, pipeline := range allPipelines {
+		if filterProject != "" && pipeline.Project != filterProject {
+			continue
+		}
+		filteredPipelines = append(filteredPipelines, pipeline)
+	}
+
+	// Fetch builds with filters
+	var allBuilds []domain.Build
+	for integrationName, config := range configs {
+		if filterIntegration != "" && integrationName != filterIntegration {
+			continue
+		}
+
+		svc := service.NewAzureDevOpsService(*config, h.log)
+		builds, err := svc.GetBuilds(100)
+		if err != nil {
+			continue
+		}
+
+		for i := range builds {
+			builds[i].Integration = integrationName
+		}
+
+		allBuilds = append(allBuilds, builds...)
+	}
+
+	// Filter builds
+	filteredBuilds := make([]domain.Build, 0)
+	for _, build := range allBuilds {
+		if filterProject != "" && build.Project != filterProject {
+			continue
+		}
+
+		if filterStartDate != "" {
+			startDate, err := time.Parse("2006-01-02", filterStartDate)
+			if err == nil && build.FinishTime.Before(startDate) {
+				continue
+			}
+		}
+		if filterEndDate != "" {
+			endDate, err := time.Parse("2006-01-02", filterEndDate)
+			if err == nil {
+				endDate = endDate.Add(24 * time.Hour)
+				if build.FinishTime.After(endDate) {
+					continue
+				}
+			}
+		}
+
+		filteredBuilds = append(filteredBuilds, build)
+	}
+
+	// Calculate stats
+	successCount := 0
+	failedCount := 0
+	runningCount := 0
+
+	for _, build := range filteredBuilds {
+		switch build.Result {
+		case "succeeded":
+			successCount++
+		case "failed":
+			failedCount++
+		case "":
+			if build.Status == "inProgress" {
+				runningCount++
+			}
+		}
+	}
+
+	successRate := 0.0
+	if len(filteredBuilds) > 0 {
+		successRate = float64(successCount) / float64(len(filteredBuilds)) * 100
+	}
+
+	stats := map[string]interface{}{
+		"totalPipelines": len(filteredPipelines),
+		"totalBuilds":    len(filteredBuilds),
+		"successCount":   successCount,
+		"failedCount":    failedCount,
+		"runningCount":   runningCount,
+		"successRate":    successRate,
+	}
+
 	c.JSON(http.StatusOK, stats)
 }
 

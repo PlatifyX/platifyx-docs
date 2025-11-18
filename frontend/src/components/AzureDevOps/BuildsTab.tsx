@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Package, CheckCircle, XCircle, Clock, GitBranch, Plus } from 'lucide-react'
 import BuildLogsModal from './BuildLogsModal'
 import QueueBuildModal from './QueueBuildModal'
+import { FilterValues } from './CIFilters'
 import styles from './AzureDevOpsTabs.module.css'
 
 interface Build {
@@ -22,7 +23,11 @@ interface Build {
   }
 }
 
-function BuildsTab() {
+interface BuildsTabProps {
+  filters: FilterValues
+}
+
+function BuildsTab({ filters }: BuildsTabProps) {
   const [builds, setBuilds] = useState<Build[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -31,11 +36,18 @@ function BuildsTab() {
 
   useEffect(() => {
     fetchBuilds()
-  }, [])
+  }, [filters])
 
   const fetchBuilds = async () => {
+    setLoading(true)
     try {
-      const response = await fetch('http://localhost:8060/api/v1/ci/builds?limit=50')
+      const params = new URLSearchParams({ limit: '50' })
+      if (filters.integration) params.append('integration', filters.integration)
+      if (filters.project) params.append('project', filters.project)
+      if (filters.startDate) params.append('startDate', filters.startDate)
+      if (filters.endDate) params.append('endDate', filters.endDate)
+
+      const response = await fetch(`http://localhost:8060/api/v1/ci/builds?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch builds')
       const data = await response.json()
       setBuilds(data.builds || [])

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Rocket, CheckCircle, XCircle, Clock, UserCheck, Check, X } from 'lucide-react'
+import { FilterValues } from './CIFilters'
 import styles from './AzureDevOpsTabs.module.css'
 
 interface User {
@@ -46,18 +47,29 @@ interface Release {
   environments: ReleaseEnvironment[]
 }
 
-function ReleasesTab() {
+interface ReleasesTabProps {
+  filters: FilterValues
+}
+
+function ReleasesTab({ filters }: ReleasesTabProps) {
   const [releases, setReleases] = useState<Release[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchReleases()
-  }, [])
+  }, [filters])
 
   const fetchReleases = async () => {
+    setLoading(true)
     try {
-      const response = await fetch('http://localhost:8060/api/v1/ci/releases?limit=50')
+      const params = new URLSearchParams({ limit: '50' })
+      if (filters.integration) params.append('integration', filters.integration)
+      if (filters.project) params.append('project', filters.project)
+      if (filters.startDate) params.append('startDate', filters.startDate)
+      if (filters.endDate) params.append('endDate', filters.endDate)
+
+      const response = await fetch(`http://localhost:8060/api/v1/ci/releases?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch releases')
       const data = await response.json()
       setReleases(data.releases || [])
@@ -195,7 +207,10 @@ function ReleasesTab() {
   }
 
   return (
-    <div className={styles.list}>
+    <>
+      <CIFilters onFilterChange={handleFilterChange} initialFilters={filters} />
+
+      <div className={styles.list}>
       {releases.map((release) => (
         <div key={release.id} className={styles.listItem}>
           <div className={styles.listItemHeader}>
@@ -272,6 +287,7 @@ function ReleasesTab() {
         </div>
       ))}
     </div>
+    </>
   )
 }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { GitBranch, FolderOpen, Package } from 'lucide-react'
 import PipelineRunsModal from './PipelineRunsModal'
+import { FilterValues } from './CIFilters'
 import styles from './AzureDevOpsTabs.module.css'
 
 interface Pipeline {
@@ -14,7 +15,11 @@ interface Pipeline {
   integration?: string
 }
 
-function PipelinesTab() {
+interface PipelinesTabProps {
+  filters: FilterValues
+}
+
+function PipelinesTab({ filters }: PipelinesTabProps) {
   const [pipelines, setPipelines] = useState<Pipeline[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -22,11 +27,16 @@ function PipelinesTab() {
 
   useEffect(() => {
     fetchPipelines()
-  }, [])
+  }, [filters])
 
   const fetchPipelines = async () => {
+    setLoading(true)
     try {
-      const response = await fetch('http://localhost:8060/api/v1/ci/pipelines')
+      const params = new URLSearchParams()
+      if (filters.integration) params.append('integration', filters.integration)
+      if (filters.project) params.append('project', filters.project)
+
+      const response = await fetch(`http://localhost:8060/api/v1/ci/pipelines?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch pipelines')
       const data = await response.json()
       setPipelines(data.pipelines || [])
