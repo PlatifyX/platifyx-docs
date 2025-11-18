@@ -9,7 +9,8 @@ import {
   GitBranch,
   Settings,
   DollarSign,
-  BarChart3
+  BarChart3,
+  Plug
 } from 'lucide-react'
 import styles from './Sidebar.module.css'
 
@@ -25,6 +26,7 @@ const navItems: NavItem[] = [
   { path: '/services', label: 'Serviços', icon: <Box size={20} /> },
   { path: '/kubernetes', label: 'Kubernetes', icon: <Server size={20} /> },
   { path: '/azuredevops', label: 'Azure DevOps', icon: <GitBranch size={20} /> },
+  { path: '/integrations', label: 'Integrações', icon: <Plug size={20} /> },
   { path: '/observability', label: 'Observabilidade', icon: <Activity size={20} /> },
   { path: '/quality', label: 'Qualidade', icon: <Shield size={20} /> },
   { path: '/finops', label: 'FinOps', icon: <DollarSign size={20} /> },

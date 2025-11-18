@@ -6,11 +6,12 @@ import (
 )
 
 type HandlerManager struct {
-	HealthHandler      *HealthHandler
-	ServiceHandler     *ServiceHandler
-	MetricsHandler     *MetricsHandler
-	KubernetesHandler  *KubernetesHandler
-	AzureDevOpsHandler *AzureDevOpsHandler
+	HealthHandler       *HealthHandler
+	ServiceHandler      *ServiceHandler
+	MetricsHandler      *MetricsHandler
+	KubernetesHandler   *KubernetesHandler
+	AzureDevOpsHandler  *AzureDevOpsHandler
+	IntegrationHandler  *IntegrationHandler
 }
 
 func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *HandlerManager {
@@ -20,10 +21,11 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 	}
 
 	return &HandlerManager{
-		HealthHandler:      NewHealthHandler(),
-		ServiceHandler:     NewServiceHandler(services.ServiceService, log),
-		MetricsHandler:     NewMetricsHandler(services.MetricsService, log),
-		KubernetesHandler:  NewKubernetesHandler(services.KubernetesService, log),
-		AzureDevOpsHandler: azureDevOpsHandler,
+		HealthHandler:       NewHealthHandler(),
+		ServiceHandler:      NewServiceHandler(services.ServiceService, log),
+		MetricsHandler:      NewMetricsHandler(services.MetricsService, log),
+		KubernetesHandler:   NewKubernetesHandler(services.KubernetesService, log),
+		AzureDevOpsHandler:  azureDevOpsHandler,
+		IntegrationHandler:  NewIntegrationHandler(services.IntegrationService, log),
 	}
 }

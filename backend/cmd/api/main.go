@@ -13,6 +13,7 @@ import (
 	"github.com/PlatifyX/platifyx-core/internal/handler"
 	"github.com/PlatifyX/platifyx-core/internal/middleware"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/database"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -29,7 +30,23 @@ func main() {
 		"port", cfg.Port,
 	)
 
-	serviceManager := service.NewServiceManager(cfg, log)
+	// Connect to PostgreSQL
+	db, err := database.NewPostgresConnection(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("Failed to connect to database", "error", err)
+	}
+	defer db.Close()
+
+	log.Info("Connected to PostgreSQL database")
+
+	// Run migrations
+	if err := database.RunMigrations(db, "migrations"); err != nil {
+		log.Fatal("Failed to run migrations", "error", err)
+	}
+
+	log.Info("Migrations completed successfully")
+
+	serviceManager := service.NewServiceManager(cfg, log, db)
 	handlerManager := handler.NewHandlerManager(serviceManager, log)
 
 	router := setupRouter(cfg, handlerManager, log)
@@ -114,6 +131,13 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 				azuredevops.GET("/releases", handlers.AzureDevOpsHandler.ListReleases)
 				azuredevops.GET("/releases/:id", handlers.AzureDevOpsHandler.GetRelease)
 			}
+		}
+
+		integrations := v1.Group("/integrations")
+		{
+			integrations.GET("", handlers.IntegrationHandler.List)
+			integrations.GET("/:id", handlers.IntegrationHandler.GetByID)
+			integrations.PUT("/:id", handlers.IntegrationHandler.Update)
 		}
 	}
 
