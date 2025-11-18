@@ -508,24 +508,21 @@ func (c *AWSClient) GetSavingsPlansUtilization() (map[string]interface{}, error)
 
 	var utilizationPercent, totalCommitment, usedCommitment, unusedCommitment float64
 
-	if len(result.Total) > 0 {
-		total := result.Total[0]
-		if total.Utilization != nil {
-			if total.Utilization.UtilizationPercentage != nil {
-				fmt.Sscanf(*total.Utilization.UtilizationPercentage, "%f", &utilizationPercent)
+	if result.Total != nil {
+		if result.Total.Utilization != nil {
+			if result.Total.Utilization.UtilizationPercentage != nil {
+				fmt.Sscanf(*result.Total.Utilization.UtilizationPercentage, "%f", &utilizationPercent)
+			}
+			if result.Total.Utilization.UsedCommitment != nil {
+				fmt.Sscanf(*result.Total.Utilization.UsedCommitment, "%f", &usedCommitment)
+			}
+			if result.Total.Utilization.UnusedCommitment != nil {
+				fmt.Sscanf(*result.Total.Utilization.UnusedCommitment, "%f", &unusedCommitment)
 			}
 		}
-		if total.AmortizedCommitment != nil {
-			if total.AmortizedCommitment.TotalAmortizedCommitment != nil {
-				fmt.Sscanf(*total.AmortizedCommitment.TotalAmortizedCommitment, "%f", &totalCommitment)
-			}
-		}
-		if total.Utilization != nil {
-			if total.Utilization.UsedCommitment != nil {
-				fmt.Sscanf(*total.Utilization.UsedCommitment, "%f", &usedCommitment)
-			}
-			if total.Utilization.UnusedCommitment != nil {
-				fmt.Sscanf(*total.Utilization.UnusedCommitment, "%f", &unusedCommitment)
+		if result.Total.AmortizedCommitment != nil {
+			if result.Total.AmortizedCommitment.TotalAmortizedCommitment != nil {
+				fmt.Sscanf(*result.Total.AmortizedCommitment.TotalAmortizedCommitment, "%f", &totalCommitment)
 			}
 		}
 	}

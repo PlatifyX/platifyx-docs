@@ -27,7 +27,7 @@ function FinOpsPageEnhanced() {
   const [spUtilization, setSpUtilization] = useState<any>(null)
 
   // Date filters
-  const [monthsToShow, setMonthsToShow] = useState(12)
+  const [monthsToShow, setMonthsToShow] = useState(1)
 
   const fetchAllData = async () => {
     setLoading(true)
