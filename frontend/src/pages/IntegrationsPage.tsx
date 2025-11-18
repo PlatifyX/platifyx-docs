@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Plug, CheckCircle, XCircle, Plus } from 'lucide-react'
 import IntegrationCard from '../components/Integrations/IntegrationCard'
+import { IntegrationApi, type Integration } from '../utils/integrationApi'
 import AzureDevOpsModal from '../components/Integrations/AzureDevOpsModal'
 import SonarQubeModal from '../components/Integrations/SonarQubeModal'
 import AzureCloudModal from '../components/Integrations/AzureCloudModal'
@@ -22,14 +23,6 @@ import AWSSecretsModal from '../components/Integrations/AWSSecretsModal'
 import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
 import styles from './IntegrationsPage.module.css'
 
-interface Integration {
-  id: number
-  name: string
-  type: string
-  enabled: boolean
-  config: any
-}
-
 function IntegrationsPage() {
   const [integrations, setIntegrations] = useState<Integration[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,10 +38,8 @@ function IntegrationsPage() {
 
   const fetchIntegrations = async () => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/integrations')
-      if (!response.ok) throw new Error('Failed to fetch integrations')
-      const data = await response.json()
-      setIntegrations(data.integrations || [])
+      const data = await IntegrationApi.getAll()
+      setIntegrations(data)
     } catch (err) {
       console.error('Error fetching integrations:', err)
     } finally {
@@ -77,42 +68,17 @@ function IntegrationsPage() {
   const handleSave = async (integrationData: any) => {
     try {
       if (isCreating) {
-        // Create new integration
-        const response = await fetch('http://localhost:8060/api/v1/integrations', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: integrationData.name,
-            type: selectedType || 'azuredevops',
-            enabled: true,
-            config: integrationData.config,
-          }),
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Failed to create integration')
-        }
+        await IntegrationApi.create(
+          selectedType || 'azuredevops',
+          integrationData.name,
+          integrationData.config
+        )
       } else if (selectedIntegration) {
-        // Update existing integration
-        const response = await fetch(`http://localhost:8060/api/v1/integrations/${selectedIntegration.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: integrationData.name,
-            enabled: true,
-            config: integrationData.config,
-          }),
+        await IntegrationApi.update(selectedIntegration.id, {
+          name: integrationData.name,
+          enabled: true,
+          config: integrationData.config,
         })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Failed to update integration')
-        }
       }
 
       await fetchIntegrations()
@@ -129,19 +95,7 @@ function IntegrationsPage() {
 
   const handleToggle = async (integration: Integration) => {
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/integrations/${integration.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          enabled: !integration.enabled,
-          config: integration.config || {},
-        }),
-      })
-
-      if (!response.ok) throw new Error('Failed to toggle integration')
-
+      await IntegrationApi.toggle(integration)
       await fetchIntegrations()
     } catch (err) {
       console.error('Error toggling integration:', err)
@@ -155,12 +109,7 @@ function IntegrationsPage() {
     if (!confirmed) return
 
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/integrations/${integration.id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) throw new Error('Failed to delete integration')
-
+      await IntegrationApi.delete(integration.id)
       await fetchIntegrations()
     } catch (err) {
       console.error('Error deleting integration:', err)

@@ -1,14 +1,8 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
+import { useIntegrationTest } from '../../hooks/useIntegrationTest'
+import type { Integration } from '../../utils/integrationApi'
 import styles from './AzureDevOpsModal.module.css'
-
-interface Integration {
-  id: number
-  name: string
-  type: string
-  enabled: boolean
-  config: any
-}
 
 interface OpenAIModalProps {
   integration: Integration | null
@@ -22,8 +16,8 @@ function OpenAIModal({ integration, isCreating, onSave, onClose }: OpenAIModalPr
   const [apiKey, setApiKey] = useState(integration?.config?.apiKey || '')
   const [organization, setOrganization] = useState(integration?.config?.organization || '')
   const [saving, setSaving] = useState(false)
-  const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  const { testing, testResult, testConnection } = useIntegrationTest()
 
   const handleTestConnection = async () => {
     if (!apiKey) {
@@ -31,41 +25,10 @@ function OpenAIModal({ integration, isCreating, onSave, onClose }: OpenAIModalPr
       return
     }
 
-    setTesting(true)
-    setTestResult(null)
-
-    try {
-      const response = await fetch('http://localhost:8060/api/v1/integrations/test/openai', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          apiKey,
-          organization: organization || undefined,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setTestResult({
-          success: true,
-          message: `Conexão estabelecida! ${data.modelCount || 0} modelos disponíveis`
-        })
-      } else {
-        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error || 'Falha ao conectar'
-        setTestResult({ success: false, message: errorMsg })
-      }
-    } catch (err: any) {
-      console.error('Connection test error:', err)
-      setTestResult({
-        success: false,
-        message: `Erro ao testar conexão: ${err.message || 'Verifique se o backend está rodando'}`
-      })
-    } finally {
-      setTesting(false)
-    }
+    await testConnection('openai', {
+      apiKey,
+      organization: organization || undefined,
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
