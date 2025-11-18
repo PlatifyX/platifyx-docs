@@ -2,20 +2,19 @@ import { useState } from 'react'
 import styles from './IntegrationModal.module.css'
 
 interface GCPModalProps {
-  isOpen: boolean
+  integration: any | null
+  isCreating: boolean
   onClose: () => void
-  onSave: (data: any) => void
-  integration?: any
+  onSave: (data: any) => Promise<void>
 }
 
-function GCPModal({ isOpen, onClose, onSave, integration }: GCPModalProps) {
+function GCPModal({ integration, isCreating, onClose, onSave }: GCPModalProps) {
   const [name, setName] = useState(integration?.name || '')
   const [projectId, setProjectId] = useState(integration?.config?.projectId || '')
   const [serviceAccountJson, setServiceAccountJson] = useState(integration?.config?.serviceAccountJson || '')
   const [testing, setTesting] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
-
-  if (!isOpen) return null
 
   const handleTestConnection = async () => {
     setTesting(true)
@@ -56,18 +55,25 @@ function GCPModal({ isOpen, onClose, onSave, integration }: GCPModalProps) {
     }
   }
 
-  const handleSave = () => {
-    const config = {
-      projectId,
-      serviceAccountJson,
-    }
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const config = {
+        projectId,
+        serviceAccountJson,
+      }
 
-    onSave({
-      name,
-      type: 'gcp',
-      config,
-      enabled: true,
-    })
+      await onSave({
+        name,
+        type: 'gcp',
+        config,
+        enabled: true,
+      })
+    } catch (error) {
+      console.error('Error saving:', error)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -148,9 +154,9 @@ function GCPModal({ isOpen, onClose, onSave, integration }: GCPModalProps) {
           <button
             className={styles.saveButton}
             onClick={handleSave}
-            disabled={!name || !projectId || !serviceAccountJson}
+            disabled={saving || !name || !projectId || !serviceAccountJson}
           >
-            Salvar
+            {saving ? 'Salvando...' : 'Salvar'}
           </button>
         </div>
       </div>

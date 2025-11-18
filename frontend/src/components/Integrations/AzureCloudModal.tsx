@@ -2,22 +2,21 @@ import { useState } from 'react'
 import styles from './IntegrationModal.module.css'
 
 interface AzureCloudModalProps {
-  isOpen: boolean
+  integration: any | null
+  isCreating: boolean
   onClose: () => void
-  onSave: (data: any) => void
-  integration?: any
+  onSave: (data: any) => Promise<void>
 }
 
-function AzureCloudModal({ isOpen, onClose, onSave, integration }: AzureCloudModalProps) {
+function AzureCloudModal({ integration, isCreating, onClose, onSave }: AzureCloudModalProps) {
   const [name, setName] = useState(integration?.name || '')
   const [subscriptionId, setSubscriptionId] = useState(integration?.config?.subscriptionId || '')
   const [tenantId, setTenantId] = useState(integration?.config?.tenantId || '')
   const [clientId, setClientId] = useState(integration?.config?.clientId || '')
   const [clientSecret, setClientSecret] = useState(integration?.config?.clientSecret || '')
   const [testing, setTesting] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
-
-  if (!isOpen) return null
 
   const handleTestConnection = async () => {
     setTesting(true)
@@ -60,20 +59,27 @@ function AzureCloudModal({ isOpen, onClose, onSave, integration }: AzureCloudMod
     }
   }
 
-  const handleSave = () => {
-    const config = {
-      subscriptionId,
-      tenantId,
-      clientId,
-      clientSecret,
-    }
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const config = {
+        subscriptionId,
+        tenantId,
+        clientId,
+        clientSecret,
+      }
 
-    onSave({
-      name,
-      type: 'azure',
-      config,
-      enabled: true,
-    })
+      await onSave({
+        name,
+        type: 'azure',
+        config,
+        enabled: true,
+      })
+    } catch (error) {
+      console.error('Error saving:', error)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -188,9 +194,9 @@ function AzureCloudModal({ isOpen, onClose, onSave, integration }: AzureCloudMod
           <button
             className={styles.saveButton}
             onClick={handleSave}
-            disabled={!name || !subscriptionId || !tenantId || !clientId || !clientSecret}
+            disabled={saving || !name || !subscriptionId || !tenantId || !clientId || !clientSecret}
           >
-            Salvar
+            {saving ? 'Salvando...' : 'Salvar'}
           </button>
         </div>
       </div>

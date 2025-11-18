@@ -219,8 +219,8 @@ function IntegrationsPage() {
 
       {showModal && (isCreating ? selectedType === 'azure' : selectedIntegration?.type === 'azure') && (
         <AzureCloudModal
-          isOpen={showModal}
           integration={selectedIntegration}
+          isCreating={isCreating}
           onSave={handleSave}
           onClose={() => {
             setShowModal(false)
@@ -233,8 +233,8 @@ function IntegrationsPage() {
 
       {showModal && (isCreating ? selectedType === 'gcp' : selectedIntegration?.type === 'gcp') && (
         <GCPModal
-          isOpen={showModal}
           integration={selectedIntegration}
+          isCreating={isCreating}
           onSave={handleSave}
           onClose={() => {
             setShowModal(false)
@@ -247,8 +247,8 @@ function IntegrationsPage() {
 
       {showModal && (isCreating ? selectedType === 'aws' : selectedIntegration?.type === 'aws') && (
         <AWSModal
-          isOpen={showModal}
           integration={selectedIntegration}
+          isCreating={isCreating}
           onSave={handleSave}
           onClose={() => {
             setShowModal(false)

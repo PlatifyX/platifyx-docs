@@ -2,21 +2,20 @@ import { useState } from 'react'
 import styles from './IntegrationModal.module.css'
 
 interface AWSModalProps {
-  isOpen: boolean
+  integration: any | null
+  isCreating: boolean
   onClose: () => void
-  onSave: (data: any) => void
-  integration?: any
+  onSave: (data: any) => Promise<void>
 }
 
-function AWSModal({ isOpen, onClose, onSave, integration }: AWSModalProps) {
+function AWSModal({ integration, isCreating, onClose, onSave }: AWSModalProps) {
   const [name, setName] = useState(integration?.name || '')
   const [accessKeyId, setAccessKeyId] = useState(integration?.config?.accessKeyId || '')
   const [secretAccessKey, setSecretAccessKey] = useState(integration?.config?.secretAccessKey || '')
   const [region, setRegion] = useState(integration?.config?.region || 'us-east-1')
   const [testing, setTesting] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
-
-  if (!isOpen) return null
 
   const handleTestConnection = async () => {
     setTesting(true)
@@ -58,19 +57,26 @@ function AWSModal({ isOpen, onClose, onSave, integration }: AWSModalProps) {
     }
   }
 
-  const handleSave = () => {
-    const config = {
-      accessKeyId,
-      secretAccessKey,
-      region,
-    }
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const config = {
+        accessKeyId,
+        secretAccessKey,
+        region,
+      }
 
-    onSave({
-      name,
-      type: 'aws',
-      config,
-      enabled: true,
-    })
+      await onSave({
+        name,
+        type: 'aws',
+        config,
+        enabled: true,
+      })
+    } catch (error) {
+      console.error('Error saving:', error)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const awsRegions = [
@@ -179,9 +185,9 @@ function AWSModal({ isOpen, onClose, onSave, integration }: AWSModalProps) {
           <button
             className={styles.saveButton}
             onClick={handleSave}
-            disabled={!name || !accessKeyId || !secretAccessKey || !region}
+            disabled={saving || !name || !accessKeyId || !secretAccessKey || !region}
           >
-            Salvar
+            {saving ? 'Salvando...' : 'Salvar'}
           </button>
         </div>
       </div>
