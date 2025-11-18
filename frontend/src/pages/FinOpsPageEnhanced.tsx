@@ -131,9 +131,10 @@ function FinOpsPageEnhanced() {
           value={monthsToShow}
           onChange={(e) => setMonthsToShow(parseInt(e.target.value))}
         >
+          <option value={1}>Mês Atual</option>
           <option value={3}>Últimos 3 meses</option>
           <option value={6}>Últimos 6 meses</option>
-          <option value={12}>Últimos 12 meses</option>
+          <option value={12}>1 Ano</option>
         </select>
       </div>
 
@@ -148,7 +149,9 @@ function FinOpsPageEnhanced() {
               <DollarSign size={24} />
             </div>
             <div className={styles.statContent}>
-              <p className={styles.statLabel}>Custo Total ({monthsToShow} meses)</p>
+              <p className={styles.statLabel}>
+                Custo Total ({monthsToShow === 1 ? 'Mês Atual' : `${monthsToShow} meses`})
+              </p>
               <p className={styles.statValue}>{formatCurrency(totalCost)}</p>
             </div>
           </div>
