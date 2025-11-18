@@ -18,19 +18,11 @@ interface ServiceCost {
   cost: number
 }
 
-interface TagCost {
-  tag: string
-  cost: number
-}
-
 function FinOpsPageEnhanced() {
   const [loading, setLoading] = useState(true)
   const [monthlyCosts, setMonthlyCosts] = useState<MonthlyCost[]>([])
   const [serviceCosts, setServiceCosts] = useState<ServiceCost[]>([])
-  const [teamCosts, setTeamCosts] = useState<TagCost[]>([])
-  const [appCosts, setAppCosts] = useState<TagCost[]>([])
   const [forecast, setForecast] = useState<any[]>([])
-  const [resources, setResources] = useState<any[]>([])
 
   // Date filters
   const [monthsToShow, setMonthsToShow] = useState(12)
@@ -43,31 +35,22 @@ function FinOpsPageEnhanced() {
     setLoading(true)
     try {
       // Fetch all data in parallel
-      const [monthlyRes, serviceRes, teamRes, appRes, forecastRes, resourcesRes] = await Promise.all([
+      const [monthlyRes, serviceRes, forecastRes] = await Promise.all([
         fetch('http://localhost:8060/api/v1/finops/aws/monthly'),
         fetch('http://localhost:8060/api/v1/finops/aws/by-service'),
-        fetch('http://localhost:8060/api/v1/finops/aws/by-tag?tag=Team'),
-        fetch('http://localhost:8060/api/v1/finops/aws/by-tag?tag=Application'),
         fetch('http://localhost:8060/api/v1/finops/aws/forecast'),
-        fetch('http://localhost:8060/api/v1/finops/resources?provider=aws'),
       ])
 
       const monthlyData = await monthlyRes.json()
       const serviceData = await serviceRes.json()
-      const teamData = await teamRes.json()
-      const appData = await appRes.json()
       const forecastData = await forecastRes.json()
-      const resourcesData = await resourcesRes.json()
 
       console.log('Monthly Data:', monthlyData)
       console.log('Service Data:', serviceData)
 
       setMonthlyCosts(monthlyData || [])
       setServiceCosts((serviceData || []).sort((a: ServiceCost, b: ServiceCost) => b.cost - a.cost).slice(0, 10))
-      setTeamCosts((teamData || []).sort((a: TagCost, b: TagCost) => b.cost - a.cost))
-      setAppCosts((appData || []).sort((a: TagCost, b: TagCost) => b.cost - a.cost))
       setForecast(forecastData || [])
-      setResources((resourcesData || []).sort((a: any, b: any) => (b.cost || 0) - (a.cost || 0)).slice(0, 10))
     } catch (error) {
       console.error('Error fetching FinOps data:', error)
     } finally {
@@ -123,13 +106,6 @@ function FinOpsPageEnhanced() {
       trend = ((lastMonth - prevMonth) / prevMonth) * 100
     }
   }
-
-  const totalResources = resources.length
-  const activeResources = resources.filter(r =>
-    r.status?.toLowerCase() === 'running' ||
-    r.status?.toLowerCase() === 'active' ||
-    r.status?.toLowerCase() === 'available'
-  ).length
 
   return (
     <div className={styles.container}>
@@ -275,144 +251,6 @@ function FinOpsPageEnhanced() {
         )}
       </section>
 
-      {/* 🟢 2. DEEP DIVE DE CUSTOS */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>🔍 Deep Dive de Custos</h2>
-
-        <div className={styles.twoColumns}>
-          {/* Por Time */}
-          <div className={styles.chartCard}>
-            <h3 className={styles.chartTitle}>👥 Custo por Time</h3>
-            {teamCosts.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={teamCosts}
-                    dataKey="cost"
-                    nameKey="tag"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label={(entry) => `${entry.tag}: ${formatCurrency(entry.cost)}`}
-                  >
-                    {teamCosts.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: any) => formatCurrency(value)} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className={styles.noData}>Nenhum dado de tag "Team" encontrado</p>
-            )}
-          </div>
-
-          {/* Por Aplicação */}
-          <div className={styles.chartCard}>
-            <h3 className={styles.chartTitle}>📱 Custo por Aplicação</h3>
-            {appCosts.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={appCosts.slice(0, 10)}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="tag" angle={-45} textAnchor="end" height={100} />
-                  <YAxis tickFormatter={(value) => `$${value.toLocaleString()}`} />
-                  <Tooltip formatter={(value: any) => formatCurrency(value)} />
-                  <Bar dataKey="cost" fill="#FFBB28" name="Custo" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className={styles.noData}>Nenhum dado de tag "Application" encontrado</p>
-            )}
-          </div>
-        </div>
-
-        {/* 📈 Gráfico 6 — Custo por Recurso (Top Resources) */}
-        {resources && resources.length > 0 && (
-          <div className={styles.chartCard}>
-            <h3 className={styles.chartTitle}>💰 Top 10 Recursos Mais Caros</h3>
-            <div className={styles.resourceTable}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Recurso</th>
-                    <th>Tipo</th>
-                    <th>Região</th>
-                    <th>Status</th>
-                    <th>Custo Estimado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resources.map((resource: any, index: number) => (
-                    <tr key={index}>
-                      <td>{resource.resourceName || resource.resourceID}</td>
-                      <td>{resource.resourceType || 'N/A'}</td>
-                      <td>{resource.region || 'N/A'}</td>
-                      <td>
-                        <span className={`${styles.badge} ${styles[`status${(resource.status || '').toLowerCase()}`]}`}>
-                          {resource.status || 'unknown'}
-                        </span>
-                      </td>
-                      <td className={styles.costCell}>{formatCurrency(resource.cost || 0)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* 🟥 4. NETWORK E ARMAZENAMENTO */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>🌐 Rede e Armazenamento</h2>
-        <div className={styles.infoBox}>
-          <p>⚠️ Dados de Data Transfer e armazenamento detalhado em desenvolvimento.</p>
-          <p>Utilize a AWS Cost Explorer Console para análise detalhada de:</p>
-          <ul>
-            <li>Data Transfer Inter-Region, NAT Gateway, Internet</li>
-            <li>Crescimento de S3, RDS e EBS por GB</li>
-          </ul>
-        </div>
-      </section>
-
-      {/* 🟪 5. OTIMIZAÇÃO / WASTE */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>⚡ Otimização e Desperdício</h2>
-        <div className={styles.infoBox}>
-          <p>🔧 Recursos de otimização em desenvolvimento:</p>
-          <ul>
-            <li>Estimativa de recursos ociosos por serviço</li>
-            <li>Utilização de Savings Plans e Reserved Instances</li>
-            <li>Detecção de anomalias de custo (integração com AWS Cost Anomaly Detection)</li>
-          </ul>
-          <p>📌 Utilize o AWS Cost Explorer para análises detalhadas de otimização.</p>
-        </div>
-      </section>
-
-      {/* Summary Footer */}
-      <section className={styles.summaryFooter}>
-        <div className={styles.summaryCard}>
-          <h4>📊 Resumo do Período ({monthsToShow} meses)</h4>
-          <div className={styles.summaryGrid}>
-            <div>
-              <p className={styles.summaryLabel}>Total de Recursos</p>
-              <p className={styles.summaryValue}>{totalResources}</p>
-            </div>
-            <div>
-              <p className={styles.summaryLabel}>Recursos Ativos</p>
-              <p className={styles.summaryValue}>{activeResources}</p>
-            </div>
-            <div>
-              <p className={styles.summaryLabel}>Serviços Únicos</p>
-              <p className={styles.summaryValue}>{serviceCosts.length}</p>
-            </div>
-            <div>
-              <p className={styles.summaryLabel}>Custo Total</p>
-              <p className={`${styles.summaryValue} ${styles.highlight}`}>{formatCurrency(totalCost)}</p>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }
