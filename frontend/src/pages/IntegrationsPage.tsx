@@ -136,6 +136,25 @@ function IntegrationsPage() {
     }
   }
 
+  const handleDelete = async (integration: Integration) => {
+    const confirmed = window.confirm(`Tem certeza que deseja deletar a integração "${integration.name}"? Esta ação não pode ser desfeita.`)
+
+    if (!confirmed) return
+
+    try {
+      const response = await fetch(`http://localhost:8060/api/v1/integrations/${integration.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) throw new Error('Failed to delete integration')
+
+      await fetchIntegrations()
+    } catch (err) {
+      console.error('Error deleting integration:', err)
+      alert('Erro ao deletar integração')
+    }
+  }
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -178,6 +197,7 @@ function IntegrationsPage() {
             integration={integration}
             onConfigure={() => handleConfigure(integration)}
             onToggle={() => handleToggle(integration)}
+            onDelete={() => handleDelete(integration)}
           />
         ))}
       </div>

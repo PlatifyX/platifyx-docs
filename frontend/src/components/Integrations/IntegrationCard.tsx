@@ -1,4 +1,4 @@
-import { Settings, CheckCircle, XCircle } from 'lucide-react'
+import { Settings, CheckCircle, XCircle, Trash2 } from 'lucide-react'
 import styles from './IntegrationCard.module.css'
 
 interface Integration {
@@ -13,9 +13,10 @@ interface IntegrationCardProps {
   integration: Integration
   onConfigure: () => void
   onToggle: () => void
+  onDelete: () => void
 }
 
-function IntegrationCard({ integration, onConfigure, onToggle }: IntegrationCardProps) {
+function IntegrationCard({ integration, onConfigure, onToggle, onDelete }: IntegrationCardProps) {
   const getIntegrationDescription = (type: string) => {
     switch (type) {
       case 'azuredevops':
@@ -81,10 +82,15 @@ function IntegrationCard({ integration, onConfigure, onToggle }: IntegrationCard
       </div>
 
       <div className={styles.cardFooter}>
-        <button className={styles.configureButton} onClick={onConfigure}>
-          <Settings size={16} />
-          <span>Configurar</span>
-        </button>
+        <div className={styles.cardActions}>
+          <button className={styles.configureButton} onClick={onConfigure}>
+            <Settings size={16} />
+            <span>Configurar</span>
+          </button>
+          <button className={styles.deleteButton} onClick={onDelete} title="Deletar integração">
+            <Trash2 size={16} />
+          </button>
+        </div>
         <label className={styles.toggle}>
           <input
             type="checkbox"

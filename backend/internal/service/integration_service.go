@@ -94,6 +94,19 @@ func (s *IntegrationService) Update(id int, enabled bool, config map[string]inte
 	return nil
 }
 
+func (s *IntegrationService) Delete(id int) error {
+	s.log.Infow("Deleting integration", "id", id)
+
+	err := s.repo.Delete(id)
+	if err != nil {
+		s.log.Errorw("Failed to delete integration", "error", err, "id", id)
+		return err
+	}
+
+	s.log.Info("Integration deleted successfully")
+	return nil
+}
+
 func (s *IntegrationService) GetAzureDevOpsConfig() (*domain.AzureDevOpsConfig, error) {
 	integration, err := s.repo.GetByType(string(domain.IntegrationTypeAzureDevOps))
 	if err != nil {

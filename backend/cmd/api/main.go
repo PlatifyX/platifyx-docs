@@ -158,6 +158,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.GET("/:id", handlers.IntegrationHandler.GetByID)
 			integrations.POST("", handlers.IntegrationHandler.Create)
 			integrations.PUT("/:id", handlers.IntegrationHandler.Update)
+			integrations.DELETE("/:id", handlers.IntegrationHandler.Delete)
 			integrations.POST("/test/azuredevops", handlers.IntegrationHandler.TestAzureDevOps)
 			integrations.POST("/test/sonarqube", handlers.IntegrationHandler.TestSonarQube)
 			integrations.POST("/test/azure", handlers.IntegrationHandler.TestAzureCloud)

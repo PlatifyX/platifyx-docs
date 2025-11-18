@@ -155,6 +155,29 @@ func (h *IntegrationHandler) Create(c *gin.Context) {
 	})
 }
 
+func (h *IntegrationHandler) Delete(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid integration ID",
+		})
+		return
+	}
+
+	if err := h.service.Delete(id); err != nil {
+		h.log.Errorw("Failed to delete integration", "error", err, "id", id)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to delete integration",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Integration deleted successfully",
+	})
+}
+
 func (h *IntegrationHandler) TestAzureDevOps(c *gin.Context) {
 	var input struct {
 		Organization string `json:"organization" binding:"required"`
