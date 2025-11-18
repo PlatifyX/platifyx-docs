@@ -14,6 +14,7 @@ interface Build {
   sourceBranch: string
   sourceVersion: string
   requestedFor: string
+  integration?: string
   definition: {
     id: number
     name: string
@@ -100,6 +101,10 @@ function BuildsTab() {
               {getStatusBadge(build.result, build.status)}
             </div>
             <div className={styles.listItemContent}>
+              <div className={styles.listItemRow}>
+                <span className={styles.label}>Integração:</span>
+                <span>{build.integration || 'N/A'}</span>
+              </div>
               <div className={styles.listItemRow}>
                 <span className={styles.label}>Build:</span>
                 <span>{build.buildNumber}</span>

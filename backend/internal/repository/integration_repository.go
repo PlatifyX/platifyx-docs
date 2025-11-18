@@ -79,6 +79,41 @@ func (r *IntegrationRepository) GetByType(integrationType string) (*domain.Integ
 	return &integration, nil
 }
 
+func (r *IntegrationRepository) GetAllByType(integrationType string) ([]domain.Integration, error) {
+	query := `
+		SELECT id, name, type, enabled, config, created_at, updated_at
+		FROM integrations
+		WHERE type = $1 AND enabled = true
+		ORDER BY name ASC
+	`
+
+	rows, err := r.db.Query(query, integrationType)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var integrations []domain.Integration
+	for rows.Next() {
+		var integration domain.Integration
+		err := rows.Scan(
+			&integration.ID,
+			&integration.Name,
+			&integration.Type,
+			&integration.Enabled,
+			&integration.Config,
+			&integration.CreatedAt,
+			&integration.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		integrations = append(integrations, integration)
+	}
+
+	return integrations, nil
+}
+
 func (r *IntegrationRepository) GetByID(id int) (*domain.Integration, error) {
 	query := `
 		SELECT id, name, type, enabled, config, created_at, updated_at

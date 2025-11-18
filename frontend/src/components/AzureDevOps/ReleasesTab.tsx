@@ -38,6 +38,7 @@ interface Release {
   modifiedOn: string
   createdBy: User
   description: string
+  integration?: string
   releaseDefinition: {
     id: number
     name: string
@@ -137,6 +138,10 @@ function ReleasesTab() {
             <div className={styles.listItemRow}>
               <span className={styles.label}>Definition:</span>
               <span>{release.releaseDefinition.name}</span>
+            </div>
+            <div className={styles.listItemRow}>
+              <span className={styles.label}>Integração:</span>
+              <span>{release.integration || 'N/A'}</span>
             </div>
             <div className={styles.listItemRow}>
               <span className={styles.label}>Created:</span>

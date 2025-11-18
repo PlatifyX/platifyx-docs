@@ -116,3 +116,28 @@ func (s *IntegrationService) GetAzureDevOpsConfig() (*domain.AzureDevOpsConfig, 
 		PAT:          config.PAT,
 	}, nil
 }
+
+func (s *IntegrationService) GetAllAzureDevOpsConfigs() (map[string]*domain.AzureDevOpsConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeAzureDevOps))
+	if err != nil {
+		s.log.Errorw("Failed to fetch Azure DevOps integrations", "error", err)
+		return nil, err
+	}
+
+	configs := make(map[string]*domain.AzureDevOpsConfig)
+	for _, integration := range integrations {
+		var config domain.AzureDevOpsIntegrationConfig
+		if err := json.Unmarshal(integration.Config, &config); err != nil {
+			s.log.Errorw("Failed to unmarshal Azure DevOps config", "error", err, "integration", integration.Name)
+			continue
+		}
+
+		configs[integration.Name] = &domain.AzureDevOpsConfig{
+			Organization: config.Organization,
+			Project:      config.Project,
+			PAT:          config.PAT,
+		}
+	}
+
+	return configs, nil
+}

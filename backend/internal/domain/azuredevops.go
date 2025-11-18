@@ -17,6 +17,7 @@ type Pipeline struct {
 	URL         string `json:"url"`
 	Project     string `json:"project,omitempty"`
 	LastBuildID int    `json:"lastBuildId,omitempty"`
+	Integration string `json:"integration,omitempty"`
 }
 
 type PipelineRun struct {
@@ -30,6 +31,7 @@ type PipelineRun struct {
 	URL           string    `json:"url"`
 	SourceBranch  string    `json:"sourceBranch"`
 	SourceVersion string    `json:"sourceVersion"`
+	Integration   string    `json:"integration,omitempty"`
 }
 
 type Build struct {
@@ -45,6 +47,7 @@ type Build struct {
 	RequestedFor  User      `json:"requestedFor"`
 	URL           string    `json:"url"`
 	Project       string    `json:"project,omitempty"`
+	Integration   string    `json:"integration,omitempty"`
 	Definition    struct {
 		ID   int    `json:"id"`
 		Name string `json:"name"`
@@ -67,6 +70,7 @@ type Release struct {
 	Description     string    `json:"description"`
 	URL             string    `json:"url"`
 	Project         string    `json:"project,omitempty"`
+	Integration     string    `json:"integration,omitempty"`
 	ReleaseDefinition struct {
 		ID   int    `json:"id"`
 		Name string `json:"name"`

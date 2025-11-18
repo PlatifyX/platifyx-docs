@@ -11,6 +11,7 @@ interface Pipeline {
   url: string
   project?: string
   lastBuildId?: number
+  integration?: string
 }
 
 function PipelinesTab() {
@@ -70,6 +71,10 @@ function PipelinesTab() {
               <div className={styles.cardInfo}>
                 <FolderOpen size={16} />
                 <span>{pipeline.folder || '/'}</span>
+              </div>
+              <div className={styles.cardInfo}>
+                <span className={styles.label}>Integração:</span>
+                <span>{pipeline.integration || 'N/A'}</span>
               </div>
               <div className={styles.cardInfo}>
                 <span className={styles.label}>Projeto:</span>
