@@ -136,8 +136,27 @@ func (c *Client) ListAllPipelines() ([]domain.Pipeline, error) {
 }
 
 func (c *Client) ListPipelineRuns(pipelineID int) ([]domain.PipelineRun, error) {
+	// Need to find which project contains this pipeline
+	// Try all projects until we find it
+	projects, err := c.ListProjects()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, project := range projects {
+		runs, err := c.ListPipelineRunsForProject(project.Name, pipelineID)
+		if err == nil && len(runs) >= 0 {
+			// Found it!
+			return runs, nil
+		}
+	}
+
+	return nil, fmt.Errorf("pipeline %d not found in any project", pipelineID)
+}
+
+func (c *Client) ListPipelineRunsForProject(project string, pipelineID int) ([]domain.PipelineRun, error) {
 	url := fmt.Sprintf("%s/%s/%s/_apis/pipelines/%d/runs?api-version=%s",
-		c.baseURL, c.organization, c.project, pipelineID, apiVersion)
+		c.baseURL, c.organization, project, pipelineID, apiVersion)
 
 	body, err := c.doRequest("GET", url)
 	if err != nil {
@@ -168,15 +187,29 @@ func (c *Client) ListBuildsForProject(project string, top int) ([]domain.Build, 
 		return nil, err
 	}
 
+	// Azure DevOps returns project as an object, not a string
 	var response struct {
-		Value []domain.Build `json:"value"`
+		Value []struct {
+			domain.Build
+			ProjectObj struct {
+				ID   string `json:"id"`
+				Name string `json:"name"`
+			} `json:"project"`
+		} `json:"value"`
 	}
 
 	if err := json.Unmarshal(body, &response); err != nil {
 		return nil, err
 	}
 
-	return response.Value, nil
+	// Extract builds and set project name
+	builds := make([]domain.Build, len(response.Value))
+	for i, item := range response.Value {
+		builds[i] = item.Build
+		builds[i].Project = item.ProjectObj.Name
+	}
+
+	return builds, nil
 }
 
 func (c *Client) ListAllBuilds(topPerProject int) ([]domain.Build, error) {
@@ -192,10 +225,6 @@ func (c *Client) ListAllBuilds(topPerProject int) ([]domain.Build, error) {
 			// Log error but continue with other projects
 			fmt.Printf("Error fetching builds for project %s: %v\n", project.Name, err)
 			continue
-		}
-		// Tag each build with its project name
-		for i := range builds {
-			builds[i].Project = project.Name
 		}
 		allBuilds = append(allBuilds, builds...)
 	}
