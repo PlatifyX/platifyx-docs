@@ -300,6 +300,49 @@ func (c *Client) GetBuild(buildID int) (*domain.Build, error) {
 	return &build, nil
 }
 
+// GetBuildLogs fetches the logs for a specific build
+func (c *Client) GetBuildLogs(buildID int) (string, error) {
+	url := fmt.Sprintf("%s/%s/%s/_apis/build/builds/%d/logs?api-version=%s",
+		c.baseURL, c.organization, c.project, buildID, apiVersion)
+
+	body, err := c.doRequest("GET", url)
+	if err != nil {
+		return "", err
+	}
+
+	// Azure DevOps returns a list of log records
+	var response struct {
+		Value []struct {
+			ID  int    `json:"id"`
+			URL string `json:"url"`
+		} `json:"value"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		return "", err
+	}
+
+	if len(response.Value) == 0 {
+		return "No logs available", nil
+	}
+
+	// Fetch all logs and concatenate them
+	var allLogs string
+	for _, logRecord := range response.Value {
+		logBody, err := c.doRequest("GET", logRecord.URL)
+		if err != nil {
+			continue // Skip failed log fetches
+		}
+		allLogs += string(logBody) + "\n"
+	}
+
+	if allLogs == "" {
+		return "No logs available", nil
+	}
+
+	return allLogs, nil
+}
+
 // ListBuildsByDefinition fetches builds for a specific pipeline/definition ID
 // and converts them to PipelineRun format for compatibility
 func (c *Client) ListBuildsByDefinition(project string, definitionID int) ([]domain.PipelineRun, error) {

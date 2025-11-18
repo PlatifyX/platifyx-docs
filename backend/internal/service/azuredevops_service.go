@@ -70,6 +70,19 @@ func (s *AzureDevOpsService) GetBuildByID(buildID int) (*domain.Build, error) {
 	return build, nil
 }
 
+func (s *AzureDevOpsService) GetBuildLogs(buildID int) (string, error) {
+	s.log.Infow("Fetching build logs", "buildId", buildID)
+
+	logs, err := s.client.GetBuildLogs(buildID)
+	if err != nil {
+		s.log.Errorw("Failed to fetch build logs", "error", err, "buildId", buildID)
+		return "", err
+	}
+
+	s.log.Info("Fetched build logs successfully")
+	return logs, nil
+}
+
 func (s *AzureDevOpsService) GetReleases(limit int) ([]domain.Release, error) {
 	s.log.Infow("Fetching releases from all projects", "limitPerProject", limit)
 

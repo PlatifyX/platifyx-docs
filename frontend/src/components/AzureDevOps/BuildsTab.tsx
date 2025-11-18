@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Package, CheckCircle, XCircle, Clock, GitBranch } from 'lucide-react'
+import BuildLogsModal from './BuildLogsModal'
 import styles from './AzureDevOpsTabs.module.css'
 
 interface Build {
@@ -23,6 +24,7 @@ function BuildsTab() {
   const [builds, setBuilds] = useState<Build[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedBuild, setSelectedBuild] = useState<Build | null>(null)
 
   useEffect(() => {
     fetchBuilds()
@@ -82,33 +84,47 @@ function BuildsTab() {
   }
 
   return (
-    <div className={styles.list}>
-      {builds.map((build) => (
-        <div key={build.id} className={styles.listItem}>
-          <div className={styles.listItemHeader}>
-            <div className={styles.listItemTitle}>
-              {getStatusIcon(build.result, build.status)}
-              <span>{build.definition.name}</span>
+    <>
+      <div className={styles.list}>
+        {builds.map((build) => (
+          <div
+            key={build.id}
+            className={`${styles.listItem} ${styles.clickable}`}
+            onClick={() => setSelectedBuild(build)}
+          >
+            <div className={styles.listItemHeader}>
+              <div className={styles.listItemTitle}>
+                {getStatusIcon(build.result, build.status)}
+                <span>{build.definition.name}</span>
+              </div>
+              {getStatusBadge(build.result, build.status)}
             </div>
-            {getStatusBadge(build.result, build.status)}
+            <div className={styles.listItemContent}>
+              <div className={styles.listItemRow}>
+                <span className={styles.label}>Build:</span>
+                <span>{build.buildNumber}</span>
+              </div>
+              <div className={styles.listItemRow}>
+                <GitBranch size={14} />
+                <span>{getBranchName(build.sourceBranch)}</span>
+              </div>
+              <div className={styles.listItemRow}>
+                <span className={styles.label}>Finished:</span>
+                <span>{formatDate(build.finishTime)}</span>
+              </div>
+            </div>
           </div>
-          <div className={styles.listItemContent}>
-            <div className={styles.listItemRow}>
-              <span className={styles.label}>Build:</span>
-              <span>{build.buildNumber}</span>
-            </div>
-            <div className={styles.listItemRow}>
-              <GitBranch size={14} />
-              <span>{getBranchName(build.sourceBranch)}</span>
-            </div>
-            <div className={styles.listItemRow}>
-              <span className={styles.label}>Finished:</span>
-              <span>{formatDate(build.finishTime)}</span>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      {selectedBuild && (
+        <BuildLogsModal
+          buildId={selectedBuild.id}
+          buildNumber={selectedBuild.buildNumber}
+          onClose={() => setSelectedBuild(null)}
+        />
+      )}
+    </>
   )
 }
 

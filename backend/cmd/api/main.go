@@ -126,6 +126,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 
 			ci.GET("/builds", handlers.AzureDevOpsHandler.ListBuilds)
 			ci.GET("/builds/:id", handlers.AzureDevOpsHandler.GetBuild)
+			ci.GET("/builds/:id/logs", handlers.AzureDevOpsHandler.GetBuildLogs)
 
 			ci.GET("/releases", handlers.AzureDevOpsHandler.ListReleases)
 			ci.GET("/releases/:id", handlers.AzureDevOpsHandler.GetRelease)

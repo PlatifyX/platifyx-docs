@@ -170,6 +170,43 @@ func (h *AzureDevOpsHandler) GetBuild(c *gin.Context) {
 	c.JSON(http.StatusOK, build)
 }
 
+func (h *AzureDevOpsHandler) GetBuildLogs(c *gin.Context) {
+	buildIDStr := c.Param("id")
+	buildID, err := strconv.Atoi(buildIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid build ID",
+		})
+		return
+	}
+
+	svc, err := h.getService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configuration",
+		})
+		return
+	}
+	if svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Azure DevOps integration not configured",
+		})
+		return
+	}
+
+	logs, err := svc.GetBuildLogs(buildID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to fetch build logs",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"logs": logs,
+	})
+}
+
 func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "50")
 	limit, err := strconv.Atoi(limitStr)
