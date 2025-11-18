@@ -187,3 +187,91 @@ func (s *IntegrationService) GetAllSonarQubeConfigs() (map[string]*domain.SonarQ
 
 	return configs, nil
 }
+
+// Cloud provider config methods
+func (s *IntegrationService) GetAllAzureCloudConfigs() (map[string]*domain.AzureCloudConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeAzureCloud))
+	if err != nil {
+		s.log.Errorw("Failed to fetch Azure Cloud integrations", "error", err)
+		return nil, err
+	}
+
+	configs := make(map[string]*domain.AzureCloudConfig)
+	for _, integration := range integrations {
+		if !integration.Enabled {
+			continue
+		}
+
+		var config domain.AzureCloudIntegrationConfig
+		if err := json.Unmarshal(integration.Config, &config); err != nil {
+			s.log.Errorw("Failed to unmarshal Azure Cloud config", "error", err, "integration", integration.Name)
+			continue
+		}
+
+		configs[integration.Name] = &domain.AzureCloudConfig{
+			SubscriptionID: config.SubscriptionID,
+			TenantID:       config.TenantID,
+			ClientID:       config.ClientID,
+			ClientSecret:   config.ClientSecret,
+		}
+	}
+
+	return configs, nil
+}
+
+func (s *IntegrationService) GetAllGCPConfigs() (map[string]*domain.GCPCloudConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGCP))
+	if err != nil {
+		s.log.Errorw("Failed to fetch GCP integrations", "error", err)
+		return nil, err
+	}
+
+	configs := make(map[string]*domain.GCPCloudConfig)
+	for _, integration := range integrations {
+		if !integration.Enabled {
+			continue
+		}
+
+		var config domain.GCPCloudIntegrationConfig
+		if err := json.Unmarshal(integration.Config, &config); err != nil {
+			s.log.Errorw("Failed to unmarshal GCP config", "error", err, "integration", integration.Name)
+			continue
+		}
+
+		configs[integration.Name] = &domain.GCPCloudConfig{
+			ProjectID:          config.ProjectID,
+			ServiceAccountJSON: config.ServiceAccountJSON,
+		}
+	}
+
+	return configs, nil
+}
+
+func (s *IntegrationService) GetAllAWSConfigs() (map[string]*domain.AWSCloudConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeAWS))
+	if err != nil {
+		s.log.Errorw("Failed to fetch AWS integrations", "error", err)
+		return nil, err
+	}
+
+	configs := make(map[string]*domain.AWSCloudConfig)
+	for _, integration := range integrations {
+		if !integration.Enabled {
+			continue
+		}
+
+		var config domain.AWSCloudIntegrationConfig
+		if err := json.Unmarshal(integration.Config, &config); err != nil {
+			s.log.Errorw("Failed to unmarshal AWS config", "error", err, "integration", integration.Name)
+			continue
+		}
+
+		configs[integration.Name] = &domain.AWSCloudConfig{
+			AccessKeyID:     config.AccessKeyID,
+			SecretAccessKey: config.SecretAccessKey,
+			Region:          config.Region,
+		}
+	}
+
+	return configs, nil
+}

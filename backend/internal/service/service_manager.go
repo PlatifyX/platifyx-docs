@@ -14,6 +14,7 @@ type ServiceManager struct {
 	KubernetesService   *KubernetesService
 	AzureDevOpsService  *AzureDevOpsService
 	IntegrationService  *IntegrationService
+	FinOpsService       *FinOpsService
 }
 
 func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *ServiceManager {
@@ -30,11 +31,15 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		azureDevOpsService = NewAzureDevOpsService(*azureDevOpsConfig, log)
 	}
 
+	// Initialize FinOps service
+	finOpsService := NewFinOpsService(integrationService, log)
+
 	return &ServiceManager{
 		ServiceService:      NewServiceService(),
 		MetricsService:      NewMetricsService(),
 		KubernetesService:   NewKubernetesService(),
 		AzureDevOpsService:  azureDevOpsService,
 		IntegrationService:  integrationService,
+		FinOpsService:       finOpsService,
 	}
 }

@@ -7,6 +7,7 @@ import KubernetesPage from './pages/KubernetesPage'
 import AzureDevOpsPage from './pages/AzureDevOpsPage'
 import IntegrationsPage from './pages/IntegrationsPage'
 import QualityPage from './pages/QualityPage'
+import FinOpsPage from './pages/FinOpsPage'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/kubernetes" element={<KubernetesPage />} />
           <Route path="/ci" element={<AzureDevOpsPage />} />
           <Route path="/quality" element={<QualityPage />} />
+          <Route path="/finops" element={<FinOpsPage />} />
           <Route path="/integrations" element={<IntegrationsPage />} />
         </Routes>
       </Layout>

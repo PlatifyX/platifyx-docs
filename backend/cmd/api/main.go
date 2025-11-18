@@ -145,6 +145,13 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			quality.GET("/issues", handlers.SonarQubeHandler.ListIssues)
 		}
 
+		finops := v1.Group("/finops")
+		{
+			finops.GET("/stats", handlers.FinOpsHandler.GetStats)
+			finops.GET("/costs", handlers.FinOpsHandler.ListCosts)
+			finops.GET("/resources", handlers.FinOpsHandler.ListResources)
+		}
+
 		integrations := v1.Group("/integrations")
 		{
 			integrations.GET("", handlers.IntegrationHandler.List)
@@ -153,6 +160,9 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.PUT("/:id", handlers.IntegrationHandler.Update)
 			integrations.POST("/test/azuredevops", handlers.IntegrationHandler.TestAzureDevOps)
 			integrations.POST("/test/sonarqube", handlers.IntegrationHandler.TestSonarQube)
+			integrations.POST("/test/azure", handlers.IntegrationHandler.TestAzureCloud)
+			integrations.POST("/test/gcp", handlers.IntegrationHandler.TestGCP)
+			integrations.POST("/test/aws", handlers.IntegrationHandler.TestAWS)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)
 		}
 	}

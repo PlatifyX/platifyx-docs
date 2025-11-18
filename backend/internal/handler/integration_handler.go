@@ -8,6 +8,7 @@ import (
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/service"
 	"github.com/PlatifyX/platifyx-core/pkg/azuredevops"
+	"github.com/PlatifyX/platifyx-core/pkg/cloud"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/PlatifyX/platifyx-core/pkg/sonarqube"
 	"github.com/gin-gonic/gin"
@@ -277,5 +278,128 @@ func (h *IntegrationHandler) TestSonarQube(c *gin.Context) {
 		"success":      true,
 		"projectCount": len(projects),
 		"projects":     projects,
+	})
+}
+
+func (h *IntegrationHandler) TestAzureCloud(c *gin.Context) {
+	var input struct {
+		SubscriptionID string `json:"subscriptionId" binding:"required"`
+		TenantID       string `json:"tenantId" binding:"required"`
+		ClientID       string `json:"clientId" binding:"required"`
+		ClientSecret   string `json:"clientSecret" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Create temporary Azure Cloud config
+	config := domain.AzureCloudConfig{
+		SubscriptionID: input.SubscriptionID,
+		TenantID:       input.TenantID,
+		ClientID:       input.ClientID,
+		ClientSecret:   input.ClientSecret,
+	}
+
+	// Test connection
+	client := cloud.NewAzureClient(config)
+	if err := client.TestConnection(); err != nil {
+		h.log.Errorw("Failed to test Azure Cloud connection",
+			"error", err,
+			"subscriptionId", input.SubscriptionID,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to Azure. Please check your credentials.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
+	})
+}
+
+func (h *IntegrationHandler) TestGCP(c *gin.Context) {
+	var input struct {
+		ProjectID          string `json:"projectId" binding:"required"`
+		ServiceAccountJSON string `json:"serviceAccountJson" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Create temporary GCP config
+	config := domain.GCPCloudConfig{
+		ProjectID:          input.ProjectID,
+		ServiceAccountJSON: input.ServiceAccountJSON,
+	}
+
+	// Test connection
+	client := cloud.NewGCPClient(config)
+	if err := client.TestConnection(); err != nil {
+		h.log.Errorw("Failed to test GCP connection",
+			"error", err,
+			"projectId", input.ProjectID,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to GCP. Please check your credentials.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
+	})
+}
+
+func (h *IntegrationHandler) TestAWS(c *gin.Context) {
+	var input struct {
+		AccessKeyID     string `json:"accessKeyId" binding:"required"`
+		SecretAccessKey string `json:"secretAccessKey" binding:"required"`
+		Region          string `json:"region" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Create temporary AWS config
+	config := domain.AWSCloudConfig{
+		AccessKeyID:     input.AccessKeyID,
+		SecretAccessKey: input.SecretAccessKey,
+		Region:          input.Region,
+	}
+
+	// Test connection
+	client := cloud.NewAWSClient(config)
+	if err := client.TestConnection(); err != nil {
+		h.log.Errorw("Failed to test AWS connection",
+			"error", err,
+			"region", input.Region,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to AWS. Please check your credentials.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
 	})
 }

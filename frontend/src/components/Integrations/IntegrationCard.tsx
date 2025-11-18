@@ -22,6 +22,12 @@ function IntegrationCard({ integration, onConfigure, onToggle }: IntegrationCard
         return 'Integração com Azure DevOps para pipelines, builds e releases'
       case 'sonarqube':
         return 'Análise de qualidade de código com SonarQube'
+      case 'azure':
+        return 'Gerenciamento de custos e recursos da Microsoft Azure'
+      case 'gcp':
+        return 'Gerenciamento de custos e recursos do Google Cloud Platform'
+      case 'aws':
+        return 'Gerenciamento de custos e recursos da Amazon Web Services'
       default:
         return 'Integração externa'
     }
@@ -33,6 +39,12 @@ function IntegrationCard({ integration, onConfigure, onToggle }: IntegrationCard
         return '/logos/azuredevops.png'
       case 'sonarqube':
         return '/logos/sonarqube.png'
+      case 'azure':
+        return '/logos/azure.png'
+      case 'gcp':
+        return '/logos/gcp.png'
+      case 'aws':
+        return '/logos/aws.png'
       case 'github':
         return '/logos/github.png'
       case 'gitlab':

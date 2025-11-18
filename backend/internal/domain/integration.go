@@ -26,6 +26,24 @@ type SonarQubeIntegrationConfig struct {
 	Token string `json:"token"`
 }
 
+type AzureCloudIntegrationConfig struct {
+	SubscriptionID string `json:"subscriptionId"`
+	TenantID       string `json:"tenantId"`
+	ClientID       string `json:"clientId"`
+	ClientSecret   string `json:"clientSecret"`
+}
+
+type GCPCloudIntegrationConfig struct {
+	ProjectID          string `json:"projectId"`
+	ServiceAccountJSON string `json:"serviceAccountJson"`
+}
+
+type AWSCloudIntegrationConfig struct {
+	AccessKeyID     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+	Region          string `json:"region"`
+}
+
 type IntegrationType string
 
 const (
@@ -33,4 +51,7 @@ const (
 	IntegrationTypeGitHub      IntegrationType = "github"
 	IntegrationTypeGitLab      IntegrationType = "gitlab"
 	IntegrationTypeSonarQube   IntegrationType = "sonarqube"
+	IntegrationTypeAzureCloud  IntegrationType = "azure"
+	IntegrationTypeGCP         IntegrationType = "gcp"
+	IntegrationTypeAWS         IntegrationType = "aws"
 )
