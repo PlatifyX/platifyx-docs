@@ -884,3 +884,112 @@ func (h *IntegrationHandler) TestPrometheus(c *gin.Context) {
 		"version": version,
 	})
 }
+
+// TestVault tests the Vault connection
+func (h *IntegrationHandler) TestVault(c *gin.Context) {
+	var req domain.VaultIntegrationConfig
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	if req.Address == "" || req.Token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Address and Token are required",
+		})
+		return
+	}
+
+	// Create Vault service for testing
+	config := domain.VaultConfig{
+		Address:   req.Address,
+		Token:     req.Token,
+		Namespace: req.Namespace,
+	}
+
+	vaultService := service.NewVaultService(config, h.log)
+
+	// Test connection
+	if err := vaultService.TestConnection(); err != nil {
+		h.log.Errorw("Vault connection test failed", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Failed to connect to Vault. Please check your address and token.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Get health info
+	health, err := vaultService.GetHealth()
+	if err != nil {
+		h.log.Warnw("Failed to get health info", "error", err)
+	}
+
+	response := gin.H{
+		"message": "Connection successful",
+		"success": true,
+	}
+
+	if health != nil {
+		response["version"] = health.Version
+		response["initialized"] = health.Initialized
+		response["sealed"] = health.Sealed
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// TestAWSSecrets tests the AWS Secrets Manager connection
+func (h *IntegrationHandler) TestAWSSecrets(c *gin.Context) {
+	var req domain.AWSSecretsIntegrationConfig
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	if req.AccessKeyID == "" || req.SecretAccessKey == "" || req.Region == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "AccessKeyID, SecretAccessKey, and Region are required",
+		})
+		return
+	}
+
+	// Create AWS Secrets service for testing
+	config := domain.AWSSecretsConfig{
+		AccessKeyID:     req.AccessKeyID,
+		SecretAccessKey: req.SecretAccessKey,
+		Region:          req.Region,
+		SessionToken:    req.SessionToken,
+	}
+
+	awsSecretsService, err := service.NewAWSSecretsService(config, h.log)
+	if err != nil {
+		h.log.Errorw("AWS Secrets connection test failed", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Failed to create AWS Secrets Manager client",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Test connection
+	ctx := c.Request.Context()
+	if err := awsSecretsService.TestConnection(ctx); err != nil {
+		h.log.Errorw("AWS Secrets connection test failed", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Failed to connect to AWS Secrets Manager. Please check your credentials and region.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
+		"region":  req.Region,
+	})
+}

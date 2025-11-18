@@ -100,6 +100,19 @@ type PrometheusIntegrationConfig struct {
 	Password string `json:"password,omitempty"`
 }
 
+type VaultIntegrationConfig struct {
+	Address   string `json:"address"`
+	Token     string `json:"token"`
+	Namespace string `json:"namespace,omitempty"`
+}
+
+type AWSSecretsIntegrationConfig struct {
+	AccessKeyID     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+	Region          string `json:"region"`
+	SessionToken    string `json:"sessionToken,omitempty"`
+}
+
 type IntegrationType string
 
 const (
@@ -120,4 +133,6 @@ const (
 	IntegrationTypeTeams       IntegrationType = "teams"
 	IntegrationTypeArgoCD      IntegrationType = "argocd"
 	IntegrationTypePrometheus  IntegrationType = "prometheus"
+	IntegrationTypeVault       IntegrationType = "vault"
+	IntegrationTypeAWSSecrets  IntegrationType = "awssecrets"
 )

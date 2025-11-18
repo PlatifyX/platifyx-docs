@@ -616,3 +616,76 @@ func (s *IntegrationService) GetPrometheusService() (*PrometheusService, error) 
 
 	return NewPrometheusService(*config, s.log), nil
 }
+
+// Vault methods
+func (s *IntegrationService) GetVaultConfig() (*domain.VaultConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeVault))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, nil
+	}
+
+	var config domain.VaultIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse Vault config: %w", err)
+	}
+
+	return &domain.VaultConfig{
+		Address:   config.Address,
+		Token:     config.Token,
+		Namespace: config.Namespace,
+	}, nil
+}
+
+func (s *IntegrationService) GetVaultService() (*VaultService, error) {
+	config, err := s.GetVaultConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Vault integration not configured")
+	}
+
+	return NewVaultService(*config, s.log), nil
+}
+
+// AWS Secrets Manager methods
+func (s *IntegrationService) GetAWSSecretsConfig() (*domain.AWSSecretsConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeAWSSecrets))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, nil
+	}
+
+	var config domain.AWSSecretsIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse AWS Secrets config: %w", err)
+	}
+
+	return &domain.AWSSecretsConfig{
+		AccessKeyID:     config.AccessKeyID,
+		SecretAccessKey: config.SecretAccessKey,
+		Region:          config.Region,
+		SessionToken:    config.SessionToken,
+	}, nil
+}
+
+func (s *IntegrationService) GetAWSSecretsService() (*AWSSecretsService, error) {
+	config, err := s.GetAWSSecretsConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("AWS Secrets Manager integration not configured")
+	}
+
+	return NewAWSSecretsService(*config, s.log)
+}

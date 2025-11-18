@@ -86,6 +86,18 @@ const integrationTypes = [
     logo: '/logos/prometheus.png',
   },
   {
+    id: 'vault',
+    name: 'HashiCorp Vault',
+    description: 'Gerenciamento seguro de secrets e credenciais',
+    logo: '/logos/vault.png',
+  },
+  {
+    id: 'awssecrets',
+    name: 'AWS Secrets Manager',
+    description: 'Gerenciamento de secrets na AWS',
+    logo: '/logos/aws-secrets.png',
+  },
+  {
     id: 'github',
     name: 'GitHub',
     description: 'Integração com GitHub Actions (em breve)',

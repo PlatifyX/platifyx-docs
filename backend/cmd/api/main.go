@@ -236,6 +236,8 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.POST("/test/teams", handlers.IntegrationHandler.TestTeams)
 			integrations.POST("/test/argocd", handlers.IntegrationHandler.TestArgoCD)
 			integrations.POST("/test/prometheus", handlers.IntegrationHandler.TestPrometheus)
+			integrations.POST("/test/vault", handlers.IntegrationHandler.TestVault)
+			integrations.POST("/test/awssecrets", handlers.IntegrationHandler.TestAWSSecrets)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)
 		}
 
@@ -290,6 +292,27 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			prometheus.GET("/series", handlers.PrometheusHandler.GetSeries)
 			prometheus.GET("/metadata", handlers.PrometheusHandler.GetMetadata)
 			prometheus.GET("/buildinfo", handlers.PrometheusHandler.GetBuildInfo)
+		}
+
+		vault := v1.Group("/vault")
+		{
+			vault.GET("/stats", handlers.VaultHandler.GetStats)
+			vault.GET("/health", handlers.VaultHandler.GetHealth)
+			vault.GET("/kv/read", handlers.VaultHandler.ReadKVSecret)
+			vault.GET("/kv/list", handlers.VaultHandler.ListKVSecrets)
+			vault.POST("/kv/write", handlers.VaultHandler.WriteKVSecret)
+			vault.DELETE("/kv/delete", handlers.VaultHandler.DeleteKVSecret)
+		}
+
+		awssecrets := v1.Group("/awssecrets")
+		{
+			awssecrets.GET("/stats", handlers.AWSSecretsHandler.GetStats)
+			awssecrets.GET("/list", handlers.AWSSecretsHandler.ListSecrets)
+			awssecrets.GET("/secret/:name", handlers.AWSSecretsHandler.GetSecret)
+			awssecrets.GET("/describe/:name", handlers.AWSSecretsHandler.DescribeSecret)
+			awssecrets.POST("/create", handlers.AWSSecretsHandler.CreateSecret)
+			awssecrets.PUT("/update/:name", handlers.AWSSecretsHandler.UpdateSecret)
+			awssecrets.DELETE("/delete/:name", handlers.AWSSecretsHandler.DeleteSecret)
 		}
 	}
 

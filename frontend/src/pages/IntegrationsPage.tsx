@@ -14,6 +14,8 @@ import SlackModal from '../components/Integrations/SlackModal'
 import TeamsModal from '../components/Integrations/TeamsModal'
 import ArgoCDModal from '../components/Integrations/ArgoCDModal'
 import PrometheusModal from '../components/Integrations/PrometheusModal'
+import VaultModal from '../components/Integrations/VaultModal'
+import AWSSecretsModal from '../components/Integrations/AWSSecretsModal'
 import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
 import styles from './IntegrationsPage.module.css'
 
@@ -387,6 +389,34 @@ function IntegrationsPage() {
 
       {showModal && (isCreating ? selectedType === 'prometheus' : selectedIntegration?.type === 'prometheus') && (
         <PrometheusModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'vault' : selectedIntegration?.type === 'vault') && (
+        <VaultModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'awssecrets' : selectedIntegration?.type === 'awssecrets') && (
+        <AWSSecretsModal
           integration={selectedIntegration}
           isCreating={isCreating}
           onSave={handleSave}
