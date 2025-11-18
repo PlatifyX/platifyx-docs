@@ -156,8 +156,8 @@ func (h *IntegrationHandler) Create(c *gin.Context) {
 func (h *IntegrationHandler) TestAzureDevOps(c *gin.Context) {
 	var input struct {
 		Organization string `json:"organization" binding:"required"`
-		URL          string `json:"url" binding:"required"`
 		PAT          string `json:"pat" binding:"required"`
+		URL          string `json:"url"` // Optional, defaults to https://dev.azure.com
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -172,7 +172,7 @@ func (h *IntegrationHandler) TestAzureDevOps(c *gin.Context) {
 		Organization: input.Organization,
 		Project:      "",
 		PAT:          input.PAT,
-		URL:          input.URL,
+		URL:          input.URL, // Will use default if empty
 	}
 
 	// Try to connect and list projects

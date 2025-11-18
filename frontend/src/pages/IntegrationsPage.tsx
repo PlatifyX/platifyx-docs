@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plug, CheckCircle, XCircle, Plus } from 'lucide-react'
 import IntegrationCard from '../components/Integrations/IntegrationCard'
 import AzureDevOpsModal from '../components/Integrations/AzureDevOpsModal'
+import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
 import styles from './IntegrationsPage.module.css'
 
 interface Integration {
@@ -18,6 +19,8 @@ function IntegrationsPage() {
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [showTypeSelector, setShowTypeSelector] = useState(false)
+  const [selectedType, setSelectedType] = useState<string | null>(null)
 
   useEffect(() => {
     fetchIntegrations()
@@ -43,6 +46,12 @@ function IntegrationsPage() {
   }
 
   const handleCreateNew = () => {
+    setShowTypeSelector(true)
+  }
+
+  const handleTypeSelected = (type: string) => {
+    setSelectedType(type)
+    setShowTypeSelector(false)
     setSelectedIntegration(null)
     setIsCreating(true)
     setShowModal(true)
@@ -59,7 +68,7 @@ function IntegrationsPage() {
           },
           body: JSON.stringify({
             name: integrationData.name,
-            type: 'azuredevops',
+            type: selectedType || 'azuredevops',
             enabled: true,
             config: integrationData.config,
           }),
@@ -93,6 +102,7 @@ function IntegrationsPage() {
       setShowModal(false)
       setSelectedIntegration(null)
       setIsCreating(false)
+      setSelectedType(null)
     } catch (err: any) {
       console.error('Error saving integration:', err)
       alert(err.message || 'Erro ao salvar integração')
@@ -168,6 +178,13 @@ function IntegrationsPage() {
         ))}
       </div>
 
+      {showTypeSelector && (
+        <IntegrationTypeSelector
+          onSelect={handleTypeSelected}
+          onClose={() => setShowTypeSelector(false)}
+        />
+      )}
+
       {showModal && (isCreating || selectedIntegration?.type === 'azuredevops') && (
         <AzureDevOpsModal
           integration={selectedIntegration}
@@ -177,6 +194,7 @@ function IntegrationsPage() {
             setShowModal(false)
             setSelectedIntegration(null)
             setIsCreating(false)
+            setSelectedType(null)
           }}
         />
       )}

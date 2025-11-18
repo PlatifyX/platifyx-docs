@@ -20,16 +20,14 @@ interface AzureDevOpsModalProps {
 function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDevOpsModalProps) {
   const [name, setName] = useState(integration?.name || '')
   const [organization, setOrganization] = useState(integration?.config?.organization || '')
-  const [url, setUrl] = useState(integration?.config?.url || 'https://dev.azure.com')
-  const [project, setProject] = useState(integration?.config?.project || '')
   const [pat, setPat] = useState(integration?.config?.pat || '')
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
 
   const handleTestConnection = async () => {
-    if (!organization || !url || !pat) {
-      alert('Preencha Organization, URL e Token para testar a conexão')
+    if (!organization || !pat) {
+      alert('Preencha Organização e Token para testar a conexão')
       return
     }
 
@@ -44,7 +42,6 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
         },
         body: JSON.stringify({
           organization,
-          url,
           pat,
         }),
       })
@@ -52,7 +49,10 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
       const data = await response.json()
 
       if (response.ok) {
-        setTestResult({ success: true, message: 'Conexão estabelecida com sucesso!' })
+        setTestResult({
+          success: true,
+          message: `Conexão estabelecida! ${data.projectCount} projeto(s) encontrado(s)`
+        })
       } else {
         setTestResult({ success: false, message: data.error || 'Falha ao conectar' })
       }
@@ -71,8 +71,8 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
       return
     }
 
-    if (!organization || !url || !pat) {
-      alert('Organization, URL e Token são obrigatórios')
+    if (!organization || !pat) {
+      alert('Organização e Token são obrigatórios')
       return
     }
 
@@ -87,7 +87,6 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
         name: name || integration?.name,
         config: {
           organization,
-          url,
           pat,
         },
       })
@@ -133,7 +132,7 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
 
           <div className={styles.formGroup}>
             <label htmlFor="organization" className={styles.label}>
-              Organization *
+              Organização *
             </label>
             <input
               id="organization"
@@ -141,35 +140,17 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
               className={styles.input}
               value={organization}
               onChange={(e) => setOrganization(e.target.value)}
-              placeholder="your-organization"
+              placeholder="sua-organizacao"
               required
             />
             <p className={styles.hint}>
-              Nome da organização no Azure DevOps
-            </p>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="url" className={styles.label}>
-              URL *
-            </label>
-            <input
-              id="url"
-              type="text"
-              className={styles.input}
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://dev.azure.com"
-              required
-            />
-            <p className={styles.hint}>
-              URL base do Azure DevOps
+              Nome da sua organização no Azure DevOps (dev.azure.com/<strong>sua-organizacao</strong>)
             </p>
           </div>
 
           <div className={styles.formGroup}>
             <label htmlFor="pat" className={styles.label}>
-              Personal Access Token (PAT) *
+              Token de Acesso (PAT) *
             </label>
             <input
               id="pat"
@@ -181,7 +162,7 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
               required
             />
             <p className={styles.hint}>
-              Token de acesso pessoal com permissões de leitura em Pipelines, Builds e Releases de TODOS os projetos da organização
+              Token de acesso pessoal com permissões de leitura em Pipelines, Builds e Releases
             </p>
           </div>
 
@@ -194,7 +175,7 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
               type="button"
               className={styles.testButton}
               onClick={handleTestConnection}
-              disabled={testing || !organization || !url || !pat}
+              disabled={testing || !organization || !pat}
             >
               {testing ? 'Testando...' : 'Testar Conexão'}
             </button>
