@@ -329,16 +329,15 @@ func (c *AWSClient) GetCostsByService() ([]map[string]interface{}, error) {
 	return services, nil
 }
 
-// GetCostForecast retrieves cost forecast for the next 3 months
+// GetCostForecast retrieves cost forecast starting from current date
+// This includes the forecast for the rest of the current month
 func (c *AWSClient) GetCostForecast() ([]map[string]interface{}, error) {
 	ctx := context.Background()
 	ceClient := costexplorer.NewFromConfig(c.awsConfig)
 
-	// Start from the first day of next month
-	now := time.Now()
-	nextMonth := now.AddDate(0, 1, 0)
-	startDate := time.Date(nextMonth.Year(), nextMonth.Month(), 1, 0, 0, 0, 0, time.UTC)
-	// End 3 months after start date
+	// Start from today to get forecast for rest of current month + future months
+	startDate := time.Now()
+	// End 3 months from now
 	endDate := startDate.AddDate(0, 3, 0)
 
 	input := &costexplorer.GetCostForecastInput{

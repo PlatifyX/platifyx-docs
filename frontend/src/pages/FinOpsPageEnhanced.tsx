@@ -238,13 +238,13 @@ function FinOpsPageEnhanced() {
         {/* 📌 Gráfico 4 — Forecast de Custos */}
         {forecast && forecast.length > 0 && (
           <div className={styles.chartCard}>
-            <h3 className={styles.chartTitle}>📌 Previsão de Custos (Próximos 3 Meses)</h3>
+            <h3 className={styles.chartTitle}>📌 Previsão de Custos</h3>
             <div className={styles.forecastBox}>
               <AlertTriangle size={48} className={styles.forecastIcon} />
               <div>
-                <p className={styles.forecastLabel}>Custo Previsto</p>
+                <p className={styles.forecastLabel}>Previsão para os Próximos 3 Meses</p>
                 <p className={styles.forecastValue}>{formatCurrency(forecast[0]?.cost || 0)}</p>
-                <p className={styles.forecastHint}>Baseado no consumo atual</p>
+                <p className={styles.forecastHint}>Inclui o restante do mês atual + próximos meses</p>
               </div>
             </div>
           </div>
