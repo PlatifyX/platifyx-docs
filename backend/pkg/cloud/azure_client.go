@@ -1,7 +1,6 @@
 package cloud
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
