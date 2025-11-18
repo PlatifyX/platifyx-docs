@@ -575,9 +575,8 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 		filteredBuilds = append(filteredBuilds, build)
 	}
 
-	// Filter releases (exclude cancelled, count only prod/main)
+	// Filter releases (exclude cancelled)
 	filteredReleases := make([]domain.Release, 0)
-	prodReleases := make([]domain.Release, 0)
 	for _, release := range allReleases {
 		// Exclude cancelled releases
 		if release.Status == "abandoned" {
@@ -605,15 +604,6 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 		}
 
 		filteredReleases = append(filteredReleases, release)
-
-		// Count prod releases (releases with environments named prod, production, or main)
-		for _, env := range release.Environments {
-			envLower := strings.ToLower(env.Name)
-			if strings.Contains(envLower, "prod") || strings.Contains(envLower, "main") {
-				prodReleases = append(prodReleases, release)
-				break
-			}
-		}
 	}
 
 	// Calculate build stats
@@ -655,7 +645,7 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 		avgPipelineTime = totalDuration / float64(validDurationCount)
 	}
 
-	// Calculate deploy frequency (deploys per day)
+	// Calculate deploy frequency (deploys per month)
 	deployFrequency := 0.0
 	if len(filteredReleases) > 0 {
 		var minDate, maxDate time.Time
@@ -667,10 +657,12 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 				maxDate = release.CreatedOn
 			}
 		}
-		daysDiff := maxDate.Sub(minDate).Hours() / 24
-		if daysDiff > 0 {
-			deployFrequency = float64(len(filteredReleases)) / daysDiff
+		// Calculate months difference
+		monthsDiff := maxDate.Sub(minDate).Hours() / 24 / 30.0
+		if monthsDiff >= 1.0 {
+			deployFrequency = float64(len(filteredReleases)) / monthsDiff
 		} else if len(filteredReleases) > 0 {
+			// If less than a month, show total releases as monthly projection
 			deployFrequency = float64(len(filteredReleases))
 		}
 	}
@@ -705,7 +697,6 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 	stats := map[string]interface{}{
 		"totalPipelines":     len(filteredPipelines),
 		"totalBuilds":        len(filteredBuilds),
-		"totalReleases":      len(prodReleases),
 		"successCount":       successCount,
 		"failedCount":        failedCount,
 		"runningCount":       runningCount,

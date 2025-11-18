@@ -5,7 +5,6 @@ interface StatsCardProps {
   stats: {
     totalPipelines: number
     totalBuilds: number
-    totalReleases: number
     successCount: number
     failedCount: number
     runningCount: number
@@ -49,16 +48,6 @@ function StatsCard({ stats }: StatsCardProps) {
       </div>
 
       <div className={styles.statCard}>
-        <div className={styles.statIcon}>
-          <Rocket size={24} />
-        </div>
-        <div className={styles.statContent}>
-          <div className={styles.statLabel}>Total Releases (Prod)</div>
-          <div className={styles.statValue}>{stats.totalReleases}</div>
-        </div>
-      </div>
-
-      <div className={styles.statCard}>
         <div className={styles.statIcon} style={{ color: 'var(--color-success)' }}>
           <TrendingUp size={24} />
         </div>
@@ -84,7 +73,7 @@ function StatsCard({ stats }: StatsCardProps) {
         </div>
         <div className={styles.statContent}>
           <div className={styles.statLabel}>Deploy Frequency</div>
-          <div className={styles.statValue}>{stats.deployFrequency.toFixed(1)}/dia</div>
+          <div className={styles.statValue}>{stats.deployFrequency.toFixed(1)}/mês</div>
         </div>
       </div>
 
