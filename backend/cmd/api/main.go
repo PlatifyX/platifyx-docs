@@ -135,6 +135,16 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			ci.POST("/releases/reject", handlers.AzureDevOpsHandler.RejectRelease)
 		}
 
+		quality := v1.Group("/quality")
+		{
+			quality.GET("/stats", handlers.SonarQubeHandler.GetStats)
+
+			quality.GET("/projects", handlers.SonarQubeHandler.ListProjects)
+			quality.GET("/projects/:key", handlers.SonarQubeHandler.GetProjectDetails)
+
+			quality.GET("/issues", handlers.SonarQubeHandler.ListIssues)
+		}
+
 		integrations := v1.Group("/integrations")
 		{
 			integrations.GET("", handlers.IntegrationHandler.List)

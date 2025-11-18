@@ -11,6 +11,7 @@ type HandlerManager struct {
 	MetricsHandler      *MetricsHandler
 	KubernetesHandler   *KubernetesHandler
 	AzureDevOpsHandler  *AzureDevOpsHandler
+	SonarQubeHandler    *SonarQubeHandler
 	IntegrationHandler  *IntegrationHandler
 }
 
@@ -21,6 +22,7 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		MetricsHandler:      NewMetricsHandler(services.MetricsService, log),
 		KubernetesHandler:   NewKubernetesHandler(services.KubernetesService, log),
 		AzureDevOpsHandler:  NewAzureDevOpsHandler(services.IntegrationService, log),
+		SonarQubeHandler:    NewSonarQubeHandler(services.IntegrationService, log),
 		IntegrationHandler:  NewIntegrationHandler(services.IntegrationService, log),
 	}
 }

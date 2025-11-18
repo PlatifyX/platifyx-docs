@@ -141,3 +141,49 @@ func (s *IntegrationService) GetAllAzureDevOpsConfigs() (map[string]*domain.Azur
 
 	return configs, nil
 }
+
+func (s *IntegrationService) GetSonarQubeConfig() (*domain.SonarQubeConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeSonarQube))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.SonarQubeIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal SonarQube config", "error", err)
+		return nil, err
+	}
+
+	return &domain.SonarQubeConfig{
+		URL:   config.URL,
+		Token: config.Token,
+	}, nil
+}
+
+func (s *IntegrationService) GetAllSonarQubeConfigs() (map[string]*domain.SonarQubeConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeSonarQube))
+	if err != nil {
+		s.log.Errorw("Failed to fetch SonarQube integrations", "error", err)
+		return nil, err
+	}
+
+	configs := make(map[string]*domain.SonarQubeConfig)
+	for _, integration := range integrations {
+		var config domain.SonarQubeIntegrationConfig
+		if err := json.Unmarshal(integration.Config, &config); err != nil {
+			s.log.Errorw("Failed to unmarshal SonarQube config", "error", err, "integration", integration.Name)
+			continue
+		}
+
+		configs[integration.Name] = &domain.SonarQubeConfig{
+			URL:   config.URL,
+			Token: config.Token,
+		}
+	}
+
+	return configs, nil
+}

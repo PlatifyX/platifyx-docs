@@ -21,6 +21,11 @@ type AzureDevOpsIntegrationConfig struct {
 	PAT          string `json:"pat"`
 }
 
+type SonarQubeIntegrationConfig struct {
+	URL   string `json:"url"`
+	Token string `json:"token"`
+}
+
 type IntegrationType string
 
 const (
