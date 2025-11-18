@@ -9,17 +9,36 @@ if [ -f "$PID_FILE" ]; then
     echo "⚠️  PlatifyX is already running. Stop it first with ./stop.sh"
     exit 1
 fi
+PIDS=$(lsof -t -i:6000)
+if [ -n "$PIDS" ]; then
+kill $PIDS
+fi
+PIDS=$(lsof -t -i:6000)
+if [ -n "$PIDS" ]; then
+kill -9 $PIDS
+fi
+
+PIDS=$(lsof -t -i:7000)
+if [ -n "$PIDS" ]; then
+kill $PIDS
+fi
+PIDS=$(lsof -t -i:7000)
+if [ -n "$PIDS" ]; then
+kill -9 $PIDS
+fi
 
 echo "📦 Installing dependencies..."
 echo ""
 
 echo "Installing backend dependencies..."
 cd backend
+go mod tidy
 go mod download
 cd ..
 
 echo "Installing frontend dependencies..."
 cd frontend
+rm -rf node_modules && rm -rf package-lock.json
 npm install
 cd ..
 
