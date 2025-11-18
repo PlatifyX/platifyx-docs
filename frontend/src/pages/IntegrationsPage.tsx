@@ -6,6 +6,9 @@ import SonarQubeModal from '../components/Integrations/SonarQubeModal'
 import AzureCloudModal from '../components/Integrations/AzureCloudModal'
 import GCPModal from '../components/Integrations/GCPModal'
 import AWSModal from '../components/Integrations/AWSModal'
+import OpenAIModal from '../components/Integrations/OpenAIModal'
+import GeminiModal from '../components/Integrations/GeminiModal'
+import ClaudeModal from '../components/Integrations/ClaudeModal'
 import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
 import styles from './IntegrationsPage.module.css'
 
@@ -267,6 +270,48 @@ function IntegrationsPage() {
 
       {showModal && (isCreating ? selectedType === 'aws' : selectedIntegration?.type === 'aws') && (
         <AWSModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'openai' : selectedIntegration?.type === 'openai') && (
+        <OpenAIModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'gemini' : selectedIntegration?.type === 'gemini') && (
+        <GeminiModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'claude' : selectedIntegration?.type === 'claude') && (
+        <ClaudeModal
           integration={selectedIntegration}
           isCreating={isCreating}
           onSave={handleSave}

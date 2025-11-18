@@ -228,6 +228,9 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.POST("/test/kubernetes", handlers.IntegrationHandler.TestKubernetes)
 			integrations.POST("/test/grafana", handlers.IntegrationHandler.TestGrafana)
 			integrations.POST("/test/github", handlers.IntegrationHandler.TestGitHub)
+			integrations.POST("/test/openai", handlers.IntegrationHandler.TestOpenAI)
+			integrations.POST("/test/gemini", handlers.IntegrationHandler.TestGemini)
+			integrations.POST("/test/claude", handlers.IntegrationHandler.TestClaude)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)
 		}
 	}

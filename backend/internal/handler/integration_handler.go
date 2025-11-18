@@ -8,8 +8,11 @@ import (
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/service"
 	"github.com/PlatifyX/platifyx-core/pkg/azuredevops"
+	"github.com/PlatifyX/platifyx-core/pkg/claude"
 	"github.com/PlatifyX/platifyx-core/pkg/cloud"
+	"github.com/PlatifyX/platifyx-core/pkg/gemini"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
+	"github.com/PlatifyX/platifyx-core/pkg/openai"
 	"github.com/PlatifyX/platifyx-core/pkg/sonarqube"
 	"github.com/gin-gonic/gin"
 )
@@ -560,5 +563,103 @@ func (h *IntegrationHandler) TestGitHub(c *gin.Context) {
 		"message": "Connection successful",
 		"success": true,
 		"user":    user,
+	})
+}
+
+func (h *IntegrationHandler) TestOpenAI(c *gin.Context) {
+	var input struct {
+		APIKey       string `json:"apiKey" binding:"required"`
+		Organization string `json:"organization"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Test connection by creating a client and listing models
+	client := openai.NewClient(input.APIKey, input.Organization)
+	models, err := client.ListModels()
+	if err != nil {
+		h.log.Errorw("Failed to test OpenAI connection",
+			"error", err,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to OpenAI. Please check your API key.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Connection successful",
+		"success":    true,
+		"modelCount": len(models.Data),
+	})
+}
+
+func (h *IntegrationHandler) TestGemini(c *gin.Context) {
+	var input struct {
+		APIKey string `json:"apiKey" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Test connection by creating a client and listing models
+	client := gemini.NewClient(input.APIKey)
+	models, err := client.ListModels()
+	if err != nil {
+		h.log.Errorw("Failed to test Gemini connection",
+			"error", err,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to Gemini. Please check your API key.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Connection successful",
+		"success":    true,
+		"modelCount": len(models.Models),
+	})
+}
+
+func (h *IntegrationHandler) TestClaude(c *gin.Context) {
+	var input struct {
+		APIKey string `json:"apiKey" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Test connection by creating a client and testing with a simple message
+	client := claude.NewClient(input.APIKey)
+	if err := client.TestConnection(); err != nil {
+		h.log.Errorw("Failed to test Claude connection",
+			"error", err,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to Claude. Please check your API key.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
 	})
 }

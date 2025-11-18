@@ -60,6 +60,19 @@ type GitHubIntegrationConfig struct {
 	Organization string `json:"organization,omitempty"`
 }
 
+type OpenAIIntegrationConfig struct {
+	APIKey       string `json:"apiKey"`
+	Organization string `json:"organization,omitempty"`
+}
+
+type GeminiIntegrationConfig struct {
+	APIKey string `json:"apiKey"`
+}
+
+type ClaudeIntegrationConfig struct {
+	APIKey string `json:"apiKey"`
+}
+
 type IntegrationType string
 
 const (
@@ -72,4 +85,7 @@ const (
 	IntegrationTypeAWS         IntegrationType = "aws"
 	IntegrationTypeKubernetes  IntegrationType = "kubernetes"
 	IntegrationTypeGrafana     IntegrationType = "grafana"
+	IntegrationTypeOpenAI      IntegrationType = "openai"
+	IntegrationTypeGemini      IntegrationType = "gemini"
+	IntegrationTypeClaude      IntegrationType = "claude"
 )

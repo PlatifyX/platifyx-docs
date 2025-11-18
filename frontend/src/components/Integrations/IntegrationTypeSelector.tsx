@@ -38,6 +38,24 @@ const integrationTypes = [
     logo: '/logos/aws.png',
   },
   {
+    id: 'openai',
+    name: 'OpenAI',
+    description: 'Integração com GPT-4, GPT-3.5 e outros modelos',
+    logo: '/logos/openai.png',
+  },
+  {
+    id: 'gemini',
+    name: 'Google Gemini',
+    description: 'Integração com Gemini Pro e outros modelos do Google',
+    logo: '/logos/gemini.png',
+  },
+  {
+    id: 'claude',
+    name: 'Anthropic Claude',
+    description: 'Integração com Claude 3 Opus, Sonnet e Haiku',
+    logo: '/logos/claude.png',
+  },
+  {
     id: 'github',
     name: 'GitHub',
     description: 'Integração com GitHub Actions (em breve)',
