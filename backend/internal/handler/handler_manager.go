@@ -20,6 +20,7 @@ type HandlerManager struct {
 	JiraHandler         *JiraHandler
 	SlackHandler        *SlackHandler
 	TeamsHandler        *TeamsHandler
+	ArgoCDHandler       *ArgoCDHandler
 }
 
 func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *HandlerManager {
@@ -38,5 +39,6 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		JiraHandler:         NewJiraHandler(services.IntegrationService, log),
 		SlackHandler:        NewSlackHandler(services.IntegrationService, log),
 		TeamsHandler:        NewTeamsHandler(services.IntegrationService, log),
+		ArgoCDHandler:       NewArgoCDHandler(services.IntegrationService, log),
 	}
 }

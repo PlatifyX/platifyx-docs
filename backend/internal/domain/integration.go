@@ -88,6 +88,12 @@ type TeamsIntegrationConfig struct {
 	WebhookURL string `json:"webhookUrl"`
 }
 
+type ArgoCDIntegrationConfig struct {
+	ServerURL string `json:"serverUrl"`
+	AuthToken string `json:"authToken"`
+	Insecure  bool   `json:"insecure,omitempty"`
+}
+
 type IntegrationType string
 
 const (
@@ -106,4 +112,5 @@ const (
 	IntegrationTypeJira        IntegrationType = "jira"
 	IntegrationTypeSlack       IntegrationType = "slack"
 	IntegrationTypeTeams       IntegrationType = "teams"
+	IntegrationTypeArgoCD      IntegrationType = "argocd"
 )

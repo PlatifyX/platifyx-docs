@@ -234,6 +234,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.POST("/test/jira", handlers.IntegrationHandler.TestJira)
 			integrations.POST("/test/slack", handlers.IntegrationHandler.TestSlack)
 			integrations.POST("/test/teams", handlers.IntegrationHandler.TestTeams)
+			integrations.POST("/test/argocd", handlers.IntegrationHandler.TestArgoCD)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)
 		}
 
@@ -260,6 +261,20 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			teams.POST("/message", handlers.TeamsHandler.SendMessage)
 			teams.POST("/simple", handlers.TeamsHandler.SendSimpleMessage)
 			teams.POST("/alert", handlers.TeamsHandler.SendAlert)
+		}
+
+		argocd := v1.Group("/argocd")
+		{
+			argocd.GET("/stats", handlers.ArgoCDHandler.GetStats)
+			argocd.GET("/applications", handlers.ArgoCDHandler.GetApplications)
+			argocd.GET("/applications/:name", handlers.ArgoCDHandler.GetApplication)
+			argocd.POST("/applications/:name/sync", handlers.ArgoCDHandler.SyncApplication)
+			argocd.POST("/applications/:name/refresh", handlers.ArgoCDHandler.RefreshApplication)
+			argocd.POST("/applications/:name/rollback", handlers.ArgoCDHandler.RollbackApplication)
+			argocd.DELETE("/applications/:name", handlers.ArgoCDHandler.DeleteApplication)
+			argocd.GET("/projects", handlers.ArgoCDHandler.GetProjects)
+			argocd.GET("/projects/:name", handlers.ArgoCDHandler.GetProject)
+			argocd.GET("/clusters", handlers.ArgoCDHandler.GetClusters)
 		}
 	}
 

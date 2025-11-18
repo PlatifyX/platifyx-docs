@@ -74,6 +74,12 @@ const integrationTypes = [
     logo: '/logos/teams.png',
   },
   {
+    id: 'argocd',
+    name: 'ArgoCD',
+    description: 'GitOps e deploy contínuo com ArgoCD',
+    logo: '/logos/argocd.png',
+  },
+  {
     id: 'github',
     name: 'GitHub',
     description: 'Integração com GitHub Actions (em breve)',

@@ -783,3 +783,52 @@ func (h *IntegrationHandler) TestTeams(c *gin.Context) {
 		"success": true,
 	})
 }
+
+// TestArgoCD tests the ArgoCD connection
+func (h *IntegrationHandler) TestArgoCD(c *gin.Context) {
+	var req domain.ArgoCDIntegrationConfig
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	if req.ServerURL == "" || req.AuthToken == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Server URL and Auth Token are required",
+		})
+		return
+	}
+
+	// Create ArgoCD service for testing
+	config := domain.ArgoCDConfig{
+		ServerURL: req.ServerURL,
+		AuthToken: req.AuthToken,
+		Insecure:  req.Insecure,
+	}
+
+	argoCDService := service.NewArgoCDService(config, h.log)
+
+	// Test connection
+	if err := argoCDService.TestConnection(); err != nil {
+		h.log.Errorw("ArgoCD connection test failed", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Failed to connect to ArgoCD. Please check your server URL and auth token.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Get applications count
+	apps, err := argoCDService.GetApplications()
+	if err != nil {
+		h.log.Warnw("Failed to get applications count", "error", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":            "Connection successful",
+		"success":            true,
+		"applicationsCount": len(apps),
+	})
+}

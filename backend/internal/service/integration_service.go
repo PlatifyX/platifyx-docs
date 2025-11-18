@@ -544,3 +544,39 @@ func (s *IntegrationService) GetTeamsService() (*TeamsService, error) {
 
 	return NewTeamsService(*config, s.log), nil
 }
+
+// ArgoCD methods
+func (s *IntegrationService) GetArgoCDConfig() (*domain.ArgoCDConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeArgoCD))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, nil
+	}
+
+	var config domain.ArgoCDIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse ArgoCD config: %w", err)
+	}
+
+	return &domain.ArgoCDConfig{
+		ServerURL: config.ServerURL,
+		AuthToken: config.AuthToken,
+		Insecure:  config.Insecure,
+	}, nil
+}
+
+func (s *IntegrationService) GetArgoCDService() (*ArgoCDService, error) {
+	config, err := s.GetArgoCDConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("ArgoCD integration not configured")
+	}
+
+	return NewArgoCDService(*config, s.log), nil
+}
