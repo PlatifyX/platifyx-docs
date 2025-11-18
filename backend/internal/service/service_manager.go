@@ -9,13 +9,14 @@ import (
 )
 
 type ServiceManager struct {
-	ServiceService      *ServiceService
-	MetricsService      *MetricsService
-	KubernetesService   *KubernetesService
-	AzureDevOpsService  *AzureDevOpsService
-	IntegrationService  *IntegrationService
-	FinOpsService       *FinOpsService
-	TechDocsService     *TechDocsService
+	ServiceService         *ServiceService
+	MetricsService         *MetricsService
+	KubernetesService      *KubernetesService
+	AzureDevOpsService     *AzureDevOpsService
+	IntegrationService     *IntegrationService
+	FinOpsService          *FinOpsService
+	TechDocsService        *TechDocsService
+	ServiceTemplateService *ServiceTemplateService
 }
 
 func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *ServiceManager {
@@ -49,13 +50,18 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	// Initialize TechDocs service
 	techDocsService := NewTechDocsService("docs", log)
 
+	// Initialize ServiceTemplate service
+	serviceTemplateRepo := repository.NewServiceTemplateRepository(db)
+	serviceTemplateService := NewServiceTemplateService(serviceTemplateRepo, log)
+
 	return &ServiceManager{
-		ServiceService:      NewServiceService(),
-		MetricsService:      NewMetricsService(),
-		KubernetesService:   kubernetesService,
-		AzureDevOpsService:  azureDevOpsService,
-		IntegrationService:  integrationService,
-		FinOpsService:       finOpsService,
-		TechDocsService:     techDocsService,
+		ServiceService:         NewServiceService(),
+		MetricsService:         NewMetricsService(),
+		KubernetesService:      kubernetesService,
+		AzureDevOpsService:     azureDevOpsService,
+		IntegrationService:     integrationService,
+		FinOpsService:          finOpsService,
+		TechDocsService:        techDocsService,
+		ServiceTemplateService: serviceTemplateService,
 	}
 }

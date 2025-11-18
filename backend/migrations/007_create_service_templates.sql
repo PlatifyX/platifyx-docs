@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS service_templates (
     parameters TEXT, -- JSON array
     files TEXT, -- JSON array
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Created Services table
@@ -25,8 +25,10 @@ CREATE TABLE IF NOT EXISTS created_services (
     parameters TEXT, -- JSON object
     status VARCHAR(50) NOT NULL DEFAULT 'created',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(255),
-    INDEX idx_template (template),
-    INDEX idx_status (status),
-    INDEX idx_created_at (created_at)
+    created_by VARCHAR(255)
 );
+
+-- Indexes for created_services
+CREATE INDEX IF NOT EXISTS idx_template ON created_services(template);
+CREATE INDEX IF NOT EXISTS idx_status ON created_services(status);
+CREATE INDEX IF NOT EXISTS idx_created_at ON created_services(created_at);
