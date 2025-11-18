@@ -29,7 +29,7 @@ func main() {
 		"port", cfg.Port,
 	)
 
-	serviceManager := service.NewServiceManager(log)
+	serviceManager := service.NewServiceManager(cfg, log)
 	handlerManager := handler.NewHandlerManager(serviceManager, log)
 
 	router := setupRouter(cfg, handlerManager, log)
@@ -98,6 +98,22 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 		{
 			kubernetes.GET("/clusters", handlers.KubernetesHandler.ListClusters)
 			kubernetes.GET("/pods", handlers.KubernetesHandler.ListPods)
+		}
+
+		if handlers.AzureDevOpsHandler != nil {
+			azuredevops := v1.Group("/azuredevops")
+			{
+				azuredevops.GET("/stats", handlers.AzureDevOpsHandler.GetStats)
+
+				azuredevops.GET("/pipelines", handlers.AzureDevOpsHandler.ListPipelines)
+				azuredevops.GET("/pipelines/:id/runs", handlers.AzureDevOpsHandler.ListPipelineRuns)
+
+				azuredevops.GET("/builds", handlers.AzureDevOpsHandler.ListBuilds)
+				azuredevops.GET("/builds/:id", handlers.AzureDevOpsHandler.GetBuild)
+
+				azuredevops.GET("/releases", handlers.AzureDevOpsHandler.ListReleases)
+				azuredevops.GET("/releases/:id", handlers.AzureDevOpsHandler.GetRelease)
+			}
 		}
 	}
 
