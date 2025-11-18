@@ -14,6 +14,7 @@ type Pipeline struct {
 	Folder   string `json:"folder"`
 	Revision int    `json:"revision"`
 	URL      string `json:"url"`
+	Project  string `json:"project,omitempty"`
 }
 
 type PipelineRun struct {
@@ -41,6 +42,7 @@ type Build struct {
 	SourceVersion string    `json:"sourceVersion"`
 	RequestedFor  string    `json:"requestedFor"`
 	URL           string    `json:"url"`
+	Project       string    `json:"project,omitempty"`
 	Definition    struct {
 		ID   int    `json:"id"`
 		Name string `json:"name"`
@@ -56,6 +58,7 @@ type Release struct {
 	CreatedBy       string    `json:"createdBy"`
 	Description     string    `json:"description"`
 	URL             string    `json:"url"`
+	Project         string    `json:"project,omitempty"`
 	ReleaseDefinition struct {
 		ID   int    `json:"id"`
 		Name string `json:"name"`

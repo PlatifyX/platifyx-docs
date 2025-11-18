@@ -177,8 +177,8 @@ func (h *IntegrationHandler) TestAzureDevOps(c *gin.Context) {
 	// Try to connect and list projects
 	client := azuredevops.NewClient(config)
 
-	// Test by making a simple API call to verify credentials
-	_, err := client.ListPipelines()
+	// Test by making a simple API call to verify credentials and list projects
+	projects, err := client.ListProjects()
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Failed to connect to Azure DevOps. Please check your credentials.",
@@ -187,7 +187,41 @@ func (h *IntegrationHandler) TestAzureDevOps(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Connection successful",
-		"success": true,
+		"message":       "Connection successful",
+		"success":       true,
+		"projectCount":  len(projects),
+		"projects":      projects,
+	})
+}
+
+func (h *IntegrationHandler) ListAzureDevOpsProjects(c *gin.Context) {
+	org := c.Query("organization")
+	pat := c.Query("pat")
+
+	if org == "" || pat == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "organization and pat query parameters are required",
+		})
+		return
+	}
+
+	config := domain.AzureDevOpsConfig{
+		Organization: org,
+		Project:      "",
+		PAT:          pat,
+	}
+
+	client := azuredevops.NewClient(config)
+	projects, err := client.ListProjects()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to fetch projects from Azure DevOps",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"projects": projects,
+		"count":    len(projects),
 	})
 }

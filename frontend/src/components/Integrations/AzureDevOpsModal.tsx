@@ -71,8 +71,8 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
       return
     }
 
-    if (!organization || !url || !project || !pat) {
-      alert('Todos os campos são obrigatórios')
+    if (!organization || !url || !pat) {
+      alert('Organization, URL e Token são obrigatórios')
       return
     }
 
@@ -88,7 +88,6 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
         config: {
           organization,
           url,
-          project,
           pat,
         },
       })
@@ -169,24 +168,6 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="project" className={styles.label}>
-              Project *
-            </label>
-            <input
-              id="project"
-              type="text"
-              className={styles.input}
-              value={project}
-              onChange={(e) => setProject(e.target.value)}
-              placeholder="your-project"
-              required
-            />
-            <p className={styles.hint}>
-              Nome do projeto no Azure DevOps
-            </p>
-          </div>
-
-          <div className={styles.formGroup}>
             <label htmlFor="pat" className={styles.label}>
               Personal Access Token (PAT) *
             </label>
@@ -200,8 +181,12 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
               required
             />
             <p className={styles.hint}>
-              Token de acesso pessoal com permissões de leitura em Pipelines, Builds e Releases
+              Token de acesso pessoal com permissões de leitura em Pipelines, Builds e Releases de TODOS os projetos da organização
             </p>
+          </div>
+
+          <div className={styles.infoBox}>
+            <p>ℹ️ Esta integração conectará com <strong>todos os projetos</strong> da organização automaticamente.</p>
           </div>
 
           <div className={styles.testSection}>

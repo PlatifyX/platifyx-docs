@@ -56,9 +56,38 @@ func (c *Client) doRequest(method, url string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
+type Project struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func (c *Client) ListProjects() ([]Project, error) {
+	url := fmt.Sprintf("https://dev.azure.com/%s/_apis/projects?api-version=%s",
+		c.organization, apiVersion)
+
+	body, err := c.doRequest("GET", url)
+	if err != nil {
+		return nil, err
+	}
+
+	var response struct {
+		Value []Project `json:"value"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+
+	return response.Value, nil
+}
+
 func (c *Client) ListPipelines() ([]domain.Pipeline, error) {
+	return c.ListPipelinesForProject(c.project)
+}
+
+func (c *Client) ListPipelinesForProject(project string) ([]domain.Pipeline, error) {
 	url := fmt.Sprintf("https://dev.azure.com/%s/%s/_apis/pipelines?api-version=%s",
-		c.organization, c.project, apiVersion)
+		c.organization, project, apiVersion)
 
 	body, err := c.doRequest("GET", url)
 	if err != nil {
@@ -73,7 +102,31 @@ func (c *Client) ListPipelines() ([]domain.Pipeline, error) {
 		return nil, err
 	}
 
+	// Add project name to each pipeline
+	for i := range response.Value {
+		response.Value[i].Project = project
+	}
+
 	return response.Value, nil
+}
+
+func (c *Client) ListAllPipelines() ([]domain.Pipeline, error) {
+	projects, err := c.ListProjects()
+	if err != nil {
+		return nil, err
+	}
+
+	var allPipelines []domain.Pipeline
+	for _, project := range projects {
+		pipelines, err := c.ListPipelinesForProject(project.Name)
+		if err != nil {
+			// Log error but continue with other projects
+			continue
+		}
+		allPipelines = append(allPipelines, pipelines...)
+	}
+
+	return allPipelines, nil
 }
 
 func (c *Client) ListPipelineRuns(pipelineID int) ([]domain.PipelineRun, error) {
@@ -97,8 +150,12 @@ func (c *Client) ListPipelineRuns(pipelineID int) ([]domain.PipelineRun, error) 
 }
 
 func (c *Client) ListBuilds(top int) ([]domain.Build, error) {
+	return c.ListBuildsForProject(c.project, top)
+}
+
+func (c *Client) ListBuildsForProject(project string, top int) ([]domain.Build, error) {
 	url := fmt.Sprintf("https://dev.azure.com/%s/%s/_apis/build/builds?api-version=%s&$top=%d",
-		c.organization, c.project, apiVersion, top)
+		c.organization, project, apiVersion, top)
 
 	body, err := c.doRequest("GET", url)
 	if err != nil {
@@ -114,6 +171,25 @@ func (c *Client) ListBuilds(top int) ([]domain.Build, error) {
 	}
 
 	return response.Value, nil
+}
+
+func (c *Client) ListAllBuilds(topPerProject int) ([]domain.Build, error) {
+	projects, err := c.ListProjects()
+	if err != nil {
+		return nil, err
+	}
+
+	var allBuilds []domain.Build
+	for _, project := range projects {
+		builds, err := c.ListBuildsForProject(project.Name, topPerProject)
+		if err != nil {
+			// Log error but continue with other projects
+			continue
+		}
+		allBuilds = append(allBuilds, builds...)
+	}
+
+	return allBuilds, nil
 }
 
 func (c *Client) GetBuild(buildID int) (*domain.Build, error) {
@@ -134,8 +210,12 @@ func (c *Client) GetBuild(buildID int) (*domain.Build, error) {
 }
 
 func (c *Client) ListReleases(top int) ([]domain.Release, error) {
+	return c.ListReleasesForProject(c.project, top)
+}
+
+func (c *Client) ListReleasesForProject(project string, top int) ([]domain.Release, error) {
 	url := fmt.Sprintf("https://vsrm.dev.azure.com/%s/%s/_apis/release/releases?api-version=%s&$top=%d",
-		c.organization, c.project, apiVersion, top)
+		c.organization, project, apiVersion, top)
 
 	body, err := c.doRequest("GET", url)
 	if err != nil {
@@ -151,6 +231,25 @@ func (c *Client) ListReleases(top int) ([]domain.Release, error) {
 	}
 
 	return response.Value, nil
+}
+
+func (c *Client) ListAllReleases(topPerProject int) ([]domain.Release, error) {
+	projects, err := c.ListProjects()
+	if err != nil {
+		return nil, err
+	}
+
+	var allReleases []domain.Release
+	for _, project := range projects {
+		releases, err := c.ListReleasesForProject(project.Name, topPerProject)
+		if err != nil {
+			// Log error but continue with other projects
+			continue
+		}
+		allReleases = append(allReleases, releases...)
+	}
+
+	return allReleases, nil
 }
 
 func (c *Client) GetRelease(releaseID int) (*domain.Release, error) {

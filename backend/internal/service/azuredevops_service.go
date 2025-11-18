@@ -19,15 +19,15 @@ func NewAzureDevOpsService(config domain.AzureDevOpsConfig, log *logger.Logger) 
 }
 
 func (s *AzureDevOpsService) GetPipelines() ([]domain.Pipeline, error) {
-	s.log.Info("Fetching Azure DevOps pipelines")
+	s.log.Info("Fetching Azure DevOps pipelines from all projects")
 
-	pipelines, err := s.client.ListPipelines()
+	pipelines, err := s.client.ListAllPipelines()
 	if err != nil {
 		s.log.Errorw("Failed to fetch pipelines", "error", err)
 		return nil, err
 	}
 
-	s.log.Infow("Fetched pipelines successfully", "count", len(pipelines))
+	s.log.Infow("Fetched pipelines successfully from all projects", "count", len(pipelines))
 	return pipelines, nil
 }
 
@@ -45,15 +45,15 @@ func (s *AzureDevOpsService) GetPipelineRuns(pipelineID int) ([]domain.PipelineR
 }
 
 func (s *AzureDevOpsService) GetBuilds(limit int) ([]domain.Build, error) {
-	s.log.Infow("Fetching builds", "limit", limit)
+	s.log.Infow("Fetching builds from all projects", "limitPerProject", limit)
 
-	builds, err := s.client.ListBuilds(limit)
+	builds, err := s.client.ListAllBuilds(limit)
 	if err != nil {
 		s.log.Errorw("Failed to fetch builds", "error", err)
 		return nil, err
 	}
 
-	s.log.Infow("Fetched builds successfully", "count", len(builds))
+	s.log.Infow("Fetched builds successfully from all projects", "count", len(builds))
 	return builds, nil
 }
 
@@ -71,15 +71,15 @@ func (s *AzureDevOpsService) GetBuildByID(buildID int) (*domain.Build, error) {
 }
 
 func (s *AzureDevOpsService) GetReleases(limit int) ([]domain.Release, error) {
-	s.log.Infow("Fetching releases", "limit", limit)
+	s.log.Infow("Fetching releases from all projects", "limitPerProject", limit)
 
-	releases, err := s.client.ListReleases(limit)
+	releases, err := s.client.ListAllReleases(limit)
 	if err != nil {
 		s.log.Errorw("Failed to fetch releases", "error", err)
 		return nil, err
 	}
 
-	s.log.Infow("Fetched releases successfully", "count", len(releases))
+	s.log.Infow("Fetched releases successfully from all projects", "count", len(releases))
 	return releases, nil
 }
 
