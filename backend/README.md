@@ -33,7 +33,7 @@ ou
 go run cmd/api/main.go
 ```
 
-Acesse: http://localhost:6000
+Acesse: http://localhost:8060
 
 ### Build
 
@@ -70,7 +70,7 @@ make docker-run
 ou
 
 ```bash
-docker run -p 6000:6000 platifyx-core:latest
+docker run -p 8060:8060 platifyx-core:latest
 ```
 
 ## 📁 Estrutura do Projeto

@@ -9,12 +9,12 @@ func CORS() gin.HandlerFunc {
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{
 		"http://localhost:7000",
-		"http://localhost:6000",
+		"http://localhost:8060",
 		"http://localhost:5173", // Vite default port
 		"http://localhost:3000", // Common React port
 		"http://localhost:8080",
 		"http://127.0.0.1:7000",
-		"http://127.0.0.1:6000",
+		"http://127.0.0.1:8060",
 		"http://127.0.0.1:5173",
 		"http://127.0.0.1:3000",
 	}

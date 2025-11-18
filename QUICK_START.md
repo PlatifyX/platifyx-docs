@@ -18,8 +18,8 @@ Inicie o PlatifyX em segundos!
 
 Após iniciar, acesse:
 - **Frontend:** http://localhost:7000
-- **Backend API:** http://localhost:6000
-- **Health Check:** http://localhost:6000/api/v1/health
+- **Backend API:** http://localhost:8060
+- **Health Check:** http://localhost:8060/api/v1/health
 
 ## 📝 Logs
 
@@ -36,7 +36,7 @@ tail -f logs/frontend.log
 ## 🔧 O que os scripts fazem?
 
 1. ✅ Verificam e instalam dependências (Go modules e npm packages)
-2. ✅ Iniciam o backend em background (porta 6000)
+2. ✅ Iniciam o backend em background (porta 8060)
 3. ✅ Iniciam o frontend em background (porta 7000)
 4. ✅ Salvam os PIDs para gerenciamento
 5. ✅ Criam logs separados para cada serviço

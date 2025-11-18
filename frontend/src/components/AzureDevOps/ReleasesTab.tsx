@@ -37,7 +37,7 @@ function ReleasesTab() {
 
   const fetchReleases = async () => {
     try {
-      const response = await fetch('http://localhost:6000/api/v1/ci/releases?limit=50')
+      const response = await fetch('http://localhost:8060/api/v1/ci/releases?limit=50')
       if (!response.ok) throw new Error('Failed to fetch releases')
       const data = await response.json()
       setReleases(data.releases || [])

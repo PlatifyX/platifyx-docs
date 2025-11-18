@@ -9,11 +9,11 @@ if [ -f "$PID_FILE" ]; then
     echo "⚠️  PlatifyX is already running. Stop it first with ./stop.sh"
     exit 1
 fi
-PIDS=$(lsof -t -i:6000)
+PIDS=$(lsof -t -i:8060)
 if [ -n "$PIDS" ]; then
 kill $PIDS
 fi
-PIDS=$(lsof -t -i:6000)
+PIDS=$(lsof -t -i:8060)
 if [ -n "$PIDS" ]; then
 kill -9 $PIDS
 fi
@@ -51,7 +51,7 @@ echo ""
 echo "🔧 Starting services..."
 echo ""
 
-echo "Starting Backend (http://localhost:6000)..."
+echo "Starting Backend (http://localhost:8060)..."
 cd backend
 go run cmd/api/main.go > ../logs/backend.log 2>&1 &
 BACKEND_PID=$!
@@ -74,8 +74,8 @@ echo "✅ PlatifyX started successfully!"
 echo ""
 echo "📍 Access:"
 echo "   Frontend: http://localhost:7000"
-echo "   Backend:  http://localhost:6000"
-echo "   API Docs: http://localhost:6000/api/v1/health"
+echo "   Backend:  http://localhost:8060"
+echo "   API Docs: http://localhost:8060/api/v1/health"
 echo ""
 echo "📝 Logs:"
 echo "   Backend:  tail -f logs/backend.log"

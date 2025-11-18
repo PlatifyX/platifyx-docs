@@ -49,7 +49,7 @@ stop.bat         # Windows
 
 Acesse:
 - Frontend: http://localhost:7000
-- Backend API: http://localhost:6000
+- Backend API: http://localhost:8060
 
 Os logs ficam salvos em `logs/backend.log` e `logs/frontend.log`
 
@@ -61,7 +61,7 @@ docker-compose up --build
 
 Acesse:
 - Frontend: http://localhost:7000
-- Backend API: http://localhost:6000
+- Backend API: http://localhost:8060
 
 ### Opção 3: Executar Separadamente
 
@@ -83,28 +83,28 @@ go mod download
 make run
 ```
 
-Acesse: http://localhost:6000
+Acesse: http://localhost:8060
 
 ## 🔌 API Endpoints
 
 ### Health & Readiness
 
 ```bash
-curl http://localhost:6000/api/v1/health
-curl http://localhost:6000/api/v1/ready
+curl http://localhost:8060/api/v1/health
+curl http://localhost:8060/api/v1/ready
 ```
 
 ### Serviços
 
 ```bash
 # Listar todos os serviços
-curl http://localhost:6000/api/v1/services
+curl http://localhost:8060/api/v1/services
 
 # Obter serviço por ID
-curl http://localhost:6000/api/v1/services/svc-1
+curl http://localhost:8060/api/v1/services/svc-1
 
 # Criar novo serviço
-curl -X POST http://localhost:6000/api/v1/services \
+curl -X POST http://localhost:8060/api/v1/services \
   -H "Content-Type: application/json" \
   -d '{"name":"my-service","description":"My Service","type":"microservice"}'
 ```
@@ -113,20 +113,20 @@ curl -X POST http://localhost:6000/api/v1/services \
 
 ```bash
 # Dashboard metrics
-curl http://localhost:6000/api/v1/metrics/dashboard
+curl http://localhost:8060/api/v1/metrics/dashboard
 
 # DORA Metrics
-curl http://localhost:6000/api/v1/metrics/dora
+curl http://localhost:8060/api/v1/metrics/dora
 ```
 
 ### Kubernetes
 
 ```bash
 # Listar clusters
-curl http://localhost:6000/api/v1/kubernetes/clusters
+curl http://localhost:8060/api/v1/kubernetes/clusters
 
 # Listar pods
-curl http://localhost:6000/api/v1/kubernetes/pods?namespace=default
+curl http://localhost:8060/api/v1/kubernetes/pods?namespace=default
 ```
 
 ## 🛠️ Desenvolvimento
@@ -210,7 +210,7 @@ docker build -t platifyx-core ./backend
 
 ```bash
 # Backend
-docker run -p 6000:6000 platifyx-core
+docker run -p 8060:8060 platifyx-core
 
 # Frontend
 docker run -p 7000:80 platifyx-app

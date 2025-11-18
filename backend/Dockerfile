@@ -22,6 +22,6 @@ COPY --from=builder /app/bin/api /api
 
 ENV TZ=UTC
 
-EXPOSE 6000
+EXPOSE 8060
 
 ENTRYPOINT ["/api"]

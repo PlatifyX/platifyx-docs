@@ -35,7 +35,7 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
     setTestResult(null)
 
     try {
-      const response = await fetch('http://localhost:6000/api/v1/integrations/test/azuredevops', {
+      const response = await fetch('http://localhost:8060/api/v1/integrations/test/azuredevops', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
