@@ -145,10 +145,14 @@ func (c *Client) ListPipelineRuns(pipelineID int) ([]domain.PipelineRun, error) 
 
 	for _, project := range projects {
 		runs, err := c.ListPipelineRunsForProject(project.Name, pipelineID)
-		if err == nil && len(runs) >= 0 {
-			// Found it!
+		if err == nil {
+			// Pipeline found in this project (200 response)
+			// Return runs even if empty - empty array means pipeline exists but has no runs
+			fmt.Printf("Found pipeline %d in project %s with %d runs\n", pipelineID, project.Name, len(runs))
 			return runs, nil
 		}
+		// If error (likely 404), continue to next project
+		fmt.Printf("Pipeline %d not found in project %s: %v\n", pipelineID, project.Name, err)
 	}
 
 	return nil, fmt.Errorf("pipeline %d not found in any project", pipelineID)
@@ -158,6 +162,7 @@ func (c *Client) ListPipelineRunsForProject(project string, pipelineID int) ([]d
 	url := fmt.Sprintf("%s/%s/%s/_apis/pipelines/%d/runs?api-version=%s",
 		c.baseURL, c.organization, project, pipelineID, apiVersion)
 
+	fmt.Printf("Fetching pipeline runs from: %s\n", url)
 	body, err := c.doRequest("GET", url)
 	if err != nil {
 		return nil, err
@@ -165,12 +170,16 @@ func (c *Client) ListPipelineRunsForProject(project string, pipelineID int) ([]d
 
 	var response struct {
 		Value []domain.PipelineRun `json:"value"`
+		Count int                  `json:"count"`
 	}
 
 	if err := json.Unmarshal(body, &response); err != nil {
+		fmt.Printf("Failed to unmarshal pipeline runs response: %v\n", err)
+		fmt.Printf("Response body: %s\n", string(body))
 		return nil, err
 	}
 
+	fmt.Printf("Pipeline runs response: count=%d, len(value)=%d\n", response.Count, len(response.Value))
 	return response.Value, nil
 }
 
