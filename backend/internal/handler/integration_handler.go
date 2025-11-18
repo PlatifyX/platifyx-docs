@@ -11,6 +11,7 @@ import (
 	"github.com/PlatifyX/platifyx-core/pkg/claude"
 	"github.com/PlatifyX/platifyx-core/pkg/cloud"
 	"github.com/PlatifyX/platifyx-core/pkg/gemini"
+	"github.com/PlatifyX/platifyx-core/pkg/jira"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/PlatifyX/platifyx-core/pkg/openai"
 	"github.com/PlatifyX/platifyx-core/pkg/sonarqube"
@@ -661,5 +662,48 @@ func (h *IntegrationHandler) TestClaude(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Connection successful",
 		"success": true,
+	})
+}
+
+func (h *IntegrationHandler) TestJira(c *gin.Context) {
+	var input struct {
+		URL      string `json:"url" binding:"required"`
+		Email    string `json:"email" binding:"required"`
+		APIToken string `json:"apiToken" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Create temporary Jira config
+	config := domain.JiraConfig{
+		URL:      input.URL,
+		Email:    input.Email,
+		APIToken: input.APIToken,
+	}
+
+	// Test connection by creating a client and getting current user
+	client := jira.NewClient(config)
+	user, err := client.GetCurrentUser()
+	if err != nil {
+		h.log.Errorw("Failed to test Jira connection",
+			"error", err,
+			"url", input.URL,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to Jira. Please check your credentials.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
+		"user":    user,
 	})
 }

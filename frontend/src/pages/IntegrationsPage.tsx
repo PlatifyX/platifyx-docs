@@ -9,6 +9,7 @@ import AWSModal from '../components/Integrations/AWSModal'
 import OpenAIModal from '../components/Integrations/OpenAIModal'
 import GeminiModal from '../components/Integrations/GeminiModal'
 import ClaudeModal from '../components/Integrations/ClaudeModal'
+import JiraModal from '../components/Integrations/JiraModal'
 import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
 import styles from './IntegrationsPage.module.css'
 
@@ -312,6 +313,20 @@ function IntegrationsPage() {
 
       {showModal && (isCreating ? selectedType === 'claude' : selectedIntegration?.type === 'claude') && (
         <ClaudeModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'jira' : selectedIntegration?.type === 'jira') && (
+        <JiraModal
           integration={selectedIntegration}
           isCreating={isCreating}
           onSave={handleSave}

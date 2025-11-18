@@ -56,6 +56,12 @@ const integrationTypes = [
     logo: '/logos/claude.png',
   },
   {
+    id: 'jira',
+    name: 'Jira',
+    description: 'Gerenciamento de projetos, issues, sprints e boards',
+    logo: '/logos/jira.png',
+  },
+  {
     id: 'github',
     name: 'GitHub',
     description: 'Integração com GitHub Actions (em breve)',

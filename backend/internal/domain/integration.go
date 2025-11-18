@@ -73,6 +73,12 @@ type ClaudeIntegrationConfig struct {
 	APIKey string `json:"apiKey"`
 }
 
+type JiraIntegrationConfig struct {
+	URL      string `json:"url"`
+	Email    string `json:"email"`
+	APIToken string `json:"apiToken"`
+}
+
 type IntegrationType string
 
 const (
@@ -88,4 +94,5 @@ const (
 	IntegrationTypeOpenAI      IntegrationType = "openai"
 	IntegrationTypeGemini      IntegrationType = "gemini"
 	IntegrationTypeClaude      IntegrationType = "claude"
+	IntegrationTypeJira        IntegrationType = "jira"
 )

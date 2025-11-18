@@ -231,7 +231,19 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.POST("/test/openai", handlers.IntegrationHandler.TestOpenAI)
 			integrations.POST("/test/gemini", handlers.IntegrationHandler.TestGemini)
 			integrations.POST("/test/claude", handlers.IntegrationHandler.TestClaude)
+			integrations.POST("/test/jira", handlers.IntegrationHandler.TestJira)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)
+		}
+
+		jira := v1.Group("/jira")
+		{
+			jira.GET("/stats", handlers.JiraHandler.GetStats)
+			jira.GET("/user", handlers.JiraHandler.GetCurrentUser)
+			jira.GET("/projects", handlers.JiraHandler.GetProjects)
+			jira.GET("/issues", handlers.JiraHandler.SearchIssues)
+			jira.GET("/issues/:key", handlers.JiraHandler.GetIssue)
+			jira.GET("/boards", handlers.JiraHandler.GetBoards)
+			jira.GET("/boards/:boardId/sprints", handlers.JiraHandler.GetSprints)
 		}
 	}
 

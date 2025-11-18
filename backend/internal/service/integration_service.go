@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/repository"
@@ -437,4 +438,40 @@ func (s *IntegrationService) GetAllGitHubConfigs() (map[string]*domain.GitHubCon
 	}
 
 	return configs, nil
+}
+
+func (s *IntegrationService) GetJiraConfig() (*domain.JiraConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeJira))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.JiraIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal Jira config", "error", err)
+		return nil, err
+	}
+
+	return &domain.JiraConfig{
+		URL:      config.URL,
+		Email:    config.Email,
+		APIToken: config.APIToken,
+	}, nil
+}
+
+func (s *IntegrationService) GetJiraService() (*JiraService, error) {
+	config, err := s.GetJiraConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Jira integration not configured")
+	}
+
+	return NewJiraService(*config, s.log), nil
 }
