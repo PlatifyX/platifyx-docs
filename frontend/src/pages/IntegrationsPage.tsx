@@ -28,7 +28,7 @@ function IntegrationsPage() {
 
   const fetchIntegrations = async () => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/integrations')
+      const response = await fetch('http://localhost:8080/api/v1/integrations')
       if (!response.ok) throw new Error('Failed to fetch integrations')
       const data = await response.json()
       setIntegrations(data.integrations || [])
@@ -61,7 +61,7 @@ function IntegrationsPage() {
     try {
       if (isCreating) {
         // Create new integration
-        const response = await fetch('http://localhost:8060/api/v1/integrations', {
+        const response = await fetch('http://localhost:8080/api/v1/integrations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ function IntegrationsPage() {
         }
       } else if (selectedIntegration) {
         // Update existing integration
-        const response = await fetch(`http://localhost:8060/api/v1/integrations/${selectedIntegration.id}`, {
+        const response = await fetch(`http://localhost:8080/api/v1/integrations/${selectedIntegration.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ function IntegrationsPage() {
 
   const handleToggle = async (integration: Integration) => {
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/integrations/${integration.id}`, {
+      const response = await fetch(`http://localhost:8080/api/v1/integrations/${integration.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

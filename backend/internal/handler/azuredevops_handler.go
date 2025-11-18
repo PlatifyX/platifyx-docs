@@ -10,19 +10,44 @@ import (
 )
 
 type AzureDevOpsHandler struct {
-	service *service.AzureDevOpsService
-	log     *logger.Logger
+	integrationService *service.IntegrationService
+	log                *logger.Logger
 }
 
-func NewAzureDevOpsHandler(svc *service.AzureDevOpsService, log *logger.Logger) *AzureDevOpsHandler {
+func NewAzureDevOpsHandler(integrationService *service.IntegrationService, log *logger.Logger) *AzureDevOpsHandler {
 	return &AzureDevOpsHandler{
-		service: svc,
-		log:     log,
+		integrationService: integrationService,
+		log:                log,
 	}
 }
 
+func (h *AzureDevOpsHandler) getService() (*service.AzureDevOpsService, error) {
+	config, err := h.integrationService.GetAzureDevOpsConfig()
+	if err != nil {
+		return nil, err
+	}
+	if config == nil {
+		return nil, nil
+	}
+	return service.NewAzureDevOpsService(*config, h.log), nil
+}
+
 func (h *AzureDevOpsHandler) ListPipelines(c *gin.Context) {
-	pipelines, err := h.service.GetPipelines()
+	svc, err := h.getService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configuration",
+		})
+		return
+	}
+	if svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Azure DevOps integration not configured",
+		})
+		return
+	}
+
+	pipelines, err := svc.GetPipelines()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch pipelines",
@@ -46,7 +71,21 @@ func (h *AzureDevOpsHandler) ListPipelineRuns(c *gin.Context) {
 		return
 	}
 
-	runs, err := h.service.GetPipelineRuns(pipelineID)
+	svc, err := h.getService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configuration",
+		})
+		return
+	}
+	if svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Azure DevOps integration not configured",
+		})
+		return
+	}
+
+	runs, err := svc.GetPipelineRuns(pipelineID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch pipeline runs",
@@ -68,7 +107,21 @@ func (h *AzureDevOpsHandler) ListBuilds(c *gin.Context) {
 		limit = 50
 	}
 
-	builds, err := h.service.GetBuilds(limit)
+	svc, err := h.getService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configuration",
+		})
+		return
+	}
+	if svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Azure DevOps integration not configured",
+		})
+		return
+	}
+
+	builds, err := svc.GetBuilds(limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch builds",
@@ -92,7 +145,21 @@ func (h *AzureDevOpsHandler) GetBuild(c *gin.Context) {
 		return
 	}
 
-	build, err := h.service.GetBuildByID(buildID)
+	svc, err := h.getService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configuration",
+		})
+		return
+	}
+	if svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Azure DevOps integration not configured",
+		})
+		return
+	}
+
+	build, err := svc.GetBuildByID(buildID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch build",
@@ -110,7 +177,21 @@ func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 		limit = 50
 	}
 
-	releases, err := h.service.GetReleases(limit)
+	svc, err := h.getService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configuration",
+		})
+		return
+	}
+	if svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Azure DevOps integration not configured",
+		})
+		return
+	}
+
+	releases, err := svc.GetReleases(limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch releases",
@@ -134,7 +215,21 @@ func (h *AzureDevOpsHandler) GetRelease(c *gin.Context) {
 		return
 	}
 
-	release, err := h.service.GetReleaseByID(releaseID)
+	svc, err := h.getService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configuration",
+		})
+		return
+	}
+	if svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Azure DevOps integration not configured",
+		})
+		return
+	}
+
+	release, err := svc.GetReleaseByID(releaseID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch release",
@@ -146,6 +241,20 @@ func (h *AzureDevOpsHandler) GetRelease(c *gin.Context) {
 }
 
 func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
-	stats := h.service.GetPipelineStats()
+	svc, err := h.getService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configuration",
+		})
+		return
+	}
+	if svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Azure DevOps integration not configured",
+		})
+		return
+	}
+
+	stats := svc.GetPipelineStats()
 	c.JSON(http.StatusOK, stats)
 }

@@ -117,20 +117,18 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			kubernetes.GET("/pods", handlers.KubernetesHandler.ListPods)
 		}
 
-		if handlers.AzureDevOpsHandler != nil {
-			ci := v1.Group("/ci")
-			{
-				ci.GET("/stats", handlers.AzureDevOpsHandler.GetStats)
+		ci := v1.Group("/ci")
+		{
+			ci.GET("/stats", handlers.AzureDevOpsHandler.GetStats)
 
-				ci.GET("/pipelines", handlers.AzureDevOpsHandler.ListPipelines)
-				ci.GET("/pipelines/:id/runs", handlers.AzureDevOpsHandler.ListPipelineRuns)
+			ci.GET("/pipelines", handlers.AzureDevOpsHandler.ListPipelines)
+			ci.GET("/pipelines/:id/runs", handlers.AzureDevOpsHandler.ListPipelineRuns)
 
-				ci.GET("/builds", handlers.AzureDevOpsHandler.ListBuilds)
-				ci.GET("/builds/:id", handlers.AzureDevOpsHandler.GetBuild)
+			ci.GET("/builds", handlers.AzureDevOpsHandler.ListBuilds)
+			ci.GET("/builds/:id", handlers.AzureDevOpsHandler.GetBuild)
 
-				ci.GET("/releases", handlers.AzureDevOpsHandler.ListReleases)
-				ci.GET("/releases/:id", handlers.AzureDevOpsHandler.GetRelease)
-			}
+			ci.GET("/releases", handlers.AzureDevOpsHandler.ListReleases)
+			ci.GET("/releases/:id", handlers.AzureDevOpsHandler.GetRelease)
 		}
 
 		integrations := v1.Group("/integrations")

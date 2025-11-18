@@ -20,7 +20,7 @@ function AzureDevOpsPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/ci/stats')
+      const response = await fetch('http://localhost:8080/api/v1/ci/stats')
       if (!response.ok) throw new Error('Failed to fetch stats')
       const data = await response.json()
       setStats(data)

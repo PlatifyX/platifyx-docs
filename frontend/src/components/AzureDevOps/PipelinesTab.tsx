@@ -21,7 +21,7 @@ function PipelinesTab() {
 
   const fetchPipelines = async () => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/ci/pipelines')
+      const response = await fetch('http://localhost:8080/api/v1/ci/pipelines')
       if (!response.ok) throw new Error('Failed to fetch pipelines')
       const data = await response.json()
       setPipelines(data.pipelines || [])
