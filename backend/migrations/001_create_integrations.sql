@@ -10,10 +10,10 @@ CREATE TABLE IF NOT EXISTS integrations (
 );
 
 -- Create index on type for faster queries
-CREATE INDEX idx_integrations_type ON integrations(type);
+CREATE INDEX IF NOT EXISTS idx_integrations_type ON integrations(type);
 
 -- Create index on enabled for faster queries
-CREATE INDEX idx_integrations_enabled ON integrations(enabled);
+CREATE INDEX IF NOT EXISTS idx_integrations_enabled ON integrations(enabled);
 
 -- Insert default integrations (disabled by default)
 INSERT INTO integrations (name, type, enabled, config)
