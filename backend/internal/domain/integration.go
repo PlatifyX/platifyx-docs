@@ -50,6 +50,11 @@ type KubernetesIntegrationConfig struct {
 	Context    string `json:"context"`
 }
 
+type GrafanaIntegrationConfig struct {
+	URL    string `json:"url"`
+	APIKey string `json:"apiKey"`
+}
+
 type IntegrationType string
 
 const (
@@ -61,4 +66,5 @@ const (
 	IntegrationTypeGCP         IntegrationType = "gcp"
 	IntegrationTypeAWS         IntegrationType = "aws"
 	IntegrationTypeKubernetes  IntegrationType = "kubernetes"
+	IntegrationTypeGrafana     IntegrationType = "grafana"
 )

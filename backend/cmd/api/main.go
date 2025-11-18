@@ -162,6 +162,30 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			finops.GET("/aws/savings-plans-utilization", handlers.FinOpsHandler.GetAWSSavingsPlansUtilization)
 		}
 
+		observability := v1.Group("/observability")
+		{
+			observability.GET("/stats", handlers.GrafanaHandler.GetStats)
+			observability.GET("/health", handlers.GrafanaHandler.GetHealth)
+
+			observability.GET("/dashboards", handlers.GrafanaHandler.SearchDashboards)
+			observability.GET("/dashboards/:uid", handlers.GrafanaHandler.GetDashboardByUID)
+
+			observability.GET("/alerts", handlers.GrafanaHandler.GetAlerts)
+
+			observability.GET("/datasources", handlers.GrafanaHandler.GetDataSources)
+			observability.GET("/datasources/:id", handlers.GrafanaHandler.GetDataSourceByID)
+
+			observability.GET("/organizations", handlers.GrafanaHandler.GetOrganizations)
+			observability.GET("/organization", handlers.GrafanaHandler.GetCurrentOrganization)
+
+			observability.GET("/users", handlers.GrafanaHandler.GetUsers)
+
+			observability.GET("/folders", handlers.GrafanaHandler.GetFolders)
+			observability.GET("/folders/:uid", handlers.GrafanaHandler.GetFolderByUID)
+
+			observability.GET("/annotations", handlers.GrafanaHandler.GetAnnotations)
+		}
+
 		integrations := v1.Group("/integrations")
 		{
 			integrations.GET("", handlers.IntegrationHandler.List)
@@ -175,6 +199,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.POST("/test/gcp", handlers.IntegrationHandler.TestGCP)
 			integrations.POST("/test/aws", handlers.IntegrationHandler.TestAWS)
 			integrations.POST("/test/kubernetes", handlers.IntegrationHandler.TestKubernetes)
+			integrations.POST("/test/grafana", handlers.IntegrationHandler.TestGrafana)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)
 		}
 	}

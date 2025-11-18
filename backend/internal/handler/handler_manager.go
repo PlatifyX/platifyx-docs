@@ -14,6 +14,7 @@ type HandlerManager struct {
 	SonarQubeHandler    *SonarQubeHandler
 	IntegrationHandler  *IntegrationHandler
 	FinOpsHandler       *FinOpsHandler
+	GrafanaHandler      *GrafanaHandler
 }
 
 func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *HandlerManager {
@@ -26,5 +27,6 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		SonarQubeHandler:    NewSonarQubeHandler(services.IntegrationService, log),
 		IntegrationHandler:  NewIntegrationHandler(services.IntegrationService, log),
 		FinOpsHandler:       NewFinOpsHandler(services.FinOpsService, log),
+		GrafanaHandler:      NewGrafanaHandler(services.IntegrationService, log),
 	}
 }

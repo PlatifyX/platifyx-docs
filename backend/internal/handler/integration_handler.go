@@ -480,3 +480,44 @@ func (h *IntegrationHandler) TestKubernetes(c *gin.Context) {
 		"cluster": cluster,
 	})
 }
+
+func (h *IntegrationHandler) TestGrafana(c *gin.Context) {
+	var input struct {
+		URL    string `json:"url" binding:"required"`
+		APIKey string `json:"apiKey" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Create temporary Grafana config
+	config := domain.GrafanaConfig{
+		URL:    input.URL,
+		APIKey: input.APIKey,
+	}
+
+	// Test connection by creating a client and fetching health
+	grafanaService := service.NewGrafanaService(config, h.log)
+	health, err := grafanaService.GetHealth()
+	if err != nil {
+		h.log.Errorw("Failed to test Grafana connection",
+			"error", err,
+			"url", input.URL,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to Grafana. Please check your credentials.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
+		"health":  health,
+	})
+}

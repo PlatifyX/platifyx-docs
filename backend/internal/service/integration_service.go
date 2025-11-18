@@ -338,3 +338,53 @@ func (s *IntegrationService) GetAllKubernetesConfigs() (map[string]*domain.Kuber
 
 	return configs, nil
 }
+
+func (s *IntegrationService) GetGrafanaConfig() (*domain.GrafanaConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeGrafana))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.GrafanaIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal Grafana config", "error", err)
+		return nil, err
+	}
+
+	return &domain.GrafanaConfig{
+		URL:    config.URL,
+		APIKey: config.APIKey,
+	}, nil
+}
+
+func (s *IntegrationService) GetAllGrafanaConfigs() (map[string]*domain.GrafanaConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGrafana))
+	if err != nil {
+		s.log.Errorw("Failed to fetch Grafana integrations", "error", err)
+		return nil, err
+	}
+
+	configs := make(map[string]*domain.GrafanaConfig)
+	for _, integration := range integrations {
+		if !integration.Enabled {
+			continue
+		}
+
+		var config domain.GrafanaIntegrationConfig
+		if err := json.Unmarshal(integration.Config, &config); err != nil {
+			s.log.Errorw("Failed to unmarshal Grafana config", "error", err, "integration", integration.Name)
+			continue
+		}
+
+		configs[integration.Name] = &domain.GrafanaConfig{
+			URL:    config.URL,
+			APIKey: config.APIKey,
+		}
+	}
+
+	return configs, nil
+}
