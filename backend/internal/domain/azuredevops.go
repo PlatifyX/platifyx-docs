@@ -63,7 +63,7 @@ type Release struct {
 	Status          string    `json:"status"`
 	CreatedOn       time.Time `json:"createdOn"`
 	ModifiedOn      time.Time `json:"modifiedOn"`
-	CreatedBy       string    `json:"createdBy"`
+	CreatedBy       User      `json:"createdBy"`
 	Description     string    `json:"description"`
 	URL             string    `json:"url"`
 	Project         string    `json:"project,omitempty"`
