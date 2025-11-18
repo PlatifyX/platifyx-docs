@@ -1,0 +1,11 @@
+# PlatifyX PIDs
+.platifyx.pid
+.backend.pid
+.frontend.pid
+
+# Logs
+logs/*.log
+
+# API binary
+backend/api
+api
