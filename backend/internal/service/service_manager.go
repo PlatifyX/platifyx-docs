@@ -31,13 +31,24 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		azureDevOpsService = NewAzureDevOpsService(*azureDevOpsConfig, log)
 	}
 
+	// Get Kubernetes config from database
+	var kubernetesService *KubernetesService
+	k8sConfig, err := integrationService.GetKubernetesConfig()
+	if err == nil && k8sConfig != nil {
+		kubernetesService, err = NewKubernetesService(*k8sConfig, log)
+		if err != nil {
+			log.Errorw("Failed to initialize Kubernetes service", "error", err)
+			kubernetesService = nil
+		}
+	}
+
 	// Initialize FinOps service
 	finOpsService := NewFinOpsService(integrationService, log)
 
 	return &ServiceManager{
 		ServiceService:      NewServiceService(),
 		MetricsService:      NewMetricsService(),
-		KubernetesService:   NewKubernetesService(),
+		KubernetesService:   kubernetesService,
 		AzureDevOpsService:  azureDevOpsService,
 		IntegrationService:  integrationService,
 		FinOpsService:       finOpsService,

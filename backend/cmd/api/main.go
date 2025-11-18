@@ -113,8 +113,12 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 
 		kubernetes := v1.Group("/kubernetes")
 		{
-			kubernetes.GET("/clusters", handlers.KubernetesHandler.ListClusters)
+			kubernetes.GET("/cluster", handlers.KubernetesHandler.GetClusterInfo)
 			kubernetes.GET("/pods", handlers.KubernetesHandler.ListPods)
+			kubernetes.GET("/deployments", handlers.KubernetesHandler.ListDeployments)
+			kubernetes.GET("/services", handlers.KubernetesHandler.ListServices)
+			kubernetes.GET("/namespaces", handlers.KubernetesHandler.ListNamespaces)
+			kubernetes.GET("/nodes", handlers.KubernetesHandler.ListNodes)
 		}
 
 		ci := v1.Group("/ci")
@@ -170,6 +174,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.POST("/test/azure", handlers.IntegrationHandler.TestAzureCloud)
 			integrations.POST("/test/gcp", handlers.IntegrationHandler.TestGCP)
 			integrations.POST("/test/aws", handlers.IntegrationHandler.TestAWS)
+			integrations.POST("/test/kubernetes", handlers.IntegrationHandler.TestKubernetes)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)
 		}
 	}

@@ -44,6 +44,12 @@ type AWSCloudIntegrationConfig struct {
 	Region          string `json:"region"`
 }
 
+type KubernetesIntegrationConfig struct {
+	Name       string `json:"name"`
+	KubeConfig string `json:"kubeconfig"`
+	Context    string `json:"context"`
+}
+
 type IntegrationType string
 
 const (
@@ -54,4 +60,5 @@ const (
 	IntegrationTypeAzureCloud  IntegrationType = "azure"
 	IntegrationTypeGCP         IntegrationType = "gcp"
 	IntegrationTypeAWS         IntegrationType = "aws"
+	IntegrationTypeKubernetes  IntegrationType = "kubernetes"
 )

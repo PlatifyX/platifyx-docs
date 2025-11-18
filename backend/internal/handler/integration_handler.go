@@ -426,3 +426,57 @@ func (h *IntegrationHandler) TestAWS(c *gin.Context) {
 		"success": true,
 	})
 }
+
+func (h *IntegrationHandler) TestKubernetes(c *gin.Context) {
+	var input struct {
+		KubeConfig string `json:"kubeconfig" binding:"required"`
+		Context    string `json:"context"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Create temporary Kubernetes config
+	config := domain.KubernetesConfig{
+		KubeConfig: input.KubeConfig,
+		Context:    input.Context,
+	}
+
+	// Test connection by creating a client and fetching cluster info
+	kubeService, err := service.NewKubernetesService(config, h.log)
+	if err != nil {
+		h.log.Errorw("Failed to create Kubernetes client",
+			"error", err,
+			"context", input.Context,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to Kubernetes cluster. Please check your kubeconfig.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Try to get cluster info to verify connection
+	cluster, err := kubeService.GetClusterInfo()
+	if err != nil {
+		h.log.Errorw("Failed to test Kubernetes connection",
+			"error", err,
+			"context", input.Context,
+		)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "Failed to connect to Kubernetes cluster. Please check your kubeconfig.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
+		"cluster": cluster,
+	})
+}

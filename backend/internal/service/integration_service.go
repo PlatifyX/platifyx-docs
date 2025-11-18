@@ -288,3 +288,53 @@ func (s *IntegrationService) GetAllAWSConfigs() (map[string]*domain.AWSCloudConf
 
 	return configs, nil
 }
+
+func (s *IntegrationService) GetKubernetesConfig() (*domain.KubernetesConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeKubernetes))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.KubernetesIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal Kubernetes config", "error", err)
+		return nil, err
+	}
+
+	return &domain.KubernetesConfig{
+		KubeConfig: config.KubeConfig,
+		Context:    config.Context,
+	}, nil
+}
+
+func (s *IntegrationService) GetAllKubernetesConfigs() (map[string]*domain.KubernetesConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeKubernetes))
+	if err != nil {
+		s.log.Errorw("Failed to fetch Kubernetes integrations", "error", err)
+		return nil, err
+	}
+
+	configs := make(map[string]*domain.KubernetesConfig)
+	for _, integration := range integrations {
+		if !integration.Enabled {
+			continue
+		}
+
+		var config domain.KubernetesIntegrationConfig
+		if err := json.Unmarshal(integration.Config, &config); err != nil {
+			s.log.Errorw("Failed to unmarshal Kubernetes config", "error", err, "integration", integration.Name)
+			continue
+		}
+
+		configs[integration.Name] = &domain.KubernetesConfig{
+			KubeConfig: config.KubeConfig,
+			Context:    config.Context,
+		}
+	}
+
+	return configs, nil
+}
