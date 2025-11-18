@@ -29,7 +29,31 @@ platifyx-docs/
 
 ## 🚀 Executar o Projeto Completo
 
-### Opção 1: Docker Compose (Recomendado)
+### Opção 1: Scripts de Inicialização (Mais Rápido) ⚡
+
+**Linux/Mac:**
+```bash
+./start.sh
+```
+
+**Windows:**
+```cmd
+start.bat
+```
+
+Para parar:
+```bash
+./stop.sh        # Linux/Mac
+stop.bat         # Windows
+```
+
+Acesse:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8080
+
+Os logs ficam salvos em `logs/backend.log` e `logs/frontend.log`
+
+### Opção 2: Docker Compose
 
 ```bash
 docker-compose up --build
@@ -39,7 +63,7 @@ Acesse:
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8080
 
-### Opção 2: Executar Separadamente
+### Opção 3: Executar Separadamente
 
 #### Frontend
 
