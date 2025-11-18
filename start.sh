@@ -27,7 +27,7 @@ echo ""
 echo "🔧 Starting services..."
 echo ""
 
-echo "Starting Backend (http://localhost:8080)..."
+echo "Starting Backend (http://localhost:6000)..."
 cd backend
 go run cmd/api/main.go > ../logs/backend.log 2>&1 &
 BACKEND_PID=$!
@@ -36,7 +36,7 @@ cd ..
 
 sleep 2
 
-echo "Starting Frontend (http://localhost:3000)..."
+echo "Starting Frontend (http://localhost:7000)..."
 cd frontend
 npm run dev > ../logs/frontend.log 2>&1 &
 FRONTEND_PID=$!
@@ -49,9 +49,9 @@ echo ""
 echo "✅ PlatifyX started successfully!"
 echo ""
 echo "📍 Access:"
-echo "   Frontend: http://localhost:3000"
-echo "   Backend:  http://localhost:8080"
-echo "   API Docs: http://localhost:8080/api/v1/health"
+echo "   Frontend: http://localhost:7000"
+echo "   Backend:  http://localhost:6000"
+echo "   API Docs: http://localhost:6000/api/v1/health"
 echo ""
 echo "📝 Logs:"
 echo "   Backend:  tail -f logs/backend.log"

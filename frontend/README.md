@@ -25,7 +25,7 @@ npm install
 npm run dev
 ```
 
-Acesse: http://localhost:3000
+Acesse: http://localhost:7000
 
 ## 🏗️ Build
 
@@ -44,7 +44,7 @@ docker build -t platifyx-app .
 ### Executar container
 
 ```bash
-docker run -p 8080:80 platifyx-app
+docker run -p 7000:80 platifyx-app
 ```
 
 ## 📁 Estrutura do Projeto

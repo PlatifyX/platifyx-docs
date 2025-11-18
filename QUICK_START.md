@@ -4,34 +4,22 @@ Inicie o PlatifyX em segundos!
 
 ## 🚀 Iniciar
 
-### Linux/Mac
 ```bash
 ./start.sh
 ```
 
-### Windows
-```cmd
-start.bat
-```
-
 ## 🛑 Parar
 
-### Linux/Mac
 ```bash
 ./stop.sh
-```
-
-### Windows
-```cmd
-stop.bat
 ```
 
 ## 📍 Acessar
 
 Após iniciar, acesse:
-- **Frontend:** http://localhost:3000
-- **Backend API:** http://localhost:8080
-- **Health Check:** http://localhost:8080/api/v1/health
+- **Frontend:** http://localhost:7000
+- **Backend API:** http://localhost:6000
+- **Health Check:** http://localhost:6000/api/v1/health
 
 ## 📝 Logs
 
@@ -41,20 +29,15 @@ Os logs são salvos em:
 
 Para ver os logs em tempo real:
 ```bash
-# Linux/Mac
 tail -f logs/backend.log
 tail -f logs/frontend.log
-
-# Windows
-type logs\backend.log
-type logs\frontend.log
 ```
 
 ## 🔧 O que os scripts fazem?
 
 1. ✅ Verificam e instalam dependências (Go modules e npm packages)
-2. ✅ Iniciam o backend em background (porta 8080)
-3. ✅ Iniciam o frontend em background (porta 3000)
+2. ✅ Iniciam o backend em background (porta 6000)
+3. ✅ Iniciam o frontend em background (porta 7000)
 4. ✅ Salvam os PIDs para gerenciamento
 5. ✅ Criam logs separados para cada serviço
 
