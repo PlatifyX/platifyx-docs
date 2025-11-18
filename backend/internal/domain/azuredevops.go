@@ -10,12 +10,13 @@ type AzureDevOpsConfig struct {
 }
 
 type Pipeline struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Folder   string `json:"folder"`
-	Revision int    `json:"revision"`
-	URL      string `json:"url"`
-	Project  string `json:"project,omitempty"`
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Folder      string `json:"folder"`
+	Revision    int    `json:"revision"`
+	URL         string `json:"url"`
+	Project     string `json:"project,omitempty"`
+	LastBuildID int    `json:"lastBuildId,omitempty"`
 }
 
 type PipelineRun struct {

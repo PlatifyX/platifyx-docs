@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { GitBranch, FolderOpen } from 'lucide-react'
+import { GitBranch, FolderOpen, Package } from 'lucide-react'
 import PipelineRunsModal from './PipelineRunsModal'
 import styles from './AzureDevOpsTabs.module.css'
 
@@ -9,6 +9,8 @@ interface Pipeline {
   folder: string
   revision: number
   url: string
+  project?: string
+  lastBuildId?: number
 }
 
 function PipelinesTab() {
@@ -70,12 +72,13 @@ function PipelinesTab() {
                 <span>{pipeline.folder || '/'}</span>
               </div>
               <div className={styles.cardInfo}>
-                <span className={styles.label}>Revision:</span>
-                <span>{pipeline.revision}</span>
+                <span className={styles.label}>Projeto:</span>
+                <span>{pipeline.project || 'N/A'}</span>
               </div>
               <div className={styles.cardInfo}>
-                <span className={styles.label}>ID:</span>
-                <span>{pipeline.id}</span>
+                <Package size={16} />
+                <span className={styles.label}>Build:</span>
+                <span>{pipeline.lastBuildId ? `#${pipeline.lastBuildId}` : 'Nenhum'}</span>
               </div>
             </div>
           </div>

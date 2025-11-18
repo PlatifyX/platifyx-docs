@@ -108,9 +108,15 @@ func (c *Client) ListPipelinesForProject(project string) ([]domain.Pipeline, err
 		return nil, err
 	}
 
-	// Add project name to each pipeline
+	// Add project name and last build ID to each pipeline
 	for i := range response.Value {
 		response.Value[i].Project = project
+
+		// Try to get last build ID (don't fail if not found)
+		lastBuildID := c.getLastBuildID(project, response.Value[i].ID)
+		if lastBuildID > 0 {
+			response.Value[i].LastBuildID = lastBuildID
+		}
 	}
 
 	return response.Value, nil
@@ -133,6 +139,33 @@ func (c *Client) ListAllPipelines() ([]domain.Pipeline, error) {
 	}
 
 	return allPipelines, nil
+}
+
+// getLastBuildID fetches the most recent build ID for a pipeline/definition
+func (c *Client) getLastBuildID(project string, definitionID int) int {
+	url := fmt.Sprintf("%s/%s/%s/_apis/build/builds?definitions=%d&api-version=%s&$top=1",
+		c.baseURL, c.organization, project, definitionID, apiVersion)
+
+	body, err := c.doRequest("GET", url)
+	if err != nil {
+		return 0
+	}
+
+	var response struct {
+		Value []struct {
+			ID int `json:"id"`
+		} `json:"value"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		return 0
+	}
+
+	if len(response.Value) > 0 {
+		return response.Value[0].ID
+	}
+
+	return 0
 }
 
 func (c *Client) ListPipelineRuns(pipelineID int) ([]domain.PipelineRun, error) {
