@@ -128,3 +128,27 @@ func (h *FinOpsHandler) GetAWSCostsByTag(c *gin.Context) {
 
 	c.JSON(http.StatusOK, data)
 }
+
+// GetAWSReservationUtilization returns Reserved Instance utilization data
+func (h *FinOpsHandler) GetAWSReservationUtilization(c *gin.Context) {
+	data, err := h.service.GetAWSReservationUtilization()
+	if err != nil {
+		h.log.Errorw("Failed to get AWS reservation utilization", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
+}
+
+// GetAWSSavingsPlansUtilization returns Savings Plans utilization data
+func (h *FinOpsHandler) GetAWSSavingsPlansUtilization(c *gin.Context) {
+	data, err := h.service.GetAWSSavingsPlansUtilization()
+	if err != nil {
+		h.log.Errorw("Failed to get AWS savings plans utilization", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
+}

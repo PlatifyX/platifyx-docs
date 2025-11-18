@@ -343,3 +343,57 @@ func (s *FinOpsService) GetAWSCostsByTag(tagKey string) ([]map[string]interface{
 
 	return allTagData, nil
 }
+
+// GetAWSReservationUtilization retrieves Reserved Instance utilization data
+func (s *FinOpsService) GetAWSReservationUtilization() (map[string]interface{}, error) {
+	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
+	if err != nil {
+		return nil, err
+	}
+
+	// For simplicity, get data from first AWS account
+	// In production, you might want to aggregate across accounts
+	for _, config := range awsConfigs {
+		client := cloud.NewAWSClient(*config)
+		data, err := client.GetReservationUtilization()
+		if err != nil {
+			s.log.Errorw("Failed to get AWS reservation utilization", "error", err)
+			continue
+		}
+		return data, nil
+	}
+
+	return map[string]interface{}{
+		"utilizationPercent": 0,
+		"purchasedHours":     0,
+		"usedHours":          0,
+		"unusedHours":        0,
+	}, nil
+}
+
+// GetAWSSavingsPlansUtilization retrieves Savings Plans utilization data
+func (s *FinOpsService) GetAWSSavingsPlansUtilization() (map[string]interface{}, error) {
+	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
+	if err != nil {
+		return nil, err
+	}
+
+	// For simplicity, get data from first AWS account
+	// In production, you might want to aggregate across accounts
+	for _, config := range awsConfigs {
+		client := cloud.NewAWSClient(*config)
+		data, err := client.GetSavingsPlansUtilization()
+		if err != nil {
+			s.log.Errorw("Failed to get AWS savings plans utilization", "error", err)
+			continue
+		}
+		return data, nil
+	}
+
+	return map[string]interface{}{
+		"utilizationPercent": 0,
+		"totalCommitment":    0,
+		"usedCommitment":     0,
+		"unusedCommitment":   0,
+	}, nil
+}

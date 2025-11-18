@@ -23,6 +23,8 @@ function FinOpsPageEnhanced() {
   const [monthlyCosts, setMonthlyCosts] = useState<MonthlyCost[]>([])
   const [serviceCosts, setServiceCosts] = useState<ServiceCost[]>([])
   const [forecast, setForecast] = useState<any[]>([])
+  const [riUtilization, setRiUtilization] = useState<any>(null)
+  const [spUtilization, setSpUtilization] = useState<any>(null)
 
   // Date filters
   const [monthsToShow, setMonthsToShow] = useState(12)
@@ -31,22 +33,30 @@ function FinOpsPageEnhanced() {
     setLoading(true)
     try {
       // Fetch all data in parallel
-      const [monthlyRes, serviceRes, forecastRes] = await Promise.all([
+      const [monthlyRes, serviceRes, forecastRes, riRes, spRes] = await Promise.all([
         fetch('http://localhost:8060/api/v1/finops/aws/monthly'),
         fetch(`http://localhost:8060/api/v1/finops/aws/by-service?months=${monthsToShow}`),
         fetch('http://localhost:8060/api/v1/finops/aws/forecast'),
+        fetch('http://localhost:8060/api/v1/finops/aws/reservation-utilization'),
+        fetch('http://localhost:8060/api/v1/finops/aws/savings-plans-utilization'),
       ])
 
       const monthlyData = await monthlyRes.json()
       const serviceData = await serviceRes.json()
       const forecastData = await forecastRes.json()
+      const riData = await riRes.json()
+      const spData = await spRes.json()
 
       console.log('Monthly Data:', monthlyData)
       console.log('Service Data:', serviceData)
+      console.log('RI Data:', riData)
+      console.log('SP Data:', spData)
 
       setMonthlyCosts(monthlyData || [])
       setServiceCosts((serviceData || []).sort((a: ServiceCost, b: ServiceCost) => b.cost - a.cost).slice(0, 10))
       setForecast(forecastData || [])
+      setRiUtilization(riData || null)
+      setSpUtilization(spData || null)
     } catch (error) {
       console.error('Error fetching FinOps data:', error)
     } finally {
@@ -253,6 +263,103 @@ function FinOpsPageEnhanced() {
             </div>
           </div>
         )}
+      </section>
+
+      {/* 💰 IMPACTO DE RESERVAS E SAVINGS PLANS */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>💰 Impacto de Reservas e Savings Plans</h2>
+
+        <div className={styles.twoColumns}>
+          {/* Reserved Instances */}
+          <div className={styles.chartCard}>
+            <h3 className={styles.chartTitle}>🏢 Reserved Instances (RI)</h3>
+            {riUtilization ? (
+              <div>
+                <div className={styles.utilizationBox}>
+                  <div className={styles.utilizationPercent}>
+                    <span className={styles.percentValue}>
+                      {riUtilization.utilizationPercent?.toFixed(1) || 0}%
+                    </span>
+                    <span className={styles.percentLabel}>Utilização</span>
+                  </div>
+                  <div className={styles.progressBar}>
+                    <div
+                      className={styles.progressFill}
+                      style={{ width: `${riUtilization.utilizationPercent || 0}%` }}
+                    />
+                  </div>
+                </div>
+                <div className={styles.statsRow}>
+                  <div className={styles.statItem}>
+                    <span className={styles.statItemLabel}>Comprado</span>
+                    <span className={styles.statItemValue}>
+                      {riUtilization.purchasedHours?.toFixed(0) || 0}h
+                    </span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statItemLabel}>Utilizado</span>
+                    <span className={styles.statItemValue}>
+                      {riUtilization.usedHours?.toFixed(0) || 0}h
+                    </span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statItemLabel}>Não Utilizado</span>
+                    <span className={`${styles.statItemValue} ${styles.warning}`}>
+                      {riUtilization.unusedHours?.toFixed(0) || 0}h
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className={styles.noData}>Nenhuma Reserved Instance encontrada</p>
+            )}
+          </div>
+
+          {/* Savings Plans */}
+          <div className={styles.chartCard}>
+            <h3 className={styles.chartTitle}>💳 Savings Plans</h3>
+            {spUtilization ? (
+              <div>
+                <div className={styles.utilizationBox}>
+                  <div className={styles.utilizationPercent}>
+                    <span className={styles.percentValue}>
+                      {spUtilization.utilizationPercent?.toFixed(1) || 0}%
+                    </span>
+                    <span className={styles.percentLabel}>Utilização</span>
+                  </div>
+                  <div className={styles.progressBar}>
+                    <div
+                      className={styles.progressFill}
+                      style={{ width: `${spUtilization.utilizationPercent || 0}%` }}
+                    />
+                  </div>
+                </div>
+                <div className={styles.statsRow}>
+                  <div className={styles.statItem}>
+                    <span className={styles.statItemLabel}>Comprometido</span>
+                    <span className={styles.statItemValue}>
+                      {formatCurrency(spUtilization.totalCommitment || 0)}
+                    </span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statItemLabel}>Utilizado</span>
+                    <span className={styles.statItemValue}>
+                      {formatCurrency(spUtilization.usedCommitment || 0)}
+                    </span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statItemLabel}>Não Utilizado</span>
+                    <span className={`${styles.statItemValue} ${styles.warning}`}>
+                      {formatCurrency(spUtilization.unusedCommitment || 0)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className={styles.noData}>Nenhum Savings Plan encontrado</p>
+            )}
+          </div>
+        </div>
       </section>
 
     </div>

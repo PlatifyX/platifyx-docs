@@ -439,6 +439,105 @@ func (c *AWSClient) GetCostsByTag(tagKey string) ([]map[string]interface{}, erro
 	return tags, nil
 }
 
+// GetReservationUtilization retrieves Reserved Instance utilization data
+func (c *AWSClient) GetReservationUtilization() (map[string]interface{}, error) {
+	ctx := context.Background()
+	ceClient := costexplorer.NewFromConfig(c.awsConfig)
+
+	// Get last 30 days
+	endDate := time.Now()
+	startDate := endDate.AddDate(0, -1, 0)
+
+	input := &costexplorer.GetReservationUtilizationInput{
+		TimePeriod: &types.DateInterval{
+			Start: aws.String(startDate.Format("2006-01-02")),
+			End:   aws.String(endDate.Format("2006-01-02")),
+		},
+		Granularity: types.GranularityMonthly,
+	}
+
+	result, err := ceClient.GetReservationUtilization(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get reservation utilization: %w", err)
+	}
+
+	var utilizationPercent, purchasedHours, usedHours, unusedHours float64
+
+	if result.Total != nil {
+		if result.Total.UtilizationPercentage != nil {
+			fmt.Sscanf(*result.Total.UtilizationPercentage, "%f", &utilizationPercent)
+		}
+		if result.Total.PurchasedHours != nil {
+			fmt.Sscanf(*result.Total.PurchasedHours, "%f", &purchasedHours)
+		}
+		if result.Total.TotalActualHours != nil {
+			fmt.Sscanf(*result.Total.TotalActualHours, "%f", &usedHours)
+		}
+		unusedHours = purchasedHours - usedHours
+	}
+
+	return map[string]interface{}{
+		"utilizationPercent": utilizationPercent,
+		"purchasedHours":     purchasedHours,
+		"usedHours":          usedHours,
+		"unusedHours":        unusedHours,
+	}, nil
+}
+
+// GetSavingsPlansUtilization retrieves Savings Plans utilization data
+func (c *AWSClient) GetSavingsPlansUtilization() (map[string]interface{}, error) {
+	ctx := context.Background()
+	ceClient := costexplorer.NewFromConfig(c.awsConfig)
+
+	// Get last 30 days
+	endDate := time.Now()
+	startDate := endDate.AddDate(0, -1, 0)
+
+	input := &costexplorer.GetSavingsPlansUtilizationInput{
+		TimePeriod: &types.DateInterval{
+			Start: aws.String(startDate.Format("2006-01-02")),
+			End:   aws.String(endDate.Format("2006-01-02")),
+		},
+		Granularity: types.GranularityMonthly,
+	}
+
+	result, err := ceClient.GetSavingsPlansUtilization(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get savings plans utilization: %w", err)
+	}
+
+	var utilizationPercent, totalCommitment, usedCommitment, unusedCommitment float64
+
+	if len(result.Total) > 0 {
+		total := result.Total[0]
+		if total.Utilization != nil {
+			if total.Utilization.UtilizationPercentage != nil {
+				fmt.Sscanf(*total.Utilization.UtilizationPercentage, "%f", &utilizationPercent)
+			}
+		}
+		if total.AmortizedCommitment != nil {
+			if total.AmortizedCommitment.TotalAmortizedCommitment != nil {
+				fmt.Sscanf(*total.AmortizedCommitment.TotalAmortizedCommitment, "%f", &totalCommitment)
+			}
+		}
+		if total.Utilization != nil {
+			if total.Utilization.UsedCommitment != nil {
+				fmt.Sscanf(*total.Utilization.UsedCommitment, "%f", &usedCommitment)
+			}
+			if total.Utilization.UnusedCommitment != nil {
+				fmt.Sscanf(*total.Utilization.UnusedCommitment, "%f", &unusedCommitment)
+			}
+		}
+	}
+
+	return map[string]interface{}{
+		"utilizationPercent": utilizationPercent,
+		"totalCommitment":    totalCommitment,
+		"usedCommitment":     usedCommitment,
+		"unusedCommitment":   unusedCommitment,
+	}, nil
+}
+
 // TestConnection tests the AWS connection using STS GetCallerIdentity
 func (c *AWSClient) TestConnection() error {
 	if c.accessKeyID == "" || c.secretAccessKey == "" || c.region == "" {

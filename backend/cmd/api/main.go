@@ -154,6 +154,8 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			finops.GET("/aws/by-service", handlers.FinOpsHandler.GetAWSCostsByService)
 			finops.GET("/aws/forecast", handlers.FinOpsHandler.GetAWSCostForecast)
 			finops.GET("/aws/by-tag", handlers.FinOpsHandler.GetAWSCostsByTag)
+			finops.GET("/aws/reservation-utilization", handlers.FinOpsHandler.GetAWSReservationUtilization)
+			finops.GET("/aws/savings-plans-utilization", handlers.FinOpsHandler.GetAWSSavingsPlansUtilization)
 		}
 
 		integrations := v1.Group("/integrations")
