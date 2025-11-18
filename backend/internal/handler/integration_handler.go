@@ -181,8 +181,14 @@ func (h *IntegrationHandler) TestAzureDevOps(c *gin.Context) {
 	// Test by making a simple API call to verify credentials and list projects
 	projects, err := client.ListProjects()
 	if err != nil {
+		h.log.Errorw("Failed to test Azure DevOps connection",
+			"error", err,
+			"organization", input.Organization,
+			"url", config.URL,
+		)
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Failed to connect to Azure DevOps. Please check your credentials.",
+			"error":   "Failed to connect to Azure DevOps. Please check your credentials.",
+			"details": err.Error(),
 		})
 		return
 	}

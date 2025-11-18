@@ -54,10 +54,15 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
           message: `Conexão estabelecida! ${data.projectCount} projeto(s) encontrado(s)`
         })
       } else {
-        setTestResult({ success: false, message: data.error || 'Falha ao conectar' })
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error || 'Falha ao conectar'
+        setTestResult({ success: false, message: errorMsg })
       }
-    } catch (err) {
-      setTestResult({ success: false, message: 'Erro ao testar conexão' })
+    } catch (err: any) {
+      console.error('Connection test error:', err)
+      setTestResult({
+        success: false,
+        message: `Erro ao testar conexão: ${err.message || 'Verifique se o backend está rodando'}`
+      })
     } finally {
       setTesting(false)
     }
