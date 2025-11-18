@@ -27,17 +27,13 @@ function FinOpsPageEnhanced() {
   // Date filters
   const [monthsToShow, setMonthsToShow] = useState(12)
 
-  useEffect(() => {
-    fetchAllData()
-  }, [])
-
   const fetchAllData = async () => {
     setLoading(true)
     try {
       // Fetch all data in parallel
       const [monthlyRes, serviceRes, forecastRes] = await Promise.all([
         fetch('http://localhost:8060/api/v1/finops/aws/monthly'),
-        fetch('http://localhost:8060/api/v1/finops/aws/by-service'),
+        fetch(`http://localhost:8060/api/v1/finops/aws/by-service?months=${monthsToShow}`),
         fetch('http://localhost:8060/api/v1/finops/aws/forecast'),
       ])
 
@@ -57,6 +53,11 @@ function FinOpsPageEnhanced() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchAllData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthsToShow])
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {

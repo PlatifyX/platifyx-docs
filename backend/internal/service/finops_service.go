@@ -278,8 +278,8 @@ func (s *FinOpsService) GetAWSCostsByMonth() ([]map[string]interface{}, error) {
 	return allMonthlyData, nil
 }
 
-// GetAWSCostsByService retrieves cost data grouped by service from AWS
-func (s *FinOpsService) GetAWSCostsByService() ([]map[string]interface{}, error) {
+// GetAWSCostsByService retrieves cost data grouped by service from AWS for a specified number of months
+func (s *FinOpsService) GetAWSCostsByService(months int) ([]map[string]interface{}, error) {
 	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
 	if err != nil {
 		return nil, err
@@ -289,7 +289,7 @@ func (s *FinOpsService) GetAWSCostsByService() ([]map[string]interface{}, error)
 
 	for name, config := range awsConfigs {
 		client := cloud.NewAWSClient(*config)
-		serviceData, err := client.GetCostsByService()
+		serviceData, err := client.GetCostsByService(months)
 		if err != nil {
 			s.log.Errorw("Failed to get AWS costs by service", "error", err, "integration", name)
 			continue

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/PlatifyX/platifyx-core/internal/service"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
@@ -77,9 +78,19 @@ func (h *FinOpsHandler) GetAWSMonthlyCosts(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-// GetAWSCostsByService returns cost data grouped by AWS service
+// GetAWSCostsByService returns cost data grouped by AWS service for a specified period
 func (h *FinOpsHandler) GetAWSCostsByService(c *gin.Context) {
-	data, err := h.service.GetAWSCostsByService()
+	// Get months parameter from query string, default to 12
+	months := 12
+	if monthsParam := c.Query("months"); monthsParam != "" {
+		if val, err := strconv.Atoi(monthsParam); err == nil {
+			if val > 0 && val <= 12 {
+				months = val
+			}
+		}
+	}
+
+	data, err := h.service.GetAWSCostsByService(months)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS costs by service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

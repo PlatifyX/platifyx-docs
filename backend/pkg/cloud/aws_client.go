@@ -266,13 +266,18 @@ func (c *AWSClient) GetCostsByMonth() ([]map[string]interface{}, error) {
 	return monthlyCosts, nil
 }
 
-// GetCostsByService retrieves costs grouped by service for the last year
-func (c *AWSClient) GetCostsByService() ([]map[string]interface{}, error) {
+// GetCostsByService retrieves costs grouped by service for a specified number of months
+func (c *AWSClient) GetCostsByService(months int) ([]map[string]interface{}, error) {
 	ctx := context.Background()
 	ceClient := costexplorer.NewFromConfig(c.awsConfig)
 
+	// Default to 12 months if invalid value
+	if months <= 0 || months > 12 {
+		months = 12
+	}
+
 	endDate := time.Now()
-	startDate := endDate.AddDate(-1, 0, 0)
+	startDate := endDate.AddDate(0, -months, 0)
 
 	input := &costexplorer.GetCostAndUsageInput{
 		TimePeriod: &types.DateInterval{
