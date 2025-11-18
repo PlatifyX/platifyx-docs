@@ -190,7 +190,12 @@ func (c *Client) ListAllBuilds(topPerProject int) ([]domain.Build, error) {
 		builds, err := c.ListBuildsForProject(project.Name, topPerProject)
 		if err != nil {
 			// Log error but continue with other projects
+			fmt.Printf("Error fetching builds for project %s: %v\n", project.Name, err)
 			continue
+		}
+		// Tag each build with its project name
+		for i := range builds {
+			builds[i].Project = project.Name
 		}
 		allBuilds = append(allBuilds, builds...)
 	}
@@ -255,7 +260,12 @@ func (c *Client) ListAllReleases(topPerProject int) ([]domain.Release, error) {
 		releases, err := c.ListReleasesForProject(project.Name, topPerProject)
 		if err != nil {
 			// Log error but continue with other projects
+			fmt.Printf("Error fetching releases for project %s: %v\n", project.Name, err)
 			continue
+		}
+		// Tag each release with its project name
+		for i := range releases {
+			releases[i].Project = project.Name
 		}
 		allReleases = append(allReleases, releases...)
 	}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { GitBranch, FolderOpen } from 'lucide-react'
+import PipelineRunsModal from './PipelineRunsModal'
 import styles from './AzureDevOpsTabs.module.css'
 
 interface Pipeline {
@@ -14,6 +15,7 @@ function PipelinesTab() {
   const [pipelines, setPipelines] = useState<Pipeline[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null)
 
   useEffect(() => {
     fetchPipelines()
@@ -50,30 +52,44 @@ function PipelinesTab() {
   }
 
   return (
-    <div className={styles.grid}>
-      {pipelines.map((pipeline) => (
-        <div key={pipeline.id} className={styles.card}>
-          <div className={styles.cardHeader}>
-            <GitBranch size={20} className={styles.cardIcon} />
-            <div className={styles.cardTitle}>{pipeline.name}</div>
+    <>
+      <div className={styles.grid}>
+        {pipelines.map((pipeline) => (
+          <div
+            key={pipeline.id}
+            className={`${styles.card} ${styles.clickable}`}
+            onClick={() => setSelectedPipeline(pipeline)}
+          >
+            <div className={styles.cardHeader}>
+              <GitBranch size={20} className={styles.cardIcon} />
+              <div className={styles.cardTitle}>{pipeline.name}</div>
+            </div>
+            <div className={styles.cardContent}>
+              <div className={styles.cardInfo}>
+                <FolderOpen size={16} />
+                <span>{pipeline.folder || '/'}</span>
+              </div>
+              <div className={styles.cardInfo}>
+                <span className={styles.label}>Revision:</span>
+                <span>{pipeline.revision}</span>
+              </div>
+              <div className={styles.cardInfo}>
+                <span className={styles.label}>ID:</span>
+                <span>{pipeline.id}</span>
+              </div>
+            </div>
           </div>
-          <div className={styles.cardContent}>
-            <div className={styles.cardInfo}>
-              <FolderOpen size={16} />
-              <span>{pipeline.folder || '/'}</span>
-            </div>
-            <div className={styles.cardInfo}>
-              <span className={styles.label}>Revision:</span>
-              <span>{pipeline.revision}</span>
-            </div>
-            <div className={styles.cardInfo}>
-              <span className={styles.label}>ID:</span>
-              <span>{pipeline.id}</span>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      {selectedPipeline && (
+        <PipelineRunsModal
+          pipelineId={selectedPipeline.id}
+          pipelineName={selectedPipeline.name}
+          onClose={() => setSelectedPipeline(null)}
+        />
+      )}
+    </>
   )
 }
 
