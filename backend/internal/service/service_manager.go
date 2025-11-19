@@ -45,10 +45,17 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		}
 	}
 
+	// Get GitHub config from database
+	var githubService *GitHubService
+	githubConfig, err := integrationService.GetGitHubConfig()
+	if err == nil && githubConfig != nil {
+		githubService = NewGitHubService(*githubConfig, log)
+	}
+
 	// Initialize ServiceCatalog service
 	var serviceCatalogService *ServiceCatalogService
-	if kubernetesService != nil && azureDevOpsService != nil {
-		serviceCatalogService = NewServiceCatalogService(serviceRepo, kubernetesService, azureDevOpsService, log)
+	if kubernetesService != nil {
+		serviceCatalogService = NewServiceCatalogService(serviceRepo, kubernetesService, azureDevOpsService, githubService, log)
 	}
 
 	// Initialize FinOps service

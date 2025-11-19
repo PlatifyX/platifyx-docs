@@ -165,3 +165,36 @@ func (s *GitHubService) GetStats() map[string]interface{} {
 		"languageCount":     languageCount,
 	}
 }
+
+// GetFileContent fetches a file content from a repository
+func (s *GitHubService) GetFileContent(owner, repo, path, ref string) (string, error) {
+	s.log.Infow("Fetching file content from GitHub",
+		"owner", owner,
+		"repository", repo,
+		"path", path,
+		"ref", ref,
+	)
+
+	content, err := s.client.GetFileContent(owner, repo, path, ref)
+	if err != nil {
+		s.log.Errorw("Failed to fetch file content from GitHub",
+			"error", err,
+			"owner", owner,
+			"repository", repo,
+			"path", path,
+		)
+		return "", err
+	}
+
+	s.log.Infow("Fetched file content successfully from GitHub",
+		"owner", owner,
+		"repository", repo,
+		"path", path,
+	)
+	return content, nil
+}
+
+// GetRepositoryURL returns the web URL for a repository
+func (s *GitHubService) GetRepositoryURL(owner, repo string) string {
+	return s.client.GetRepositoryURL(owner, repo)
+}

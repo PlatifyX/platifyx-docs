@@ -1,10 +1,12 @@
 package github
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
@@ -596,4 +598,50 @@ func (c *Client) GetOrganization(org string) (*domain.GitHubOrganization, error)
 		PublicRepos: raw.PublicRepos,
 		Followers:   raw.Followers,
 	}, nil
+}
+
+// GetFileContent fetches the content of a file from a repository
+func (c *Client) GetFileContent(owner, repo, path, ref string) (string, error) {
+	apiPath := fmt.Sprintf("/repos/%s/%s/contents/%s", owner, repo, path)
+	if ref != "" {
+		apiPath = fmt.Sprintf("%s?ref=%s", apiPath, ref)
+	}
+
+	resp, err := c.doRequest("GET", apiPath, nil)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var raw struct {
+		Type     string `json:"type"`
+		Encoding string `json:"encoding"`
+		Content  string `json:"content"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+		return "", fmt.Errorf("failed to decode file content: %w", err)
+	}
+
+	if raw.Type != "file" {
+		return "", fmt.Errorf("path is not a file")
+	}
+
+	// GitHub returns base64 encoded content with newlines
+	if raw.Encoding == "base64" {
+		// Remove newlines from base64 string
+		content := strings.ReplaceAll(raw.Content, "\n", "")
+		decoded, err := base64.StdEncoding.DecodeString(content)
+		if err != nil {
+			return "", fmt.Errorf("failed to decode base64 content: %w", err)
+		}
+		return string(decoded), nil
+	}
+
+	return raw.Content, nil
+}
+
+// GetRepositoryURL returns the web URL for a repository
+func (c *Client) GetRepositoryURL(owner, repo string) string {
+	return fmt.Sprintf("https://github.com/%s/%s", owner, repo)
 }

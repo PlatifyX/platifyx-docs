@@ -17,6 +17,7 @@ type ServiceCatalogService struct {
 	serviceRepo        *repository.ServiceRepository
 	kubeService        *KubernetesService
 	azureDevOpsService *AzureDevOpsService
+	githubService      *GitHubService
 	log                *logger.Logger
 }
 
@@ -24,12 +25,14 @@ func NewServiceCatalogService(
 	serviceRepo *repository.ServiceRepository,
 	kubeService *KubernetesService,
 	azureDevOpsService *AzureDevOpsService,
+	githubService *GitHubService,
 	log *logger.Logger,
 ) *ServiceCatalogService {
 	return &ServiceCatalogService{
 		serviceRepo:        serviceRepo,
 		kubeService:        kubeService,
 		azureDevOpsService: azureDevOpsService,
+		githubService:      githubService,
 		log:                log,
 	}
 }
@@ -140,19 +143,50 @@ func (s *ServiceCatalogService) SyncFromKubernetes() error {
 	return nil
 }
 
-// fetchServiceMetadata fetches metadata from Azure DevOps ci/pipeline.yml
+// fetchServiceMetadata fetches metadata from GitHub or Azure DevOps ci/pipeline.yml
 func (s *ServiceCatalogService) fetchServiceMetadata(squad, application, namespace string) (*domain.Service, error) {
 	serviceName := fmt.Sprintf("%s-%s", squad, application)
+	var fileContent string
+	var err error
+	var repoURL string
+	var repositoryType string
 
-	// Fetch file content from Azure DevOps
-	// Repository name follows pattern: squad-application
-	fileContent, err := s.azureDevOpsService.GetFileContent(serviceName, "ci/pipeline.yml", "main")
-	if err != nil {
-		// Try refs/heads/main
-		fileContent, err = s.azureDevOpsService.GetFileContent(serviceName, "ci/pipeline.yml", "refs/heads/main")
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch pipeline.yml: %w", err)
+	// Try GitHub first if available
+	if s.githubService != nil {
+		s.log.Infow("Trying to fetch from GitHub", "service", serviceName)
+
+		// Try different GitHub organizations/owners
+		owners := []string{"PlatifyX", squad, serviceName}
+		for _, owner := range owners {
+			fileContent, err = s.githubService.GetFileContent(owner, serviceName, "ci/pipeline.yml", "main")
+			if err == nil {
+				repoURL = s.githubService.GetRepositoryURL(owner, serviceName)
+				repositoryType = "github"
+				s.log.Infow("Found repository on GitHub", "owner", owner, "repo", serviceName)
+				break
+			}
 		}
+	}
+
+	// If GitHub failed or not available, try Azure DevOps
+	if fileContent == "" && s.azureDevOpsService != nil {
+		s.log.Infow("Trying to fetch from Azure DevOps", "service", serviceName)
+
+		fileContent, err = s.azureDevOpsService.GetFileContent(serviceName, "ci/pipeline.yml", "main")
+		if err != nil {
+			// Try refs/heads/main
+			fileContent, err = s.azureDevOpsService.GetFileContent(serviceName, "ci/pipeline.yml", "refs/heads/main")
+		}
+
+		if err == nil {
+			repoURL, _ = s.azureDevOpsService.GetRepositoryURL(serviceName)
+			repositoryType = "azuredevops"
+		}
+	}
+
+	// If both failed, return error
+	if fileContent == "" {
+		return nil, fmt.Errorf("failed to fetch pipeline.yml from GitHub and Azure DevOps: %w", err)
 	}
 
 	// Parse YAML to extract variables
@@ -185,19 +219,14 @@ func (s *ServiceCatalogService) fetchServiceMetadata(squad, application, namespa
 		Application:      application,
 		Language:         vars["language"],
 		Version:          vars["version"],
-		RepositoryType:   "azuredevops", // Default, can be enhanced
+		RepositoryType:   repositoryType,
+		RepositoryURL:    repoURL,
 		SonarQubeProject: serviceName,
 		Namespace:        namespace,
 		Microservices:    parseBool(vars["microservices"]),
 		Monorepo:         parseBool(vars["monorepo"]),
 		TestUnit:         parseBool(vars["testun"]),
 		Infra:            vars["infra"],
-	}
-
-	// Try to get repository URL
-	repoURL, err := s.azureDevOpsService.GetRepositoryURL(serviceName)
-	if err == nil {
-		service.RepositoryURL = repoURL
 	}
 
 	return service, nil
