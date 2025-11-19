@@ -102,3 +102,17 @@ func (s *LokiService) GetLogsForApp(app string, limit int, duration time.Duratio
 
 	return s.QueryRange(query, start, end, limit)
 }
+
+// TestConnection tests if the Loki server is reachable
+func (s *LokiService) TestConnection() error {
+	s.log.Info("Testing Loki connection")
+
+	err := s.client.TestConnection()
+	if err != nil {
+		s.log.Errorw("Loki connection test failed", "error", err)
+		return err
+	}
+
+	s.log.Info("Loki connection test successful")
+	return nil
+}

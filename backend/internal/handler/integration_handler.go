@@ -885,6 +885,56 @@ func (h *IntegrationHandler) TestPrometheus(c *gin.Context) {
 	})
 }
 
+// TestLoki tests the Loki connection
+func (h *IntegrationHandler) TestLoki(c *gin.Context) {
+	var req domain.LokiIntegrationConfig
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	if req.URL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "URL is required",
+		})
+		return
+	}
+
+	// Create Loki service for testing
+	config := domain.LokiConfig{
+		URL:      req.URL,
+		Username: req.Username,
+		Password: req.Password,
+	}
+
+	lokiService := service.NewLokiService(config, h.log)
+
+	// Test connection
+	if err := lokiService.TestConnection(); err != nil {
+		h.log.Errorw("Loki connection test failed", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Failed to connect to Loki. Please check your URL and credentials.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Get labels count
+	labels, err := lokiService.GetLabels()
+	labelsCount := 0
+	if err == nil {
+		labelsCount = len(labels)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
+		"labels":  labelsCount,
+	})
+}
+
 // TestVault tests the Vault connection
 func (h *IntegrationHandler) TestVault(c *gin.Context) {
 	var req domain.VaultIntegrationConfig

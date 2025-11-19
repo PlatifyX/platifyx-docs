@@ -146,3 +146,10 @@ func (c *Client) Query(query string, limit int) (*domain.LokiQueryResult, error)
 
 	return &result, nil
 }
+
+// TestConnection tests if the Loki server is reachable
+func (c *Client) TestConnection() error {
+	// Try to fetch labels as a simple test
+	_, err := c.doRequest("GET", "/loki/api/v1/labels", nil)
+	return err
+}
