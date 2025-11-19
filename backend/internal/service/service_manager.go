@@ -49,7 +49,15 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	var githubService *GitHubService
 	githubConfig, err := integrationService.GetGitHubConfig()
 	if err == nil && githubConfig != nil {
+		log.Infow("Initializing GitHub service",
+			"organization", githubConfig.Organization,
+			"hasToken", githubConfig.Token != "",
+		)
 		githubService = NewGitHubService(*githubConfig, log)
+	} else {
+		log.Warnw("GitHub integration not configured or disabled",
+			"error", err,
+		)
 	}
 
 	// Initialize ServiceCatalog service

@@ -13,6 +13,9 @@ type GitHubService struct {
 }
 
 func NewGitHubService(config domain.GitHubConfig, log *logger.Logger) *GitHubService {
+	log.Infow("Creating GitHub service",
+		"organization", config.Organization,
+	)
 	return &GitHubService{
 		client:       github.NewClient(config),
 		organization: config.Organization,
