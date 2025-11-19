@@ -342,6 +342,12 @@
   color: var(--color-primary);
 }
 
+.summary {
+  font-size: 13px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
 .description {
   font-size: 13px;
   color: var(--color-text-secondary);

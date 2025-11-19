@@ -304,25 +304,19 @@ function ObservabilityPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Nome</th>
-                <th>Estado</th>
-                <th>Ativo Desde</th>
+                <th>Nome da Alerta</th>
                 <th>Valor</th>
-                <th>Descrição</th>
+                <th>Summary</th>
+                <th>Description</th>
               </tr>
             </thead>
             <tbody>
               {prometheusAlerts.map((alert, idx) => (
                 <tr key={idx}>
                   <td className={styles.alertName}>{alert.labels.alertname || '-'}</td>
-                  <td>
-                    <span className={`${styles.alertState} ${getAlertStateClass(alert.state)}`}>
-                      {alert.state}
-                    </span>
-                  </td>
-                  <td>{new Date(alert.activeAt).toLocaleString('pt-BR')}</td>
                   <td className={styles.value}>{alert.value}</td>
-                  <td className={styles.description}>{alert.annotations.description || alert.annotations.summary || '-'}</td>
+                  <td className={styles.summary}>{alert.annotations.summary || '-'}</td>
+                  <td className={styles.description}>{alert.annotations.description || '-'}</td>
                 </tr>
               ))}
             </tbody>
