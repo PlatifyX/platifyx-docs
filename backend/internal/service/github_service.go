@@ -208,3 +208,29 @@ func (s *GitHubService) GetFileContent(owner, repo, path, ref string) (string, e
 func (s *GitHubService) GetRepositoryURL(owner, repo string) string {
 	return s.client.GetRepositoryURL(owner, repo)
 }
+
+// GetAllRepositoryFiles retrieves all files from a repository
+func (s *GitHubService) GetAllRepositoryFiles(owner, repo, ref string) ([]github.GitHubRepositoryFile, error) {
+	s.log.Infow("Fetching all files from GitHub repository",
+		"owner", owner,
+		"repository", repo,
+		"ref", ref,
+	)
+
+	files, err := s.client.GetAllRepositoryFiles(owner, repo, ref)
+	if err != nil {
+		s.log.Errorw("Failed to fetch all repository files",
+			"error", err,
+			"owner", owner,
+			"repository", repo,
+		)
+		return nil, err
+	}
+
+	s.log.Infow("Fetched all repository files successfully",
+		"owner", owner,
+		"repository", repo,
+		"fileCount", len(files),
+	)
+	return files, nil
+}
