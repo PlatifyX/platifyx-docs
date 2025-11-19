@@ -136,15 +136,6 @@ function ObservabilityPage() {
 
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Grafana</h2>
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <BarChart3 size={24} className={styles.statIcon} />
-            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Dashboards</span>
-              <span className={styles.statValue}>{overviewStats.grafana?.totalDashboards || 0}</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Tabela de Alertas do Prometheus */}
