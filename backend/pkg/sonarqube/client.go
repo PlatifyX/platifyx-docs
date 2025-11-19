@@ -41,10 +41,15 @@ func (c *Client) doRequest(method, endpoint string, params url.Values) ([]byte, 
 		return nil, err
 	}
 
-	// SonarQube uses token authentication
+	// SonarQube uses token authentication with Basic Auth
+	// Token goes as username, password is empty
 	auth := base64.StdEncoding.EncodeToString([]byte(c.token + ":"))
 	req.Header.Set("Authorization", "Basic "+auth)
 	req.Header.Set("Content-Type", "application/json")
+
+	// Debug: log the request
+	fmt.Printf("SonarQube Request: %s %s\n", method, fullURL)
+	fmt.Printf("Token prefix: %s...\n", c.token[:min(10, len(c.token))])
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -52,12 +57,21 @@ func (c *Client) doRequest(method, endpoint string, params url.Values) ([]byte, 
 	}
 	defer resp.Body.Close()
 
+	bodyBytes, _ := io.ReadAll(resp.Body)
+
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		fmt.Printf("SonarQube Error Response: Status %d, Body: %s\n", resp.StatusCode, string(bodyBytes))
 		return nil, fmt.Errorf("SonarQube API returned status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
-	return io.ReadAll(resp.Body)
+	return bodyBytes, nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // GetProjects retrieves all projects from SonarQube

@@ -323,7 +323,7 @@ function ServicesPage() {
                 {/* Stage Build */}
                 {serviceMetrics[service.name]?.stageBuild && (
                   <div className={styles.buildSection}>
-                    <h4 className={styles.buildTitle}>Pipeline Stage ({serviceMetrics[service.name].stageBuild.integration})</h4>
+                    <h4 className={styles.buildTitle}>CI/CD Stage</h4>
                     <div className={styles.buildInfo}>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Status:</span>
@@ -352,7 +352,7 @@ function ServicesPage() {
                 {/* Main Build */}
                 {serviceMetrics[service.name]?.mainBuild && (
                   <div className={styles.buildSection}>
-                    <h4 className={styles.buildTitle}>Pipeline Main ({serviceMetrics[service.name].mainBuild.integration})</h4>
+                    <h4 className={styles.buildTitle}>CI/CD Prod</h4>
                     <div className={styles.buildInfo}>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Status:</span>
