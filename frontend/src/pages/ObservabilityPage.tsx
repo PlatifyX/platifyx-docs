@@ -197,28 +197,28 @@ function ObservabilityPage() {
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Prometheus</h2>
         <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
+          <div className={`${styles.statCard} ${styles.clickable}`} onClick={() => setActiveTab('prometheus')}>
             <Target size={24} className={styles.statIcon} />
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Targets</span>
               <span className={styles.statValue}>{overviewStats.prometheus?.totalTargets || 0}</span>
             </div>
           </div>
-          <div className={styles.statCard}>
+          <div className={`${styles.statCard} ${styles.clickable}`} onClick={() => setActiveTab('prometheus')}>
             <Activity size={24} className={styles.statIcon} />
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Targets Ativos</span>
               <span className={styles.statValue}>{overviewStats.prometheus?.activeTargets || 0}</span>
             </div>
           </div>
-          <div className={styles.statCard}>
+          <div className={`${styles.statCard} ${styles.clickable}`} onClick={() => setActiveTab('prometheus')}>
             <AlertTriangle size={24} className={styles.statIcon} />
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Alertas</span>
               <span className={styles.statValue}>{overviewStats.prometheus?.totalAlerts || 0}</span>
             </div>
           </div>
-          <div className={styles.statCard}>
+          <div className={`${styles.statCard} ${styles.clickable}`} onClick={() => setActiveTab('prometheus')}>
             <AlertCircle size={24} className={styles.statIcon} />
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Alertas Ativos</span>
@@ -231,28 +231,28 @@ function ObservabilityPage() {
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Grafana</h2>
         <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
+          <div className={`${styles.statCard} ${styles.clickable}`} onClick={() => setActiveTab('grafana')}>
             <BarChart3 size={24} className={styles.statIcon} />
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Dashboards</span>
               <span className={styles.statValue}>{overviewStats.grafana?.totalDashboards || 0}</span>
             </div>
           </div>
-          <div className={styles.statCard}>
+          <div className={`${styles.statCard} ${styles.clickable}`} onClick={() => setActiveTab('grafana')}>
             <AlertTriangle size={24} className={styles.statIcon} />
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Alertas</span>
               <span className={styles.statValue}>{overviewStats.grafana?.totalAlerts || 0}</span>
             </div>
           </div>
-          <div className={styles.statCard}>
+          <div className={`${styles.statCard} ${styles.clickable}`} onClick={() => setActiveTab('grafana')}>
             <AlertCircle size={24} className={styles.statIcon} />
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Alertas Ativos</span>
               <span className={styles.statValue}>{overviewStats.grafana?.alertingAlerts || 0}</span>
             </div>
           </div>
-          <div className={styles.statCard}>
+          <div className={`${styles.statCard} ${styles.clickable}`} onClick={() => setActiveTab('grafana')}>
             <Database size={24} className={styles.statIcon} />
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Data Sources</span>

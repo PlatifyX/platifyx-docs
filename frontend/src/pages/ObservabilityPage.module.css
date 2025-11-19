@@ -189,6 +189,21 @@
   transform: translateY(-2px);
 }
 
+.statCard.clickable {
+  cursor: pointer;
+}
+
+.statCard.clickable:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.2);
+  transform: translateY(-3px);
+}
+
+.statCard.clickable:active {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+}
+
 .statIcon {
   width: 48px;
   height: 48px;
