@@ -9,7 +9,6 @@ import (
 )
 
 type ServiceManager struct {
-	ServiceService         *ServiceService
 	MetricsService         *MetricsService
 	KubernetesService      *KubernetesService
 	AzureDevOpsService     *AzureDevOpsService
@@ -63,7 +62,6 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	serviceTemplateService := NewServiceTemplateService(serviceTemplateRepo, log)
 
 	return &ServiceManager{
-		ServiceService:         NewServiceService(),
 		MetricsService:         NewMetricsService(),
 		KubernetesService:      kubernetesService,
 		AzureDevOpsService:     azureDevOpsService,

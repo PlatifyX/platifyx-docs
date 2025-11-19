@@ -98,13 +98,6 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 		v1.GET("/health", handlers.HealthHandler.Check)
 		v1.GET("/ready", handlers.HealthHandler.Ready)
 
-		services := v1.Group("/services")
-		{
-			services.GET("", handlers.ServiceHandler.List)
-			services.GET("/:id", handlers.ServiceHandler.GetByID)
-			services.POST("", handlers.ServiceHandler.Create)
-		}
-
 		// Service Catalog (discovered from Kubernetes)
 		serviceCatalog := v1.Group("/service-catalog")
 		{

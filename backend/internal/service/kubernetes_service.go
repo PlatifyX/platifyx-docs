@@ -4,6 +4,7 @@ import (
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/pkg/kubernetes"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
+	k8s "k8s.io/client-go/kubernetes"
 )
 
 type KubernetesService struct {
@@ -101,7 +102,7 @@ func (k *KubernetesService) GetNodes() ([]domain.KubernetesNode, error) {
 	return nodes, nil
 }
 // GetClientset returns the Kubernetes clientset for direct API access
-func (k *KubernetesService) GetClientset() interface{} {
+func (k *KubernetesService) GetClientset() *k8s.Clientset {
 	if k.client == nil {
 		return nil
 	}
