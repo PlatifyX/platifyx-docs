@@ -336,6 +336,12 @@
   font-weight: 500;
 }
 
+.squad {
+  font-size: 13px;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 .value {
   font-family: 'Courier New', monospace;
   font-size: 12px;

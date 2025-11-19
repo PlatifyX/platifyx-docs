@@ -273,6 +273,7 @@ function ObservabilityPage() {
             <thead>
               <tr>
                 <th>Nome da Alerta</th>
+                <th>Squad</th>
                 <th>Resumo</th>
                 <th>Descrição</th>
               </tr>
@@ -281,6 +282,7 @@ function ObservabilityPage() {
               {prometheusAlerts.map((alert, idx) => (
                 <tr key={idx}>
                   <td className={styles.alertName}>{alert.labels.alertname || '-'}</td>
+                  <td className={styles.squad}>{alert.labels.squad || '-'}</td>
                   <td className={styles.summary}>{alert.annotations.summary || '-'}</td>
                   <td className={styles.description}>{alert.annotations.description || '-'}</td>
                 </tr>
