@@ -18,6 +18,7 @@ type ServiceManager struct {
 	TechDocsService        *TechDocsService
 	ServiceTemplateService *ServiceTemplateService
 	ServiceCatalogService  *ServiceCatalogService
+	CacheService           *CacheService
 }
 
 func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *ServiceManager {
@@ -84,6 +85,20 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	serviceTemplateRepo := repository.NewServiceTemplateRepository(db)
 	serviceTemplateService := NewServiceTemplateService(serviceTemplateRepo, log)
 
+	// Initialize Cache service (Redis)
+	var cacheService *CacheService
+	redisConfig, err := integrationService.GetRedisConfig()
+	if err == nil && redisConfig != nil {
+		cacheService, err = NewCacheService(*redisConfig, log)
+		if err != nil {
+			log.Warnw("Failed to initialize Redis cache", "error", err)
+		} else {
+			log.Info("Redis cache initialized successfully")
+		}
+	} else {
+		log.Info("Redis integration not configured, cache disabled")
+	}
+
 	return &ServiceManager{
 		MetricsService:         NewMetricsService(),
 		KubernetesService:      kubernetesService,
@@ -94,5 +109,6 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		TechDocsService:        techDocsService,
 		ServiceTemplateService: serviceTemplateService,
 		ServiceCatalogService:  serviceCatalogService,
+		CacheService:           cacheService,
 	}
 }

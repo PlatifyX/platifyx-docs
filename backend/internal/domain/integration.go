@@ -106,6 +106,13 @@ type LokiIntegrationConfig struct {
 	Password string `json:"password,omitempty"`
 }
 
+type RedisIntegrationConfig struct {
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Password string `json:"password,omitempty"`
+	DB       int    `json:"db,omitempty"`
+}
+
 type VaultIntegrationConfig struct {
 	Address   string `json:"address"`
 	Token     string `json:"token"`
@@ -140,6 +147,7 @@ const (
 	IntegrationTypeArgoCD      IntegrationType = "argocd"
 	IntegrationTypePrometheus  IntegrationType = "prometheus"
 	IntegrationTypeLoki        IntegrationType = "loki"
+	IntegrationTypeRedis       IntegrationType = "redis"
 	IntegrationTypeVault       IntegrationType = "vault"
 	IntegrationTypeAWSSecrets  IntegrationType = "awssecrets"
 )

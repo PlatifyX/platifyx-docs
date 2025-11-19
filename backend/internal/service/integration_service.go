@@ -653,6 +653,43 @@ func (s *IntegrationService) GetLokiService() (*LokiService, error) {
 	return NewLokiService(*config, s.log), nil
 }
 
+// Redis methods
+func (s *IntegrationService) GetRedisConfig() (*domain.RedisConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeRedis))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, nil
+	}
+
+	var config domain.RedisIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse Redis config: %w", err)
+	}
+
+	return &domain.RedisConfig{
+		Host:     config.Host,
+		Port:     config.Port,
+		Password: config.Password,
+		DB:       config.DB,
+	}, nil
+}
+
+func (s *IntegrationService) GetCacheService() (*CacheService, error) {
+	config, err := s.GetRedisConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Redis integration not configured")
+	}
+
+	return NewCacheService(*config, s.log)
+}
+
 // Vault methods
 func (s *IntegrationService) GetVaultConfig() (*domain.VaultConfig, error) {
 	integration, err := s.repo.GetByType(string(domain.IntegrationTypeVault))

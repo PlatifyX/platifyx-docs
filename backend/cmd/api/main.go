@@ -255,6 +255,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.POST("/test/argocd", handlers.IntegrationHandler.TestArgoCD)
 			integrations.POST("/test/prometheus", handlers.IntegrationHandler.TestPrometheus)
 			integrations.POST("/test/loki", handlers.IntegrationHandler.TestLoki)
+			integrations.POST("/test/redis", handlers.IntegrationHandler.TestRedis)
 			integrations.POST("/test/vault", handlers.IntegrationHandler.TestVault)
 			integrations.POST("/test/awssecrets", handlers.IntegrationHandler.TestAWSSecrets)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)

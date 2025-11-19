@@ -935,6 +935,63 @@ func (h *IntegrationHandler) TestLoki(c *gin.Context) {
 	})
 }
 
+// TestRedis tests the Redis connection
+func (h *IntegrationHandler) TestRedis(c *gin.Context) {
+	var req domain.RedisIntegrationConfig
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	if req.Host == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Host is required",
+		})
+		return
+	}
+
+	if req.Port == 0 {
+		req.Port = 6379 // Default Redis port
+	}
+
+	// Create Redis cache service for testing
+	config := domain.RedisConfig{
+		Host:     req.Host,
+		Port:     req.Port,
+		Password: req.Password,
+		DB:       req.DB,
+	}
+
+	cacheService, err := service.NewCacheService(config, h.log)
+	if err != nil {
+		h.log.Errorw("Redis connection failed", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Failed to connect to Redis. Please check your host, port and credentials.",
+			"details": err.Error(),
+		})
+		return
+	}
+	defer cacheService.Close()
+
+	// Test connection
+	if err := cacheService.TestConnection(); err != nil {
+		h.log.Errorw("Redis connection test failed", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Failed to ping Redis. Please check your connection.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection successful",
+		"success": true,
+		"db":      config.DB,
+	})
+}
+
 // TestVault tests the Vault connection
 func (h *IntegrationHandler) TestVault(c *gin.Context) {
 	var req domain.VaultIntegrationConfig
