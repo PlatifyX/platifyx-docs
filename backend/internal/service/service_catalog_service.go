@@ -346,23 +346,57 @@ func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeS
 		}
 	}
 
-	// Fetch last build from Azure DevOps
+	// Fetch last builds from Azure DevOps for stage and main branches
 	if azureDevOpsService != nil {
 		builds, err := azureDevOpsService.GetBuilds(100) // Get latest 100 builds
 		if err == nil && len(builds) > 0 {
-			// Find the first build that matches this service name
+			var stageBuild, mainBuild map[string]interface{}
+
+			// Find the latest builds for stage and main branches
 			for _, build := range builds {
 				// Check if the build definition name matches the service name
 				if build.Definition.Name == serviceName {
-					metrics["lastBuild"] = map[string]interface{}{
-						"status":      build.Result,
-						"buildNumber": build.BuildNumber,
-						"sourceBranch": build.SourceBranch,
-						"finishTime":  build.FinishTime,
-						"integration": build.Integration,
+					sourceBranch := strings.ToLower(build.SourceBranch)
+
+					// Check if this is a stage build
+					if stageBuild == nil && (strings.Contains(sourceBranch, "stage") ||
+						strings.HasSuffix(sourceBranch, "refs/heads/stage")) {
+						stageBuild = map[string]interface{}{
+							"status":       build.Result,
+							"buildNumber":  build.BuildNumber,
+							"sourceBranch": build.SourceBranch,
+							"finishTime":   build.FinishTime,
+							"integration":  build.Integration,
+						}
 					}
-					break
+
+					// Check if this is a main/master build
+					if mainBuild == nil && (strings.Contains(sourceBranch, "main") ||
+						strings.Contains(sourceBranch, "master") ||
+						strings.HasSuffix(sourceBranch, "refs/heads/main") ||
+						strings.HasSuffix(sourceBranch, "refs/heads/master")) {
+						mainBuild = map[string]interface{}{
+							"status":       build.Result,
+							"buildNumber":  build.BuildNumber,
+							"sourceBranch": build.SourceBranch,
+							"finishTime":   build.FinishTime,
+							"integration":  build.Integration,
+						}
+					}
+
+					// Break if we found both
+					if stageBuild != nil && mainBuild != nil {
+						break
+					}
 				}
+			}
+
+			// Add builds to metrics if found
+			if stageBuild != nil {
+				metrics["stageBuild"] = stageBuild
+			}
+			if mainBuild != nil {
+				metrics["mainBuild"] = mainBuild
 			}
 		}
 	}

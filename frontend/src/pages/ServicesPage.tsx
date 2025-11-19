@@ -32,7 +32,14 @@ interface ServiceMetrics {
     securityHotspots: number
     coverage: number
   }
-  lastBuild?: {
+  stageBuild?: {
+    status: string
+    buildNumber: string
+    sourceBranch: string
+    finishTime: string
+    integration: string
+  }
+  mainBuild?: {
     status: string
     buildNumber: string
     sourceBranch: string
@@ -313,29 +320,58 @@ function ServicesPage() {
                   </div>
                 )}
 
-                {/* Last Build */}
-                {serviceMetrics[service.name]?.lastBuild && (
+                {/* Stage Build */}
+                {serviceMetrics[service.name]?.stageBuild && (
                   <div className={styles.buildSection}>
-                    <h4 className={styles.buildTitle}>Pipeline ({serviceMetrics[service.name].lastBuild.integration})</h4>
+                    <h4 className={styles.buildTitle}>Pipeline Stage ({serviceMetrics[service.name].stageBuild.integration})</h4>
                     <div className={styles.buildInfo}>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Status:</span>
-                        <span className={`${styles.buildStatus} ${styles[`status${serviceMetrics[service.name].lastBuild.status}`]}`}>
-                          {serviceMetrics[service.name].lastBuild.status}
+                        <span className={`${styles.buildStatus} ${styles[`status${serviceMetrics[service.name].stageBuild.status}`]}`}>
+                          {serviceMetrics[service.name].stageBuild.status}
                         </span>
                       </div>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Build:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name].lastBuild.buildNumber}</span>
+                        <span className={styles.buildValue}>{serviceMetrics[service.name].stageBuild.buildNumber}</span>
                       </div>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Branch:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name].lastBuild.sourceBranch}</span>
+                        <span className={styles.buildValue}>{serviceMetrics[service.name].stageBuild.sourceBranch}</span>
                       </div>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Finished:</span>
                         <span className={styles.buildValue}>
-                          {new Date(serviceMetrics[service.name].lastBuild.finishTime).toLocaleString('pt-BR')}
+                          {new Date(serviceMetrics[service.name].stageBuild.finishTime).toLocaleString('pt-BR')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Main Build */}
+                {serviceMetrics[service.name]?.mainBuild && (
+                  <div className={styles.buildSection}>
+                    <h4 className={styles.buildTitle}>Pipeline Main ({serviceMetrics[service.name].mainBuild.integration})</h4>
+                    <div className={styles.buildInfo}>
+                      <div className={styles.buildRow}>
+                        <span className={styles.buildLabel}>Status:</span>
+                        <span className={`${styles.buildStatus} ${styles[`status${serviceMetrics[service.name].mainBuild.status}`]}`}>
+                          {serviceMetrics[service.name].mainBuild.status}
+                        </span>
+                      </div>
+                      <div className={styles.buildRow}>
+                        <span className={styles.buildLabel}>Build:</span>
+                        <span className={styles.buildValue}>{serviceMetrics[service.name].mainBuild.buildNumber}</span>
+                      </div>
+                      <div className={styles.buildRow}>
+                        <span className={styles.buildLabel}>Branch:</span>
+                        <span className={styles.buildValue}>{serviceMetrics[service.name].mainBuild.sourceBranch}</span>
+                      </div>
+                      <div className={styles.buildRow}>
+                        <span className={styles.buildLabel}>Finished:</span>
+                        <span className={styles.buildValue}>
+                          {new Date(serviceMetrics[service.name].mainBuild.finishTime).toLocaleString('pt-BR')}
                         </span>
                       </div>
                     </div>
