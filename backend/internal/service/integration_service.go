@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/repository"
@@ -287,4 +288,440 @@ func (s *IntegrationService) GetAllAWSConfigs() (map[string]*domain.AWSCloudConf
 	}
 
 	return configs, nil
+}
+
+func (s *IntegrationService) GetKubernetesConfig() (*domain.KubernetesConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeKubernetes))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.KubernetesIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal Kubernetes config", "error", err)
+		return nil, err
+	}
+
+	return &domain.KubernetesConfig{
+		KubeConfig: config.KubeConfig,
+		Context:    config.Context,
+	}, nil
+}
+
+func (s *IntegrationService) GetAllKubernetesConfigs() (map[string]*domain.KubernetesConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeKubernetes))
+	if err != nil {
+		s.log.Errorw("Failed to fetch Kubernetes integrations", "error", err)
+		return nil, err
+	}
+
+	configs := make(map[string]*domain.KubernetesConfig)
+	for _, integration := range integrations {
+		if !integration.Enabled {
+			continue
+		}
+
+		var config domain.KubernetesIntegrationConfig
+		if err := json.Unmarshal(integration.Config, &config); err != nil {
+			s.log.Errorw("Failed to unmarshal Kubernetes config", "error", err, "integration", integration.Name)
+			continue
+		}
+
+		configs[integration.Name] = &domain.KubernetesConfig{
+			KubeConfig: config.KubeConfig,
+			Context:    config.Context,
+		}
+	}
+
+	return configs, nil
+}
+
+func (s *IntegrationService) GetGrafanaConfig() (*domain.GrafanaConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeGrafana))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.GrafanaIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal Grafana config", "error", err)
+		return nil, err
+	}
+
+	return &domain.GrafanaConfig{
+		URL:    config.URL,
+		APIKey: config.APIKey,
+	}, nil
+}
+
+func (s *IntegrationService) GetAllGrafanaConfigs() (map[string]*domain.GrafanaConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGrafana))
+	if err != nil {
+		s.log.Errorw("Failed to fetch Grafana integrations", "error", err)
+		return nil, err
+	}
+
+	configs := make(map[string]*domain.GrafanaConfig)
+	for _, integration := range integrations {
+		if !integration.Enabled {
+			continue
+		}
+
+		var config domain.GrafanaIntegrationConfig
+		if err := json.Unmarshal(integration.Config, &config); err != nil {
+			s.log.Errorw("Failed to unmarshal Grafana config", "error", err, "integration", integration.Name)
+			continue
+		}
+
+		configs[integration.Name] = &domain.GrafanaConfig{
+			URL:    config.URL,
+			APIKey: config.APIKey,
+		}
+	}
+
+	return configs, nil
+}
+
+func (s *IntegrationService) GetGitHubConfig() (*domain.GitHubConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeGitHub))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.GitHubIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal GitHub config", "error", err)
+		return nil, err
+	}
+
+	return &domain.GitHubConfig{
+		Token:        config.Token,
+		Organization: config.Organization,
+	}, nil
+}
+
+func (s *IntegrationService) GetAllGitHubConfigs() (map[string]*domain.GitHubConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGitHub))
+	if err != nil {
+		s.log.Errorw("Failed to fetch GitHub integrations", "error", err)
+		return nil, err
+	}
+
+	configs := make(map[string]*domain.GitHubConfig)
+	for _, integration := range integrations {
+		if !integration.Enabled {
+			continue
+		}
+
+		var config domain.GitHubIntegrationConfig
+		if err := json.Unmarshal(integration.Config, &config); err != nil {
+			s.log.Errorw("Failed to unmarshal GitHub config", "error", err, "integration", integration.Name)
+			continue
+		}
+
+		configs[integration.Name] = &domain.GitHubConfig{
+			Token:        config.Token,
+			Organization: config.Organization,
+		}
+	}
+
+	return configs, nil
+}
+
+func (s *IntegrationService) GetJiraConfig() (*domain.JiraConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeJira))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.JiraIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal Jira config", "error", err)
+		return nil, err
+	}
+
+	return &domain.JiraConfig{
+		URL:      config.URL,
+		Email:    config.Email,
+		APIToken: config.APIToken,
+	}, nil
+}
+
+func (s *IntegrationService) GetJiraService() (*JiraService, error) {
+	config, err := s.GetJiraConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Jira integration not configured")
+	}
+
+	return NewJiraService(*config, s.log), nil
+}
+
+func (s *IntegrationService) GetSlackConfig() (*domain.SlackConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeSlack))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.SlackIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal Slack config", "error", err)
+		return nil, err
+	}
+
+	return &domain.SlackConfig{
+		WebhookURL: config.WebhookURL,
+		BotToken:   config.BotToken,
+	}, nil
+}
+
+func (s *IntegrationService) GetSlackService() (*SlackService, error) {
+	config, err := s.GetSlackConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Slack integration not configured")
+	}
+
+	return NewSlackService(*config, s.log), nil
+}
+
+func (s *IntegrationService) GetTeamsConfig() (*domain.TeamsConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeTeams))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.TeamsIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal Teams config", "error", err)
+		return nil, err
+	}
+
+	return &domain.TeamsConfig{
+		WebhookURL: config.WebhookURL,
+	}, nil
+}
+
+func (s *IntegrationService) GetTeamsService() (*TeamsService, error) {
+	config, err := s.GetTeamsConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Teams integration not configured")
+	}
+
+	return NewTeamsService(*config, s.log), nil
+}
+
+// ArgoCD methods
+func (s *IntegrationService) GetArgoCDConfig() (*domain.ArgoCDConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeArgoCD))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, nil
+	}
+
+	var config domain.ArgoCDIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse ArgoCD config: %w", err)
+	}
+
+	return &domain.ArgoCDConfig{
+		ServerURL: config.ServerURL,
+		AuthToken: config.AuthToken,
+		Insecure:  config.Insecure,
+	}, nil
+}
+
+func (s *IntegrationService) GetArgoCDService() (*ArgoCDService, error) {
+	config, err := s.GetArgoCDConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("ArgoCD integration not configured")
+	}
+
+	return NewArgoCDService(*config, s.log), nil
+}
+
+// Prometheus methods
+func (s *IntegrationService) GetPrometheusConfig() (*domain.PrometheusConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypePrometheus))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, nil
+	}
+
+	var config domain.PrometheusIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse Prometheus config: %w", err)
+	}
+
+	return &domain.PrometheusConfig{
+		URL:      config.URL,
+		Username: config.Username,
+		Password: config.Password,
+	}, nil
+}
+
+func (s *IntegrationService) GetPrometheusService() (*PrometheusService, error) {
+	config, err := s.GetPrometheusConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Prometheus integration not configured")
+	}
+
+	return NewPrometheusService(*config, s.log), nil
+}
+
+// Loki methods
+func (s *IntegrationService) GetLokiConfig() (*domain.LokiConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeLoki))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, nil
+	}
+
+	var config domain.LokiIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse Loki config: %w", err)
+	}
+
+	return &domain.LokiConfig{
+		URL:      config.URL,
+		Username: config.Username,
+		Password: config.Password,
+	}, nil
+}
+
+func (s *IntegrationService) GetLokiService() (*LokiService, error) {
+	config, err := s.GetLokiConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Loki integration not configured")
+	}
+
+	return NewLokiService(*config, s.log), nil
+}
+
+// Vault methods
+func (s *IntegrationService) GetVaultConfig() (*domain.VaultConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeVault))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, nil
+	}
+
+	var config domain.VaultIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse Vault config: %w", err)
+	}
+
+	return &domain.VaultConfig{
+		Address:   config.Address,
+		Token:     config.Token,
+		Namespace: config.Namespace,
+	}, nil
+}
+
+func (s *IntegrationService) GetVaultService() (*VaultService, error) {
+	config, err := s.GetVaultConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Vault integration not configured")
+	}
+
+	return NewVaultService(*config, s.log), nil
+}
+
+// AWS Secrets Manager methods
+func (s *IntegrationService) GetAWSSecretsConfig() (*domain.AWSSecretsConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeAWSSecrets))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, nil
+	}
+
+	var config domain.AWSSecretsIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse AWS Secrets config: %w", err)
+	}
+
+	return &domain.AWSSecretsConfig{
+		AccessKeyID:     config.AccessKeyID,
+		SecretAccessKey: config.SecretAccessKey,
+		Region:          config.Region,
+		SessionToken:    config.SessionToken,
+	}, nil
+}
+
+func (s *IntegrationService) GetAWSSecretsService() (*AWSSecretsService, error) {
+	config, err := s.GetAWSSecretsConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("AWS Secrets Manager integration not configured")
+	}
+
+	return NewAWSSecretsService(*config, s.log)
 }

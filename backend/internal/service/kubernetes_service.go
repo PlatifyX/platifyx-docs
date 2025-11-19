@@ -1,68 +1,110 @@
 package service
 
-type KubernetesService struct{}
+import (
+	"github.com/PlatifyX/platifyx-core/internal/domain"
+	"github.com/PlatifyX/platifyx-core/pkg/kubernetes"
+	"github.com/PlatifyX/platifyx-core/pkg/logger"
+	k8s "k8s.io/client-go/kubernetes"
+)
 
-func NewKubernetesService() *KubernetesService {
-	return &KubernetesService{}
+type KubernetesService struct {
+	client *kubernetes.Client
+	log    *logger.Logger
 }
 
-func (k *KubernetesService) GetClusters() []map[string]interface{} {
-	return []map[string]interface{}{
-		{
-			"name":     "production-us-east",
-			"provider": "GKE",
-			"region":   "us-east1",
-			"nodes":    12,
-			"status":   "healthy",
-			"version":  "1.28.3",
-		},
-		{
-			"name":     "production-eu-west",
-			"provider": "AKS",
-			"region":   "eu-west1",
-			"nodes":    8,
-			"status":   "healthy",
-			"version":  "1.28.2",
-		},
-		{
-			"name":     "staging",
-			"provider": "EKS",
-			"region":   "us-west-2",
-			"nodes":    4,
-			"status":   "healthy",
-			"version":  "1.28.1",
-		},
+func NewKubernetesService(config domain.KubernetesConfig, log *logger.Logger) (*KubernetesService, error) {
+	client, err := kubernetes.NewClient(config)
+	if err != nil {
+		return nil, err
 	}
+
+	return &KubernetesService{
+		client: client,
+		log:    log,
+	}, nil
 }
 
-func (k *KubernetesService) GetPods(namespace string) []map[string]interface{} {
-	return []map[string]interface{}{
-		{
-			"name":      "api-gateway-7d5c8f9b4-x8k2m",
-			"namespace": namespace,
-			"status":    "Running",
-			"ready":     "2/2",
-			"restarts":  0,
-			"age":       "2h",
-			"node":      "node-1",
-		},
-		{
-			"name":      "auth-service-5f6d7c8a9-p4r2t",
-			"namespace": namespace,
-			"status":    "Running",
-			"ready":     "1/1",
-			"restarts":  0,
-			"age":       "5h",
-			"node":      "node-2",
-		},
-		{
-			"name":      "payment-service-9a8b7c6d5-m9n3k",
-			"namespace": namespace,
-			"status":    "Running",
-			"ready":     "2/2",
-			"restarts":  1,
-			"age":       "1d",
-			"node":      "node-3",
-		},
+func (k *KubernetesService) GetClusterInfo() (*domain.KubernetesCluster, error) {
+	k.log.Info("Fetching Kubernetes cluster information")
+
+	cluster, err := k.client.GetClusterInfo()
+	if err != nil {
+		k.log.Errorw("Failed to fetch cluster info", "error", err)
+		return nil, err
 	}
+
+	k.log.Infow("Fetched cluster info successfully", "cluster", cluster.Name)
+	return cluster, nil
+}
+
+func (k *KubernetesService) GetPods(namespace string) ([]domain.KubernetesPod, error) {
+	k.log.Infow("Fetching Kubernetes pods", "namespace", namespace)
+
+	pods, err := k.client.ListPods(namespace)
+	if err != nil {
+		k.log.Errorw("Failed to fetch pods", "error", err, "namespace", namespace)
+		return nil, err
+	}
+
+	k.log.Infow("Fetched pods successfully", "count", len(pods), "namespace", namespace)
+	return pods, nil
+}
+
+func (k *KubernetesService) GetDeployments(namespace string) ([]domain.KubernetesDeployment, error) {
+	k.log.Infow("Fetching Kubernetes deployments", "namespace", namespace)
+
+	deployments, err := k.client.ListDeployments(namespace)
+	if err != nil {
+		k.log.Errorw("Failed to fetch deployments", "error", err, "namespace", namespace)
+		return nil, err
+	}
+
+	k.log.Infow("Fetched deployments successfully", "count", len(deployments), "namespace", namespace)
+	return deployments, nil
+}
+
+func (k *KubernetesService) GetServices(namespace string) ([]domain.KubernetesService, error) {
+	k.log.Infow("Fetching Kubernetes services", "namespace", namespace)
+
+	services, err := k.client.ListServices(namespace)
+	if err != nil {
+		k.log.Errorw("Failed to fetch services", "error", err, "namespace", namespace)
+		return nil, err
+	}
+
+	k.log.Infow("Fetched services successfully", "count", len(services), "namespace", namespace)
+	return services, nil
+}
+
+func (k *KubernetesService) GetNamespaces() ([]domain.KubernetesNamespace, error) {
+	k.log.Info("Fetching Kubernetes namespaces")
+
+	namespaces, err := k.client.ListNamespaces()
+	if err != nil {
+		k.log.Errorw("Failed to fetch namespaces", "error", err)
+		return nil, err
+	}
+
+	k.log.Infow("Fetched namespaces successfully", "count", len(namespaces))
+	return namespaces, nil
+}
+
+func (k *KubernetesService) GetNodes() ([]domain.KubernetesNode, error) {
+	k.log.Info("Fetching Kubernetes nodes")
+
+	nodes, err := k.client.ListNodes()
+	if err != nil {
+		k.log.Errorw("Failed to fetch nodes", "error", err)
+		return nil, err
+	}
+
+	k.log.Infow("Fetched nodes successfully", "count", len(nodes))
+	return nodes, nil
+}
+// GetClientset returns the Kubernetes clientset for direct API access
+func (k *KubernetesService) GetClientset() *k8s.Clientset {
+	if k.client == nil {
+		return nil
+	}
+	return k.client.GetClientset()
 }

@@ -18,6 +18,19 @@ function QualityPage() {
     project: '',
   })
 
+  // Read URL parameters on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const project = params.get('project')
+
+    if (project) {
+      setFilters(prev => ({
+        ...prev,
+        project: project
+      }))
+    }
+  }, [])
+
   useEffect(() => {
     fetchStats()
   }, [filters])

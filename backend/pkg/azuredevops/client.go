@@ -521,3 +521,36 @@ func (c *Client) GetRelease(releaseID int) (*domain.Release, error) {
 
 	return &release, nil
 }
+
+// GetFileContent fetches the content of a file from a repository
+func (c *Client) GetFileContent(repositoryName, filePath, branch string) (string, error) {
+	url := fmt.Sprintf("%s/%s/%s/_apis/git/repositories/%s/items?path=%s&versionDescriptor.version=%s&api-version=%s",
+		c.baseURL, c.organization, c.project, repositoryName, filePath, branch, apiVersion)
+
+	body, err := c.doRequest("GET", url)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}
+
+// GetRepositoryURL returns the web URL for a repository
+func (c *Client) GetRepositoryURL(repositoryName string) (string, error) {
+	url := fmt.Sprintf("%s/%s/%s/_apis/git/repositories/%s?api-version=%s",
+		c.baseURL, c.organization, c.project, repositoryName, apiVersion)
+
+	body, err := c.doRequest("GET", url)
+	if err != nil {
+		return "", err
+	}
+
+	var repo struct {
+		WebURL string `json:"webUrl"`
+	}
+	if err := json.Unmarshal(body, &repo); err != nil {
+		return "", err
+	}
+
+	return repo.WebURL, nil
+}

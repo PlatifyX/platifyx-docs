@@ -44,6 +44,81 @@ type AWSCloudIntegrationConfig struct {
 	Region          string `json:"region"`
 }
 
+type KubernetesIntegrationConfig struct {
+	Name       string `json:"name"`
+	KubeConfig string `json:"kubeconfig"`
+	Context    string `json:"context"`
+}
+
+type GrafanaIntegrationConfig struct {
+	URL    string `json:"url"`
+	APIKey string `json:"apiKey"`
+}
+
+type GitHubIntegrationConfig struct {
+	Token        string `json:"token"`
+	Organization string `json:"organization,omitempty"`
+}
+
+type OpenAIIntegrationConfig struct {
+	APIKey       string `json:"apiKey"`
+	Organization string `json:"organization,omitempty"`
+}
+
+type GeminiIntegrationConfig struct {
+	APIKey string `json:"apiKey"`
+}
+
+type ClaudeIntegrationConfig struct {
+	APIKey string `json:"apiKey"`
+}
+
+type JiraIntegrationConfig struct {
+	URL      string `json:"url"`
+	Email    string `json:"email"`
+	APIToken string `json:"apiToken"`
+}
+
+type SlackIntegrationConfig struct {
+	WebhookURL string `json:"webhookUrl"`
+	BotToken   string `json:"botToken,omitempty"`
+}
+
+type TeamsIntegrationConfig struct {
+	WebhookURL string `json:"webhookUrl"`
+}
+
+type ArgoCDIntegrationConfig struct {
+	ServerURL string `json:"serverUrl"`
+	AuthToken string `json:"authToken"`
+	Insecure  bool   `json:"insecure,omitempty"`
+}
+
+type PrometheusIntegrationConfig struct {
+	URL      string `json:"url"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
+type LokiIntegrationConfig struct {
+	URL      string `json:"url"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
+type VaultIntegrationConfig struct {
+	Address   string `json:"address"`
+	Token     string `json:"token"`
+	Namespace string `json:"namespace,omitempty"`
+}
+
+type AWSSecretsIntegrationConfig struct {
+	AccessKeyID     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+	Region          string `json:"region"`
+	SessionToken    string `json:"sessionToken,omitempty"`
+}
+
 type IntegrationType string
 
 const (
@@ -54,4 +129,17 @@ const (
 	IntegrationTypeAzureCloud  IntegrationType = "azure"
 	IntegrationTypeGCP         IntegrationType = "gcp"
 	IntegrationTypeAWS         IntegrationType = "aws"
+	IntegrationTypeKubernetes  IntegrationType = "kubernetes"
+	IntegrationTypeGrafana     IntegrationType = "grafana"
+	IntegrationTypeOpenAI      IntegrationType = "openai"
+	IntegrationTypeGemini      IntegrationType = "gemini"
+	IntegrationTypeClaude      IntegrationType = "claude"
+	IntegrationTypeJira        IntegrationType = "jira"
+	IntegrationTypeSlack       IntegrationType = "slack"
+	IntegrationTypeTeams       IntegrationType = "teams"
+	IntegrationTypeArgoCD      IntegrationType = "argocd"
+	IntegrationTypePrometheus  IntegrationType = "prometheus"
+	IntegrationTypeLoki        IntegrationType = "loki"
+	IntegrationTypeVault       IntegrationType = "vault"
+	IntegrationTypeAWSSecrets  IntegrationType = "awssecrets"
 )

@@ -98,11 +98,13 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 		v1.GET("/health", handlers.HealthHandler.Check)
 		v1.GET("/ready", handlers.HealthHandler.Ready)
 
-		services := v1.Group("/services")
+		// Service Catalog (discovered from Kubernetes)
+		serviceCatalog := v1.Group("/service-catalog")
 		{
-			services.GET("", handlers.ServiceHandler.List)
-			services.GET("/:id", handlers.ServiceHandler.GetByID)
-			services.POST("", handlers.ServiceHandler.Create)
+			serviceCatalog.POST("/sync", handlers.ServiceCatalogHandler.SyncServices)
+			serviceCatalog.GET("", handlers.ServiceCatalogHandler.ListServices)
+			serviceCatalog.GET("/:name/status", handlers.ServiceCatalogHandler.GetServiceStatus)
+			serviceCatalog.POST("/metrics", handlers.ServiceCatalogHandler.GetServicesMetrics)
 		}
 
 		metrics := v1.Group("/metrics")
@@ -113,8 +115,12 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 
 		kubernetes := v1.Group("/kubernetes")
 		{
-			kubernetes.GET("/clusters", handlers.KubernetesHandler.ListClusters)
+			kubernetes.GET("/cluster", handlers.KubernetesHandler.GetClusterInfo)
 			kubernetes.GET("/pods", handlers.KubernetesHandler.ListPods)
+			kubernetes.GET("/deployments", handlers.KubernetesHandler.ListDeployments)
+			kubernetes.GET("/services", handlers.KubernetesHandler.ListServices)
+			kubernetes.GET("/namespaces", handlers.KubernetesHandler.ListNamespaces)
+			kubernetes.GET("/nodes", handlers.KubernetesHandler.ListNodes)
 		}
 
 		ci := v1.Group("/ci")
@@ -158,6 +164,73 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			finops.GET("/aws/savings-plans-utilization", handlers.FinOpsHandler.GetAWSSavingsPlansUtilization)
 		}
 
+		observability := v1.Group("/observability")
+		{
+			observability.GET("/stats", handlers.GrafanaHandler.GetStats)
+			observability.GET("/health", handlers.GrafanaHandler.GetHealth)
+
+			observability.GET("/dashboards", handlers.GrafanaHandler.SearchDashboards)
+			observability.GET("/dashboards/:uid", handlers.GrafanaHandler.GetDashboardByUID)
+
+			observability.GET("/alerts", handlers.GrafanaHandler.GetAlerts)
+
+			observability.GET("/datasources", handlers.GrafanaHandler.GetDataSources)
+			observability.GET("/datasources/:id", handlers.GrafanaHandler.GetDataSourceByID)
+
+			observability.GET("/organizations", handlers.GrafanaHandler.GetOrganizations)
+			observability.GET("/organization", handlers.GrafanaHandler.GetCurrentOrganization)
+
+			observability.GET("/users", handlers.GrafanaHandler.GetUsers)
+
+			observability.GET("/folders", handlers.GrafanaHandler.GetFolders)
+			observability.GET("/folders/:uid", handlers.GrafanaHandler.GetFolderByUID)
+
+			observability.GET("/annotations", handlers.GrafanaHandler.GetAnnotations)
+
+			// Loki logs endpoints
+			observability.GET("/logs/labels", handlers.LokiHandler.GetLabels)
+			observability.GET("/logs/labels/:label/values", handlers.LokiHandler.GetLabelValues)
+			observability.GET("/logs/apps", handlers.LokiHandler.GetAppLabels)
+			observability.GET("/logs/query", handlers.LokiHandler.QueryLogs)
+			observability.GET("/logs/apps/:app", handlers.LokiHandler.GetLogsForApp)
+		}
+
+		// Grafana endpoints (alias for some observability endpoints)
+		grafana := v1.Group("/grafana")
+		{
+			grafana.GET("/stats", handlers.GrafanaHandler.GetStats)
+			grafana.GET("/config", handlers.GrafanaHandler.GetConfig)
+			grafana.GET("/dashboards", handlers.GrafanaHandler.SearchDashboards)
+			grafana.GET("/dashboards/:uid", handlers.GrafanaHandler.GetDashboardByUID)
+		}
+
+		code := v1.Group("/code")
+		{
+			code.GET("/stats", handlers.GitHubHandler.GetStats)
+			code.GET("/user", handlers.GitHubHandler.GetAuthenticatedUser)
+
+			code.GET("/repositories", handlers.GitHubHandler.ListRepositories)
+			code.GET("/repositories/:owner/:repo", handlers.GitHubHandler.GetRepository)
+
+			code.GET("/repositories/:owner/:repo/commits", handlers.GitHubHandler.ListCommits)
+			code.GET("/repositories/:owner/:repo/pulls", handlers.GitHubHandler.ListPullRequests)
+			code.GET("/repositories/:owner/:repo/issues", handlers.GitHubHandler.ListIssues)
+			code.GET("/repositories/:owner/:repo/branches", handlers.GitHubHandler.ListBranches)
+			code.GET("/repositories/:owner/:repo/actions/runs", handlers.GitHubHandler.ListWorkflowRuns)
+
+			code.GET("/organizations/:org", handlers.GitHubHandler.GetOrganization)
+		}
+
+		techdocs := v1.Group("/techdocs")
+		{
+			techdocs.GET("/tree", handlers.TechDocsHandler.GetTree)
+			techdocs.GET("/document", handlers.TechDocsHandler.GetDocument)
+			techdocs.POST("/document", handlers.TechDocsHandler.SaveDocument)
+			techdocs.DELETE("/document", handlers.TechDocsHandler.DeleteDocument)
+			techdocs.POST("/folder", handlers.TechDocsHandler.CreateFolder)
+			techdocs.GET("/list", handlers.TechDocsHandler.ListDocuments)
+		}
+
 		integrations := v1.Group("/integrations")
 		{
 			integrations.GET("", handlers.IntegrationHandler.List)
@@ -170,7 +243,109 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.POST("/test/azure", handlers.IntegrationHandler.TestAzureCloud)
 			integrations.POST("/test/gcp", handlers.IntegrationHandler.TestGCP)
 			integrations.POST("/test/aws", handlers.IntegrationHandler.TestAWS)
+			integrations.POST("/test/kubernetes", handlers.IntegrationHandler.TestKubernetes)
+			integrations.POST("/test/grafana", handlers.IntegrationHandler.TestGrafana)
+			integrations.POST("/test/github", handlers.IntegrationHandler.TestGitHub)
+			integrations.POST("/test/openai", handlers.IntegrationHandler.TestOpenAI)
+			integrations.POST("/test/gemini", handlers.IntegrationHandler.TestGemini)
+			integrations.POST("/test/claude", handlers.IntegrationHandler.TestClaude)
+			integrations.POST("/test/jira", handlers.IntegrationHandler.TestJira)
+			integrations.POST("/test/slack", handlers.IntegrationHandler.TestSlack)
+			integrations.POST("/test/teams", handlers.IntegrationHandler.TestTeams)
+			integrations.POST("/test/argocd", handlers.IntegrationHandler.TestArgoCD)
+			integrations.POST("/test/prometheus", handlers.IntegrationHandler.TestPrometheus)
+			integrations.POST("/test/vault", handlers.IntegrationHandler.TestVault)
+			integrations.POST("/test/awssecrets", handlers.IntegrationHandler.TestAWSSecrets)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)
+		}
+
+		jira := v1.Group("/jira")
+		{
+			jira.GET("/stats", handlers.JiraHandler.GetStats)
+			jira.GET("/user", handlers.JiraHandler.GetCurrentUser)
+			jira.GET("/projects", handlers.JiraHandler.GetProjects)
+			jira.GET("/issues", handlers.JiraHandler.SearchIssues)
+			jira.GET("/issues/:key", handlers.JiraHandler.GetIssue)
+			jira.GET("/boards", handlers.JiraHandler.GetBoards)
+			jira.GET("/boards/:boardId/sprints", handlers.JiraHandler.GetSprints)
+		}
+
+		slack := v1.Group("/slack")
+		{
+			slack.POST("/message", handlers.SlackHandler.SendMessage)
+			slack.POST("/simple", handlers.SlackHandler.SendSimpleMessage)
+			slack.POST("/alert", handlers.SlackHandler.SendAlert)
+		}
+
+		teams := v1.Group("/teams")
+		{
+			teams.POST("/message", handlers.TeamsHandler.SendMessage)
+			teams.POST("/simple", handlers.TeamsHandler.SendSimpleMessage)
+			teams.POST("/alert", handlers.TeamsHandler.SendAlert)
+		}
+
+		argocd := v1.Group("/argocd")
+		{
+			argocd.GET("/stats", handlers.ArgoCDHandler.GetStats)
+			argocd.GET("/applications", handlers.ArgoCDHandler.GetApplications)
+			argocd.GET("/applications/:name", handlers.ArgoCDHandler.GetApplication)
+			argocd.POST("/applications/:name/sync", handlers.ArgoCDHandler.SyncApplication)
+			argocd.POST("/applications/:name/refresh", handlers.ArgoCDHandler.RefreshApplication)
+			argocd.POST("/applications/:name/rollback", handlers.ArgoCDHandler.RollbackApplication)
+			argocd.DELETE("/applications/:name", handlers.ArgoCDHandler.DeleteApplication)
+			argocd.GET("/projects", handlers.ArgoCDHandler.GetProjects)
+			argocd.GET("/projects/:name", handlers.ArgoCDHandler.GetProject)
+			argocd.GET("/clusters", handlers.ArgoCDHandler.GetClusters)
+		}
+
+		prometheus := v1.Group("/prometheus")
+		{
+			prometheus.GET("/stats", handlers.PrometheusHandler.GetStats)
+			prometheus.GET("/query", handlers.PrometheusHandler.Query)
+			prometheus.GET("/query_range", handlers.PrometheusHandler.QueryRange)
+			prometheus.GET("/targets", handlers.PrometheusHandler.GetTargets)
+			prometheus.GET("/alerts", handlers.PrometheusHandler.GetAlerts)
+			prometheus.GET("/rules", handlers.PrometheusHandler.GetRules)
+			prometheus.GET("/label/:label/values", handlers.PrometheusHandler.GetLabelValues)
+			prometheus.GET("/series", handlers.PrometheusHandler.GetSeries)
+			prometheus.GET("/metadata", handlers.PrometheusHandler.GetMetadata)
+			prometheus.GET("/buildinfo", handlers.PrometheusHandler.GetBuildInfo)
+		}
+
+		vault := v1.Group("/vault")
+		{
+			vault.GET("/stats", handlers.VaultHandler.GetStats)
+			vault.GET("/health", handlers.VaultHandler.GetHealth)
+			vault.GET("/kv/read", handlers.VaultHandler.ReadKVSecret)
+			vault.GET("/kv/list", handlers.VaultHandler.ListKVSecrets)
+			vault.POST("/kv/write", handlers.VaultHandler.WriteKVSecret)
+			vault.DELETE("/kv/delete", handlers.VaultHandler.DeleteKVSecret)
+		}
+
+		awssecrets := v1.Group("/awssecrets")
+		{
+			awssecrets.GET("/stats", handlers.AWSSecretsHandler.GetStats)
+			awssecrets.GET("/list", handlers.AWSSecretsHandler.ListSecrets)
+			awssecrets.GET("/secret/:name", handlers.AWSSecretsHandler.GetSecret)
+			awssecrets.GET("/describe/:name", handlers.AWSSecretsHandler.DescribeSecret)
+			awssecrets.POST("/create", handlers.AWSSecretsHandler.CreateSecret)
+			awssecrets.PUT("/update/:name", handlers.AWSSecretsHandler.UpdateSecret)
+			awssecrets.DELETE("/delete/:name", handlers.AWSSecretsHandler.DeleteSecret)
+		}
+
+		templates := v1.Group("/templates")
+		{
+			templates.GET("", handlers.ServiceTemplateHandler.GetAllTemplates)
+			templates.GET("/:id", handlers.ServiceTemplateHandler.GetTemplateByID)
+			templates.GET("/stats", handlers.ServiceTemplateHandler.GetStats)
+			templates.POST("/initialize", handlers.ServiceTemplateHandler.InitializeTemplates)
+		}
+
+		serviceTemplates := v1.Group("/service-templates")
+		{
+			serviceTemplates.GET("", handlers.ServiceTemplateHandler.GetAllServices)
+			serviceTemplates.GET("/:id", handlers.ServiceTemplateHandler.GetServiceByID)
+			serviceTemplates.POST("/create", handlers.ServiceTemplateHandler.CreateService)
 		}
 	}
 

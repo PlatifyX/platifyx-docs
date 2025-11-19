@@ -23,6 +23,19 @@ function AzureDevOpsPage() {
     project: '',
   })
 
+  // Read URL parameters on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const repo = params.get('repo')
+
+    if (repo) {
+      setFilters(prev => ({
+        ...prev,
+        project: repo
+      }))
+    }
+  }, [])
+
   useEffect(() => {
     fetchStats()
   }, [filters])

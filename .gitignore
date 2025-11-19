@@ -9,3 +9,4 @@ logs/*.log
 # API binary
 backend/api
 api
+.env

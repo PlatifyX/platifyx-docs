@@ -29,6 +29,32 @@ function IntegrationCard({ integration, onConfigure, onToggle, onDelete }: Integ
         return 'Gerenciamento de custos e recursos do Google Cloud Platform'
       case 'aws':
         return 'Gerenciamento de custos e recursos da Amazon Web Services'
+      case 'kubernetes':
+        return 'Integração com clusters Kubernetes'
+      case 'grafana':
+        return 'Visualização de métricas e dashboards'
+      case 'github':
+        return 'Integração com repositórios e GitHub Actions'
+      case 'openai':
+        return 'Integração com GPT-4, GPT-3.5 e outros modelos'
+      case 'gemini':
+        return 'Integração com Gemini Pro e outros modelos do Google'
+      case 'claude':
+        return 'Integração com Claude 3 Opus, Sonnet e Haiku'
+      case 'jira':
+        return 'Gerenciamento de projetos, issues, sprints e boards'
+      case 'slack':
+        return 'Notificações e comunicação via Slack'
+      case 'teams':
+        return 'Notificações e comunicação via Microsoft Teams'
+      case 'argocd':
+        return 'GitOps e deploy contínuo com ArgoCD'
+      case 'prometheus':
+        return 'Monitoramento de métricas e alertas'
+      case 'vault':
+        return 'Gerenciamento seguro de secrets e credenciais'
+      case 'awssecrets':
+        return 'Gerenciamento de secrets na AWS'
       default:
         return 'Integração externa'
     }
@@ -46,12 +72,36 @@ function IntegrationCard({ integration, onConfigure, onToggle, onDelete }: Integ
         return '/logos/gcp.png'
       case 'aws':
         return '/logos/aws.png'
+      case 'kubernetes':
+        return '/logos/kubernetes.png'
+      case 'grafana':
+        return '/logos/grafana.png'
       case 'github':
         return '/logos/github.png'
       case 'gitlab':
         return '/logos/gitlab.png'
       case 'jenkins':
         return '/logos/jenkins.png'
+      case 'openai':
+        return '/logos/openai.png'
+      case 'gemini':
+        return '/logos/gemini.png'
+      case 'claude':
+        return '/logos/claude.png'
+      case 'jira':
+        return '/logos/jira.png'
+      case 'slack':
+        return '/logos/slack.png'
+      case 'teams':
+        return '/logos/teams.png'
+      case 'argocd':
+        return '/logos/argocd.png'
+      case 'prometheus':
+        return '/logos/prometheus.png'
+      case 'vault':
+        return '/logos/vault.png'
+      case 'awssecrets':
+        return '/logos/aws-secrets.png'
       default:
         return '/logos/platifyx.png'
     }

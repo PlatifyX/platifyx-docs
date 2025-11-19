@@ -1,21 +1,28 @@
 import { useState, useEffect } from 'react'
 import { Plug, CheckCircle, XCircle, Plus } from 'lucide-react'
 import IntegrationCard from '../components/Integrations/IntegrationCard'
+import { IntegrationApi, type Integration } from '../utils/integrationApi'
 import AzureDevOpsModal from '../components/Integrations/AzureDevOpsModal'
 import SonarQubeModal from '../components/Integrations/SonarQubeModal'
 import AzureCloudModal from '../components/Integrations/AzureCloudModal'
 import GCPModal from '../components/Integrations/GCPModal'
 import AWSModal from '../components/Integrations/AWSModal'
+import KubernetesModal from '../components/Integrations/KubernetesModal'
+import GrafanaModal from '../components/Integrations/GrafanaModal'
+import GitHubModal from '../components/Integrations/GitHubModal'
+import OpenAIModal from '../components/Integrations/OpenAIModal'
+import GeminiModal from '../components/Integrations/GeminiModal'
+import ClaudeModal from '../components/Integrations/ClaudeModal'
+import JiraModal from '../components/Integrations/JiraModal'
+import SlackModal from '../components/Integrations/SlackModal'
+import TeamsModal from '../components/Integrations/TeamsModal'
+import ArgoCDModal from '../components/Integrations/ArgoCDModal'
+import PrometheusModal from '../components/Integrations/PrometheusModal'
+import LokiModal from '../components/Integrations/LokiModal'
+import VaultModal from '../components/Integrations/VaultModal'
+import AWSSecretsModal from '../components/Integrations/AWSSecretsModal'
 import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
 import styles from './IntegrationsPage.module.css'
-
-interface Integration {
-  id: number
-  name: string
-  type: string
-  enabled: boolean
-  config: any
-}
 
 function IntegrationsPage() {
   const [integrations, setIntegrations] = useState<Integration[]>([])
@@ -32,10 +39,8 @@ function IntegrationsPage() {
 
   const fetchIntegrations = async () => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/integrations')
-      if (!response.ok) throw new Error('Failed to fetch integrations')
-      const data = await response.json()
-      setIntegrations(data.integrations || [])
+      const data = await IntegrationApi.getAll()
+      setIntegrations(data)
     } catch (err) {
       console.error('Error fetching integrations:', err)
     } finally {
@@ -64,42 +69,17 @@ function IntegrationsPage() {
   const handleSave = async (integrationData: any) => {
     try {
       if (isCreating) {
-        // Create new integration
-        const response = await fetch('http://localhost:8060/api/v1/integrations', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: integrationData.name,
-            type: selectedType || 'azuredevops',
-            enabled: true,
-            config: integrationData.config,
-          }),
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Failed to create integration')
-        }
+        await IntegrationApi.create(
+          selectedType || 'azuredevops',
+          integrationData.name,
+          integrationData.config
+        )
       } else if (selectedIntegration) {
-        // Update existing integration
-        const response = await fetch(`http://localhost:8060/api/v1/integrations/${selectedIntegration.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: integrationData.name,
-            enabled: true,
-            config: integrationData.config,
-          }),
+        await IntegrationApi.update(selectedIntegration.id, {
+          name: integrationData.name,
+          enabled: true,
+          config: integrationData.config,
         })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Failed to update integration')
-        }
       }
 
       await fetchIntegrations()
@@ -116,19 +96,7 @@ function IntegrationsPage() {
 
   const handleToggle = async (integration: Integration) => {
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/integrations/${integration.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          enabled: !integration.enabled,
-          config: integration.config || {},
-        }),
-      })
-
-      if (!response.ok) throw new Error('Failed to toggle integration')
-
+      await IntegrationApi.toggle(integration)
       await fetchIntegrations()
     } catch (err) {
       console.error('Error toggling integration:', err)
@@ -142,12 +110,7 @@ function IntegrationsPage() {
     if (!confirmed) return
 
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/integrations/${integration.id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) throw new Error('Failed to delete integration')
-
+      await IntegrationApi.delete(integration.id)
       await fetchIntegrations()
     } catch (err) {
       console.error('Error deleting integration:', err)
@@ -267,6 +230,202 @@ function IntegrationsPage() {
 
       {showModal && (isCreating ? selectedType === 'aws' : selectedIntegration?.type === 'aws') && (
         <AWSModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'openai' : selectedIntegration?.type === 'openai') && (
+        <OpenAIModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'gemini' : selectedIntegration?.type === 'gemini') && (
+        <GeminiModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'claude' : selectedIntegration?.type === 'claude') && (
+        <ClaudeModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'jira' : selectedIntegration?.type === 'jira') && (
+        <JiraModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'slack' : selectedIntegration?.type === 'slack') && (
+        <SlackModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'teams' : selectedIntegration?.type === 'teams') && (
+        <TeamsModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'argocd' : selectedIntegration?.type === 'argocd') && (
+        <ArgoCDModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'prometheus' : selectedIntegration?.type === 'prometheus') && (
+        <PrometheusModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'loki' : selectedIntegration?.type === 'loki') && (
+        <LokiModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'vault' : selectedIntegration?.type === 'vault') && (
+        <VaultModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'awssecrets' : selectedIntegration?.type === 'awssecrets') && (
+        <AWSSecretsModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'kubernetes' : selectedIntegration?.type === 'kubernetes') && (
+        <KubernetesModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'grafana' : selectedIntegration?.type === 'grafana') && (
+        <GrafanaModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'github' : selectedIntegration?.type === 'github') && (
+        <GitHubModal
           integration={selectedIntegration}
           isCreating={isCreating}
           onSave={handleSave}
