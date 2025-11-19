@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { FileText, Folder, Plus, Edit2, Trash2, Save, X, FolderPlus } from 'lucide-react'
+import { FileText, Folder, Plus, Edit2, Trash2, Save, X, FolderPlus, Sparkles } from 'lucide-react'
+import AIAssistant from '../components/TechDocs/AIAssistant'
 import styles from './TechDocsPage.module.css'
 
 interface TreeNode {
@@ -28,6 +29,7 @@ function TechDocsPage() {
   const [showNewFolderModal, setShowNewFolderModal] = useState(false)
   const [newDocPath, setNewDocPath] = useState('')
   const [newFolderPath, setNewFolderPath] = useState('')
+  const [showAIAssistant, setShowAIAssistant] = useState(false)
 
   useEffect(() => {
     fetchTree()
@@ -206,6 +208,10 @@ function TechDocsPage() {
           </div>
         </div>
         <div className={styles.headerActions}>
+          <button className={styles.aiButton} onClick={() => setShowAIAssistant(!showAIAssistant)}>
+            <Sparkles size={20} />
+            <span>Assistente IA</span>
+          </button>
           <button className={styles.addButton} onClick={() => setShowNewFolderModal(true)}>
             <FolderPlus size={20} />
             <span>Nova Pasta</span>
@@ -228,6 +234,23 @@ function TechDocsPage() {
             )}
           </div>
         </div>
+
+        {showAIAssistant && (
+          <div className={styles.aiPanel}>
+            <AIAssistant
+              currentContent={selectedDoc?.content}
+              onInsertContent={(content) => {
+                if (isEditing) {
+                  setEditContent(content)
+                } else {
+                  setEditContent(content)
+                  setIsEditing(true)
+                }
+              }}
+              onClose={() => setShowAIAssistant(false)}
+            />
+          </div>
+        )}
 
         <div className={styles.main}>
           {selectedDoc ? (

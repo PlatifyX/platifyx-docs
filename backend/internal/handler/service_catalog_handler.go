@@ -12,14 +12,16 @@ type ServiceCatalogHandler struct {
 	serviceCatalogService *service.ServiceCatalogService
 	sonarQubeService      *service.SonarQubeService
 	azureDevOpsService    *service.AzureDevOpsService
+	integrationService    *service.IntegrationService
 	log                   *logger.Logger
 }
 
-func NewServiceCatalogHandler(serviceCatalogSvc *service.ServiceCatalogService, sonarQubeSvc *service.SonarQubeService, azureDevOpsSvc *service.AzureDevOpsService, log *logger.Logger) *ServiceCatalogHandler {
+func NewServiceCatalogHandler(serviceCatalogSvc *service.ServiceCatalogService, sonarQubeSvc *service.SonarQubeService, azureDevOpsSvc *service.AzureDevOpsService, integrationSvc *service.IntegrationService, log *logger.Logger) *ServiceCatalogHandler {
 	return &ServiceCatalogHandler{
 		serviceCatalogService: serviceCatalogSvc,
 		sonarQubeService:      sonarQubeSvc,
 		azureDevOpsService:    azureDevOpsSvc,
+		integrationService:    integrationSvc,
 		log:                   log,
 	}
 }
@@ -126,7 +128,19 @@ func (h *ServiceCatalogHandler) GetServicesMetrics(c *gin.Context) {
 		return
 	}
 
-	metrics := h.serviceCatalogService.GetMultipleServiceMetrics(request.ServiceNames, h.sonarQubeService, h.azureDevOpsService)
+	// Get all Azure DevOps configurations to fetch builds from all integrations
+	var azureDevOpsServices []*service.AzureDevOpsService
+	if h.integrationService != nil {
+		configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+		if err == nil && len(configs) > 0 {
+			h.log.Infow("Creating Azure DevOps services for all integrations", "count", len(configs))
+			for _, config := range configs {
+				azureDevOpsServices = append(azureDevOpsServices, service.NewAzureDevOpsService(*config, h.log))
+			}
+		}
+	}
+
+	metrics := h.serviceCatalogService.GetMultipleServiceMetrics(request.ServiceNames, h.sonarQubeService, azureDevOpsServices)
 
 	h.log.Infow("Returning metrics", "metricsCount", len(metrics))
 

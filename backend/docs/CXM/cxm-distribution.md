@@ -1,0 +1,3 @@
+# Novo Documento
+
+Escreva seu conteúdo aqui...

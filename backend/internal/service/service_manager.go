@@ -2,10 +2,8 @@ package service
 
 import (
 	"database/sql"
-	"strconv"
 
 	"github.com/PlatifyX/platifyx-core/internal/config"
-	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/repository"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 )
@@ -20,7 +18,6 @@ type ServiceManager struct {
 	TechDocsService        *TechDocsService
 	ServiceTemplateService *ServiceTemplateService
 	ServiceCatalogService  *ServiceCatalogService
-	CacheService           *CacheService
 	AIService              *AIService
 	DiagramService         *DiagramService
 }
@@ -93,39 +90,6 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	serviceTemplateRepo := repository.NewServiceTemplateRepository(db)
 	serviceTemplateService := NewServiceTemplateService(serviceTemplateRepo, log)
 
-	// Initialize Cache service (Redis) from config
-	var cacheService *CacheService
-	if cfg.RedisHost != "" {
-		port := 6379
-		if cfg.RedisPort != "" {
-			if p, err := strconv.Atoi(cfg.RedisPort); err == nil {
-				port = p
-			}
-		}
-		db := 0
-		if cfg.RedisDB != "" {
-			if d, err := strconv.Atoi(cfg.RedisDB); err == nil {
-				db = d
-			}
-		}
-
-		redisConfig := domain.RedisConfig{
-			Host:     cfg.RedisHost,
-			Port:     port,
-			Password: cfg.RedisPass,
-			DB:       db,
-		}
-
-		cacheService, err = NewCacheService(redisConfig, log)
-		if err != nil {
-			log.Warnw("Failed to initialize Redis cache", "error", err)
-		} else {
-			log.Info("Redis cache initialized successfully")
-		}
-	} else {
-		log.Info("Redis not configured, cache disabled")
-	}
-
 	return &ServiceManager{
 		MetricsService:         NewMetricsService(),
 		KubernetesService:      kubernetesService,
@@ -136,7 +100,6 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		TechDocsService:        techDocsService,
 		ServiceTemplateService: serviceTemplateService,
 		ServiceCatalogService:  serviceCatalogService,
-		CacheService:           cacheService,
 		AIService:              aiService,
 		DiagramService:         diagramService,
 	}

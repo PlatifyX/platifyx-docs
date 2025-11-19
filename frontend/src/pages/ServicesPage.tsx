@@ -300,6 +300,14 @@ function ServicesPage() {
                   )}
                 </div>
 
+                {/* Loading Metrics */}
+                {loadingMetrics && !serviceMetrics[service.name] && (
+                  <div className={styles.metricsLoading}>
+                    <RefreshCw size={20} className={styles.spinning} />
+                    <span>Carregando métricas e pipelines...</span>
+                  </div>
+                )}
+
                 {/* SonarQube Metrics */}
                 {serviceMetrics[service.name]?.sonarqube && (
                   <div className={styles.metricsSection}>

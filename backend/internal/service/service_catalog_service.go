@@ -328,7 +328,7 @@ func (s *ServiceCatalogService) getDeploymentStatus(clientset *kubernetes.Client
 }
 
 // GetServiceMetrics returns aggregated metrics from SonarQube and last build from Azure DevOps
-func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeService *SonarQubeService, azureDevOpsService *AzureDevOpsService) map[string]interface{} {
+func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeService *SonarQubeService, azureDevOpsServices []*AzureDevOpsService) map[string]interface{} {
 	metrics := make(map[string]interface{})
 	metrics["serviceName"] = serviceName
 
@@ -361,21 +361,81 @@ func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeS
 		}
 	}
 
-	// Fetch last builds from Azure DevOps for stage and main branches
-	if azureDevOpsService != nil {
-		builds, err := azureDevOpsService.GetBuilds(100) // Get latest 100 builds
-		if err == nil && len(builds) > 0 {
-			var stageBuild, mainBuild map[string]interface{}
+	// Fetch last builds from ALL Azure DevOps integrations for stage and main branches
+	if len(azureDevOpsServices) > 0 {
+		var stageBuild, mainBuild map[string]interface{}
+		totalMatchCount := 0
+
+		s.log.Infow("Searching for builds across all Azure DevOps integrations",
+			"serviceName", serviceName,
+			"integrationCount", len(azureDevOpsServices),
+		)
+
+		// Iterate through all Azure DevOps services (integrations)
+		for _, azureDevOpsService := range azureDevOpsServices {
+			if azureDevOpsService == nil {
+				continue
+			}
+
+			builds, err := azureDevOpsService.GetBuilds(100) // Get latest 100 builds
+			if err != nil {
+				s.log.Warnw("Failed to fetch builds from Azure DevOps integration",
+					"error", err,
+					"serviceName", serviceName,
+				)
+				continue
+			}
+
+			if len(builds) == 0 {
+				continue
+			}
+
+			s.log.Infow("Fetched builds from integration",
+				"serviceName", serviceName,
+				"buildCount", len(builds),
+			)
+
+			// DEBUG: Log all definition names for cxm-export
+			if serviceName == "cxm-export" && len(builds) > 0 {
+				s.log.Infow("DEBUG: Showing first 20 build definitions for cxm-export from this integration")
+				for i, build := range builds {
+					if i < 20 {
+						s.log.Infow("Build definition",
+							"index", i,
+							"definitionName", build.Definition.Name,
+							"sourceBranch", build.SourceBranch,
+							"integration", build.Integration,
+						)
+					}
+				}
+			}
 
 			// Find the latest builds for stage and main branches
+			matchCount := 0
 			for _, build := range builds {
-				// Check if the build definition name matches the service name
-				if build.Definition.Name == serviceName {
+				definitionName := strings.ToLower(build.Definition.Name)
+				serviceNameLower := strings.ToLower(serviceName)
+
+				// Check if the build definition name matches the service name (case insensitive and partial match)
+				if definitionName == serviceNameLower || strings.Contains(definitionName, serviceNameLower) {
+					matchCount++
+					totalMatchCount++
 					sourceBranch := strings.ToLower(build.SourceBranch)
 
+					s.log.Infow("Found matching build",
+						"serviceName", serviceName,
+						"definitionName", build.Definition.Name,
+						"sourceBranch", build.SourceBranch,
+						"sourceBranchLower", sourceBranch,
+						"buildNumber", build.BuildNumber,
+						"status", build.Result,
+						"integration", build.Integration,
+						"matchCount", totalMatchCount,
+					)
+
 					// Check if this is a stage build
-					if stageBuild == nil && (strings.Contains(sourceBranch, "stage") ||
-						strings.HasSuffix(sourceBranch, "refs/heads/stage")) {
+					stageMatch := strings.Contains(sourceBranch, "stage") || strings.HasSuffix(sourceBranch, "refs/heads/stage")
+					if stageBuild == nil && stageMatch {
 						stageBuild = map[string]interface{}{
 							"status":       build.Result,
 							"buildNumber":  build.BuildNumber,
@@ -383,13 +443,17 @@ func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeS
 							"finishTime":   build.FinishTime,
 							"integration":  build.Integration,
 						}
+						s.log.Infow("✓ Added stage build", "serviceName", serviceName, "buildNumber", build.BuildNumber, "integration", build.Integration)
+					} else if strings.Contains(sourceBranch, "stage") {
+						s.log.Infow("✗ Stage build skipped (already have one)", "serviceName", serviceName, "buildNumber", build.BuildNumber)
 					}
 
 					// Check if this is a main/master build
-					if mainBuild == nil && (strings.Contains(sourceBranch, "main") ||
+					mainMatch := strings.Contains(sourceBranch, "main") ||
 						strings.Contains(sourceBranch, "master") ||
 						strings.HasSuffix(sourceBranch, "refs/heads/main") ||
-						strings.HasSuffix(sourceBranch, "refs/heads/master")) {
+						strings.HasSuffix(sourceBranch, "refs/heads/master")
+					if mainBuild == nil && mainMatch {
 						mainBuild = map[string]interface{}{
 							"status":       build.Result,
 							"buildNumber":  build.BuildNumber,
@@ -397,6 +461,15 @@ func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeS
 							"finishTime":   build.FinishTime,
 							"integration":  build.Integration,
 						}
+						s.log.Infow("✓ Added main build", "serviceName", serviceName, "buildNumber", build.BuildNumber, "integration", build.Integration)
+					} else if strings.Contains(sourceBranch, "main") || strings.Contains(sourceBranch, "master") {
+						s.log.Infow("✗ Main build skipped (already have one)", "serviceName", serviceName, "buildNumber", build.BuildNumber)
+					} else {
+						s.log.Debugw("Build doesn't match stage or main",
+							"serviceName", serviceName,
+							"buildNumber", build.BuildNumber,
+							"sourceBranch", build.SourceBranch,
+						)
 					}
 
 					// Break if we found both
@@ -406,25 +479,51 @@ func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeS
 				}
 			}
 
-			// Add builds to metrics if found
-			if stageBuild != nil {
-				metrics["stageBuild"] = stageBuild
-			}
-			if mainBuild != nil {
-				metrics["mainBuild"] = mainBuild
+			s.log.Infow("Build search completed for integration",
+				"serviceName", serviceName,
+				"matchingBuildsFromIntegration", matchCount,
+			)
+
+			// If we found both builds, no need to check more integrations
+			if stageBuild != nil && mainBuild != nil {
+				break
 			}
 		}
+
+		s.log.Infow("Build search completed across all integrations",
+			"serviceName", serviceName,
+			"totalMatchingBuilds", totalMatchCount,
+			"foundStage", stageBuild != nil,
+			"foundMain", mainBuild != nil,
+		)
+
+		// Add builds to metrics if found
+		if stageBuild != nil {
+			metrics["stageBuild"] = stageBuild
+			s.log.Infow("Returning stage build metrics", "serviceName", serviceName)
+		} else {
+			s.log.Warnw("No stage build found", "serviceName", serviceName)
+		}
+
+		if mainBuild != nil {
+			metrics["mainBuild"] = mainBuild
+			s.log.Infow("Returning main build metrics", "serviceName", serviceName)
+		} else {
+			s.log.Warnw("No main build found", "serviceName", serviceName)
+		}
+	} else {
+		s.log.Warnw("No Azure DevOps services available", "serviceName", serviceName)
 	}
 
 	return metrics
 }
 
 // GetMultipleServiceMetrics returns metrics for multiple services
-func (s *ServiceCatalogService) GetMultipleServiceMetrics(serviceNames []string, sonarQubeService *SonarQubeService, azureDevOpsService *AzureDevOpsService) map[string]interface{} {
+func (s *ServiceCatalogService) GetMultipleServiceMetrics(serviceNames []string, sonarQubeService *SonarQubeService, azureDevOpsServices []*AzureDevOpsService) map[string]interface{} {
 	result := make(map[string]interface{})
 
 	for _, serviceName := range serviceNames {
-		result[serviceName] = s.GetServiceMetrics(serviceName, sonarQubeService, azureDevOpsService)
+		result[serviceName] = s.GetServiceMetrics(serviceName, sonarQubeService, azureDevOpsServices)
 	}
 
 	return result
