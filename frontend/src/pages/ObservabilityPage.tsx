@@ -267,7 +267,7 @@ function ObservabilityPage() {
   const renderPrometheus = () => (
     <div className={styles.prometheus}>
       <div className={styles.subsection}>
-        <h3 className={styles.subsectionTitle}>Targets ({prometheusTargets.length})</h3>
+        <h3 className={styles.subsectionTitle}>Targets</h3>
         <div className={styles.tableContainer}>
           <table className={styles.table}>
             <thead>
@@ -299,7 +299,7 @@ function ObservabilityPage() {
       </div>
 
       <div className={styles.subsection}>
-        <h3 className={styles.subsectionTitle}>Alertas ({prometheusAlerts.length})</h3>
+        <h3 className={styles.subsectionTitle}>Alertas</h3>
         <div className={styles.tableContainer}>
           <table className={styles.table}>
             <thead>
@@ -335,7 +335,7 @@ function ObservabilityPage() {
   const renderGrafana = () => (
     <div className={styles.grafana}>
       <div className={styles.subsection}>
-        <h3 className={styles.subsectionTitle}>Dashboards ({grafanaDashboards.length})</h3>
+        <h3 className={styles.subsectionTitle}>Dashboards</h3>
         <div className={styles.tableContainer}>
           <table className={styles.table}>
             <thead>
@@ -392,7 +392,7 @@ function ObservabilityPage() {
       </div>
 
       <div className={styles.subsection}>
-        <h3 className={styles.subsectionTitle}>Alertas ({grafanaAlerts.length})</h3>
+        <h3 className={styles.subsectionTitle}>Alertas</h3>
         <div className={styles.tableContainer}>
           <table className={styles.table}>
             <thead>
@@ -434,7 +434,7 @@ function ObservabilityPage() {
       </div>
 
       <div className={styles.subsection}>
-        <h3 className={styles.subsectionTitle}>Data Sources ({grafanaDatasources.length})</h3>
+        <h3 className={styles.subsectionTitle}>Data Sources</h3>
         <div className={styles.tableContainer}>
           <table className={styles.table}>
             <thead>
