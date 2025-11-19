@@ -21,6 +21,8 @@ type ServiceManager struct {
 	ServiceTemplateService *ServiceTemplateService
 	ServiceCatalogService  *ServiceCatalogService
 	CacheService           *CacheService
+	AIService              *AIService
+	DiagramService         *DiagramService
 }
 
 func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *ServiceManager {
@@ -80,8 +82,12 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	// Initialize FinOps service
 	finOpsService := NewFinOpsService(integrationService, log)
 
-	// Initialize TechDocs service
-	techDocsService := NewTechDocsService("docs", log)
+	// Initialize AI services
+	aiService := NewAIService(integrationService, log)
+	diagramService := NewDiagramService(aiService, log)
+
+	// Initialize TechDocs service with AI capabilities
+	techDocsService := NewTechDocsService("docs", aiService, diagramService, log)
 
 	// Initialize ServiceTemplate service
 	serviceTemplateRepo := repository.NewServiceTemplateRepository(db)
@@ -131,5 +137,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		ServiceTemplateService: serviceTemplateService,
 		ServiceCatalogService:  serviceCatalogService,
 		CacheService:           cacheService,
+		AIService:              aiService,
+		DiagramService:         diagramService,
 	}
 }

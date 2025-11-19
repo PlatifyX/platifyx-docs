@@ -229,6 +229,17 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			techdocs.DELETE("/document", handlers.TechDocsHandler.DeleteDocument)
 			techdocs.POST("/folder", handlers.TechDocsHandler.CreateFolder)
 			techdocs.GET("/list", handlers.TechDocsHandler.ListDocuments)
+
+			// AI-powered features
+			techdocs.POST("/generate", handlers.TechDocsHandler.GenerateDocumentation)
+			techdocs.POST("/improve", handlers.TechDocsHandler.ImproveDocumentation)
+			techdocs.POST("/chat", handlers.TechDocsHandler.ChatAboutDocumentation)
+			techdocs.POST("/diagram", handlers.TechDocsHandler.GenerateDiagram)
+		}
+
+		ai := v1.Group("/ai")
+		{
+			ai.GET("/providers", handlers.AIHandler.GetProviders)
 		}
 
 		integrations := v1.Group("/integrations")

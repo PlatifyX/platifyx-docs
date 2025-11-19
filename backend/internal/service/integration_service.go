@@ -725,3 +725,61 @@ func (s *IntegrationService) GetAWSSecretsService() (*AWSSecretsService, error) 
 
 	return NewAWSSecretsService(*config, s.log)
 }
+
+// AI Provider methods
+func (s *IntegrationService) GetOpenAIConfig() (*domain.OpenAIIntegrationConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeOpenAI))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.OpenAIIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal OpenAI config", "error", err)
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func (s *IntegrationService) GetClaudeConfig() (*domain.ClaudeIntegrationConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeClaude))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.ClaudeIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal Claude config", "error", err)
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func (s *IntegrationService) GetGeminiConfig() (*domain.GeminiIntegrationConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeGemini))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.GeminiIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal Gemini config", "error", err)
+		return nil, err
+	}
+
+	return &config, nil
+}
