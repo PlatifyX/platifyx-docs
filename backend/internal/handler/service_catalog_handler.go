@@ -104,13 +104,22 @@ func (h *ServiceCatalogHandler) GetServicesMetrics(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
+		h.log.Errorw("Failed to bind request", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request body",
 		})
 		return
 	}
 
+	h.log.Infow("Fetching metrics for services",
+		"serviceNames", request.ServiceNames,
+		"count", len(request.ServiceNames),
+		"hasSonarQube", h.sonarQubeService != nil,
+		"hasAzureDevOps", h.azureDevOpsService != nil,
+	)
+
 	if h.serviceCatalogService == nil {
+		h.log.Error("Service catalog not configured")
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": "Service catalog not configured",
 		})
@@ -118,6 +127,8 @@ func (h *ServiceCatalogHandler) GetServicesMetrics(c *gin.Context) {
 	}
 
 	metrics := h.serviceCatalogService.GetMultipleServiceMetrics(request.ServiceNames, h.sonarQubeService, h.azureDevOpsService)
+
+	h.log.Infow("Returning metrics", "metricsCount", len(metrics))
 
 	c.JSON(http.StatusOK, gin.H{
 		"metrics": metrics,
