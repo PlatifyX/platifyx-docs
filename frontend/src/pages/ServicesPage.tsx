@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, BarChart3, GitMerge, Shield } from 'lucide-react'
+import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, BarChart3, GitMerge, Shield, Bug, TrendingUp, AlertTriangle } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
 import styles from './ServicesPage.module.css'
 
@@ -75,6 +75,13 @@ function ServicesPage() {
   const [loadingMetrics, setLoadingMetrics] = useState(false)
   const [filter, setFilter] = useState('')
   const [squadFilter, setSquadFilter] = useState('all')
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K`
+    }
+    return num.toString()
+  }
 
   const fetchServices = async () => {
     setLoading(true)
@@ -299,22 +306,27 @@ function ServicesPage() {
                     <h4 className={styles.metricsTitle}>SonarQube</h4>
                     <div className={styles.metricsGrid}>
                       <div className={styles.metric}>
+                        <Bug size={14} style={{ color: 'var(--color-error)' }} />
                         <span className={styles.metricLabel}>Bugs</span>
-                        <span className={styles.metricValue}>{serviceMetrics[service.name].sonarqube.bugs}</span>
+                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name].sonarqube.bugs)}</span>
                       </div>
                       <div className={styles.metric}>
+                        <Shield size={14} style={{ color: 'var(--color-error)' }} />
                         <span className={styles.metricLabel}>Vulnerabilidades</span>
-                        <span className={styles.metricValue}>{serviceMetrics[service.name].sonarqube.vulnerabilities}</span>
+                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name].sonarqube.vulnerabilities)}</span>
                       </div>
                       <div className={styles.metric}>
+                        <Code size={14} style={{ color: 'var(--color-warning)' }} />
                         <span className={styles.metricLabel}>Code Smells</span>
-                        <span className={styles.metricValue}>{serviceMetrics[service.name].sonarqube.codeSmells}</span>
+                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name].sonarqube.codeSmells)}</span>
                       </div>
                       <div className={styles.metric}>
+                        <AlertTriangle size={14} style={{ color: 'var(--color-warning)' }} />
                         <span className={styles.metricLabel}>Security Hotspots</span>
-                        <span className={styles.metricValue}>{serviceMetrics[service.name].sonarqube.securityHotspots}</span>
+                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name].sonarqube.securityHotspots)}</span>
                       </div>
                       <div className={styles.metric}>
+                        <TrendingUp size={14} style={{ color: 'var(--color-success)' }} />
                         <span className={styles.metricLabel}>Cobertura</span>
                         <span className={styles.metricValue}>{serviceMetrics[service.name].sonarqube.coverage.toFixed(1)}%</span>
                       </div>
