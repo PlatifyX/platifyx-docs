@@ -186,6 +186,13 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			observability.GET("/folders/:uid", handlers.GrafanaHandler.GetFolderByUID)
 
 			observability.GET("/annotations", handlers.GrafanaHandler.GetAnnotations)
+
+			// Loki logs endpoints
+			observability.GET("/logs/labels", handlers.LokiHandler.GetLabels)
+			observability.GET("/logs/labels/:label/values", handlers.LokiHandler.GetLabelValues)
+			observability.GET("/logs/apps", handlers.LokiHandler.GetAppLabels)
+			observability.GET("/logs/query", handlers.LokiHandler.QueryLogs)
+			observability.GET("/logs/apps/:app", handlers.LokiHandler.GetLogsForApp)
 		}
 
 		// Grafana endpoints (alias for some observability endpoints)

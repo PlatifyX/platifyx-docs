@@ -617,6 +617,42 @@ func (s *IntegrationService) GetPrometheusService() (*PrometheusService, error) 
 	return NewPrometheusService(*config, s.log), nil
 }
 
+// Loki methods
+func (s *IntegrationService) GetLokiConfig() (*domain.LokiConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeLoki))
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, nil
+	}
+
+	var config domain.LokiIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse Loki config: %w", err)
+	}
+
+	return &domain.LokiConfig{
+		URL:      config.URL,
+		Username: config.Username,
+		Password: config.Password,
+	}, nil
+}
+
+func (s *IntegrationService) GetLokiService() (*LokiService, error) {
+	config, err := s.GetLokiConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("Loki integration not configured")
+	}
+
+	return NewLokiService(*config, s.log), nil
+}
+
 // Vault methods
 func (s *IntegrationService) GetVaultConfig() (*domain.VaultConfig, error) {
 	integration, err := s.repo.GetByType(string(domain.IntegrationTypeVault))
