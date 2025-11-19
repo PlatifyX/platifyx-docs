@@ -267,45 +267,12 @@ function ObservabilityPage() {
   const renderPrometheus = () => (
     <div className={styles.prometheus}>
       <div className={styles.subsection}>
-        <h3 className={styles.subsectionTitle}>Targets</h3>
-        <div className={styles.tableContainer}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Pool</th>
-                <th>URL</th>
-                <th>Status</th>
-                <th>Última Coleta</th>
-                <th>Duração</th>
-              </tr>
-            </thead>
-            <tbody>
-              {prometheusTargets.map((target, idx) => (
-                <tr key={idx}>
-                  <td className={styles.poolName}>{target.scrapePool}</td>
-                  <td className={styles.url}>{target.scrapeUrl}</td>
-                  <td>
-                    <span className={`${styles.health} ${getHealthClass(target.health)}`}>
-                      {target.health}
-                    </span>
-                  </td>
-                  <td>{new Date(target.lastScrape).toLocaleString('pt-BR')}</td>
-                  <td>{target.lastScrapeDuration.toFixed(2)}s</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className={styles.subsection}>
-        <h3 className={styles.subsectionTitle}>Alertas</h3>
+        <h3 className={styles.subsectionTitle}>Alertas Ativas</h3>
         <div className={styles.tableContainer}>
           <table className={styles.table}>
             <thead>
               <tr>
                 <th>Nome da Alerta</th>
-                <th>Valor</th>
                 <th>Summary</th>
                 <th>Description</th>
               </tr>
@@ -314,7 +281,6 @@ function ObservabilityPage() {
               {prometheusAlerts.map((alert, idx) => (
                 <tr key={idx}>
                   <td className={styles.alertName}>{alert.labels.alertname || '-'}</td>
-                  <td className={styles.value}>{alert.value}</td>
                   <td className={styles.summary}>{alert.annotations.summary || '-'}</td>
                   <td className={styles.description}>{alert.annotations.description || '-'}</td>
                 </tr>
