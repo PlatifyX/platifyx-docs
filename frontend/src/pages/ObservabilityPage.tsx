@@ -156,6 +156,33 @@ function ObservabilityPage() {
             </div>
           </div>
         </div>
+
+        {/* Tabela de Alertas */}
+        <div className={styles.subsection}>
+          <h3 className={styles.subsectionTitle}>Alertas Ativas</h3>
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Nome da Alerta</th>
+                  <th>Squad</th>
+                  <th>Resumo</th>
+                  <th>Descrição</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prometheusAlerts.map((alert, idx) => (
+                  <tr key={idx}>
+                    <td className={styles.alertName}>{alert.labels.alertname || '-'}</td>
+                    <td className={styles.squad}>{alert.labels.squad || '-'}</td>
+                    <td className={styles.summary}>{alert.annotations.summary || '-'}</td>
+                    <td className={styles.description}>{alert.annotations.description || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div className={styles.section}>
@@ -171,7 +198,7 @@ function ObservabilityPage() {
                 </svg>
               </div>
               <div className={styles.dashboardInfo}>
-                <h3 className={styles.dashboardName}>{dashboardTitle}</h3>
+                <h3 className={styles.dashboardName}>Domínio</h3>
                 <p className={styles.dashboardDescription}>Clique para abrir o dashboard principal no Grafana</p>
               </div>
               <a
@@ -194,33 +221,6 @@ function ObservabilityPage() {
             <p>Nenhum dashboard configurado</p>
           </div>
         )}
-      </div>
-
-      {/* Tabela de Alertas do Prometheus */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Alertas Ativas do Prometheus</h2>
-        <div className={styles.tableContainer}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Nome da Alerta</th>
-                <th>Squad</th>
-                <th>Resumo</th>
-                <th>Descrição</th>
-              </tr>
-            </thead>
-            <tbody>
-              {prometheusAlerts.map((alert, idx) => (
-                <tr key={idx}>
-                  <td className={styles.alertName}>{alert.labels.alertname || '-'}</td>
-                  <td className={styles.squad}>{alert.labels.squad || '-'}</td>
-                  <td className={styles.summary}>{alert.annotations.summary || '-'}</td>
-                  <td className={styles.description}>{alert.annotations.description || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
   )
