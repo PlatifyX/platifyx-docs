@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Activity, BarChart3, AlertTriangle, Database, RefreshCw, AlertCircle, ExternalLink, Target, Layers } from 'lucide-react'
+import { Activity, BarChart3, AlertTriangle, Database, RefreshCw, AlertCircle, ExternalLink, Target, Layers, FileText } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
 import styles from './ObservabilityPage.module.css'
 
@@ -73,6 +73,14 @@ interface OverviewStats {
   }
 }
 
+// Loki Interfaces
+interface LokiApp {
+  name: string
+  squad?: string
+  application?: string
+  environment?: string
+}
+
 function ObservabilityPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -82,6 +90,37 @@ function ObservabilityPage() {
   const [grafanaUrl, setGrafanaUrl] = useState<string>('')
   const [dashboardUid, setDashboardUid] = useState<string>('')
   const [dashboardTitle, setDashboardTitle] = useState<string>('Dashboard Principal')
+  const [lokiApps, setLokiApps] = useState<LokiApp[]>([])
+  const [loadingLokiApps, setLoadingLokiApps] = useState(false)
+
+  const parseAppName = (appName: string): LokiApp => {
+    const parts = appName.split('-')
+    if (parts.length >= 3) {
+      const environment = parts[parts.length - 1]
+      if (environment === 'stage' || environment === 'prod') {
+        const squad = parts[0]
+        const application = parts.slice(1, -1).join('-')
+        return { name: appName, squad, application, environment }
+      }
+    }
+    return { name: appName }
+  }
+
+  const fetchLokiApps = async () => {
+    setLoadingLokiApps(true)
+    try {
+      const response = await fetch(buildApiUrl('observability/logs/apps'))
+      if (response.ok) {
+        const data = await response.json()
+        const apps = (data.apps || []).map(parseAppName)
+        setLokiApps(apps)
+      }
+    } catch (err) {
+      console.error('Failed to fetch Loki apps:', err)
+    } finally {
+      setLoadingLokiApps(false)
+    }
+  }
 
   const fetchData = async () => {
     setLoading(true)
@@ -95,6 +134,9 @@ function ObservabilityPage() {
         fetch(buildApiUrl('prometheus/alerts')),
         fetch(buildApiUrl('grafana/config'))
       ])
+
+      // Fetch Loki apps in parallel
+      fetchLokiApps()
 
       const stats: OverviewStats = {}
 
@@ -219,6 +261,52 @@ function ObservabilityPage() {
         ) : (
           <div className={styles.emptyState}>
             <p>Nenhum dashboard configurado</p>
+          </div>
+        )}
+      </div>
+
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Loki - Logs</h2>
+        {loadingLokiApps ? (
+          <div className={styles.loading}>Carregando aplicações...</div>
+        ) : lokiApps.length > 0 ? (
+          <div className={styles.subsection}>
+            <h3 className={styles.subsectionTitle}>Aplicações com Logs ({lokiApps.length})</h3>
+            <div className={styles.tableContainer}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Aplicação</th>
+                    <th>Squad</th>
+                    <th>Serviço</th>
+                    <th>Ambiente</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lokiApps.map((app, idx) => (
+                    <tr key={idx}>
+                      <td className={styles.appName}>
+                        <FileText size={16} style={{ marginRight: '8px' }} />
+                        {app.name}
+                      </td>
+                      <td>{app.squad || '-'}</td>
+                      <td>{app.application || '-'}</td>
+                      <td>
+                        {app.environment ? (
+                          <span className={`${styles.envBadge} ${styles[`env${app.environment}`]}`}>
+                            {app.environment}
+                          </span>
+                        ) : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.emptyState}>
+            <p>Nenhuma aplicação com logs encontrada</p>
           </div>
         )}
       </div>
