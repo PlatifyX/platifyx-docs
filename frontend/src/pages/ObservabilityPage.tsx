@@ -81,6 +81,7 @@ function ObservabilityPage() {
   const [prometheusAlerts, setPrometheusAlerts] = useState<PrometheusAlert[]>([])
   const [grafanaUrl, setGrafanaUrl] = useState<string>('')
   const [dashboardUid, setDashboardUid] = useState<string>('')
+  const [dashboardTitle, setDashboardTitle] = useState<string>('Dashboard Principal')
 
   const fetchData = async () => {
     setLoading(true)
@@ -127,6 +128,7 @@ function ObservabilityPage() {
           const mainDashboard = dashboards.find((d: GrafanaDashboard) => d.isStarred) || dashboards[0]
           if (mainDashboard) {
             setDashboardUid(mainDashboard.uid)
+            setDashboardTitle(mainDashboard.title || 'Dashboard Principal')
           }
         }
       }
@@ -158,13 +160,38 @@ function ObservabilityPage() {
 
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Grafana</h2>
-        {grafanaUrl && dashboardUid && (
-          <div className={styles.dashboardContainer}>
-            <iframe
-              src={`${grafanaUrl}/d/${dashboardUid}?orgId=1&kiosk&theme=light`}
-              className={styles.dashboardIframe}
-              title="Grafana Dashboard"
-            />
+        {grafanaUrl && dashboardUid ? (
+          <div className={styles.dashboardLinkContainer}>
+            <div className={styles.dashboardCard}>
+              <div className={styles.dashboardIcon}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <line x1="9" y1="9" x2="15" y2="9" />
+                  <line x1="9" y1="15" x2="15" y2="15" />
+                </svg>
+              </div>
+              <div className={styles.dashboardInfo}>
+                <h3 className={styles.dashboardName}>{dashboardTitle}</h3>
+                <p className={styles.dashboardDescription}>Clique para abrir o dashboard principal no Grafana</p>
+              </div>
+              <a
+                href={`${grafanaUrl}/d/${dashboardUid}?orgId=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.dashboardButton}
+              >
+                Abrir Dashboard
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.emptyState}>
+            <p>Nenhum dashboard configurado</p>
           </div>
         )}
       </div>
