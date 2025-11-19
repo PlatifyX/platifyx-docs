@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, BarChart3 } from 'lucide-react'
+import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, BarChart3, GitMerge, Shield } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
 import styles from './ServicesPage.module.css'
 
@@ -245,15 +245,22 @@ function ServicesPage() {
                       <span>Repositório</span>
                     </a>
                   )}
-                  {service.sonarqubeProject && (
-                    <a
-                      href={`#`}
-                      className={styles.link}
-                    >
-                      <BarChart3 size={16} />
-                      <span>SonarQube</span>
-                    </a>
-                  )}
+                  <a
+                    href={`/ci?repo=${service.name}`}
+                    className={styles.link}
+                    title="Ver pipelines no CI/CD"
+                  >
+                    <GitMerge size={16} />
+                    <span>Pipeline</span>
+                  </a>
+                  <a
+                    href={`/quality?project=${service.name}`}
+                    className={styles.link}
+                    title="Ver qualidade no SonarQube"
+                  >
+                    <Shield size={16} />
+                    <span>Qualidade</span>
+                  </a>
                 </div>
               </div>
             ))}
