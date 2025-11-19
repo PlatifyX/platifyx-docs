@@ -153,6 +153,19 @@
   }
 }
 
+.section {
+  margin-bottom: 48px;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -205,13 +218,32 @@
   color: var(--color-text);
 }
 
+/* Prometheus & Grafana Sections */
+.prometheus,
+.grafana {
+  animation: fadeIn 0.3s ease;
+}
+
+.subsection {
+  margin-bottom: 40px;
+}
+
+.subsectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Table Styles */
 .tableContainer {
   overflow-x: auto;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  animation: fadeIn 0.3s ease;
 }
 
 .table {
@@ -249,38 +281,55 @@
   background-color: var(--color-background);
 }
 
-/* Dashboard Specific */
-.dashboardTitle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* Prometheus Specific */
+.poolName {
   font-weight: 500;
+  color: var(--color-text);
 }
 
-.star {
-  font-size: 14px;
+.url {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.tag {
+.health {
   display: inline-block;
-  padding: 3px 10px;
-  background-color: rgba(99, 102, 241, 0.1);
-  color: var(--color-primary);
+  padding: 4px 12px;
   border-radius: 12px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
 }
 
-.noTags {
+.healthUp {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: var(--color-success);
+}
+
+.healthDown {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+}
+
+.healthUnknown {
+  background-color: rgba(156, 163, 175, 0.1);
   color: var(--color-text-secondary);
-  font-style: italic;
+}
+
+.alertName {
+  font-weight: 500;
+}
+
+.value {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--color-primary);
+}
+
+.description {
+  font-size: 13px;
+  color: var(--color-text-secondary);
 }
 
 /* Alert States */
@@ -318,7 +367,40 @@
   color: var(--color-text-secondary);
 }
 
-/* Badges */
+/* Grafana Specific */
+.dashboardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.star {
+  font-size: 14px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 3px 10px;
+  background-color: rgba(99, 102, 241, 0.1);
+  color: var(--color-primary);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.noTags {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
 .badge {
   display: inline-block;
   padding: 4px 12px;
@@ -345,7 +427,6 @@
   font-style: italic;
 }
 
-/* Data Source Specific */
 .dsName {
   font-weight: 500;
 }
