@@ -24,6 +24,23 @@ interface Service {
   updatedAt: string
 }
 
+interface ServiceMetrics {
+  sonarqube?: {
+    bugs: number
+    vulnerabilities: number
+    codeSmells: number
+    securityHotspots: number
+    coverage: number
+  }
+  lastBuild?: {
+    status: string
+    buildNumber: string
+    sourceBranch: string
+    finishTime: string
+    integration: string
+  }
+}
+
 interface ServiceStatus {
   serviceName: string
   stageStatus?: {
@@ -47,6 +64,8 @@ function ServicesPage() {
   const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [services, setServices] = useState<Service[]>([])
+  const [serviceMetrics, setServiceMetrics] = useState<Record<string, ServiceMetrics>>({})
+  const [loadingMetrics, setLoadingMetrics] = useState(false)
   const [filter, setFilter] = useState('')
   const [squadFilter, setSquadFilter] = useState('all')
 
@@ -61,11 +80,43 @@ function ServicesPage() {
       }
 
       const data = await response.json()
-      setServices(data.services || [])
+      const fetchedServices = data.services || []
+      setServices(fetchedServices)
+
+      // Fetch metrics for all services
+      if (fetchedServices.length > 0) {
+        await fetchServicesMetrics(fetchedServices.map((s: Service) => s.name))
+      }
     } catch (err: any) {
       setError(err.message || 'Erro ao buscar serviços')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchServicesMetrics = async (serviceNames: string[]) => {
+    setLoadingMetrics(true)
+
+    try {
+      const response = await fetch(buildApiUrl('service-catalog/metrics'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ serviceNames }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch metrics')
+      }
+
+      const data = await response.json()
+      setServiceMetrics(data.metrics || {})
+    } catch (err: any) {
+      console.error('Failed to fetch service metrics:', err)
+      // Don't show error to user, just log it
+    } finally {
+      setLoadingMetrics(false)
     }
   }
 
@@ -232,6 +283,64 @@ function ServicesPage() {
                     </div>
                   )}
                 </div>
+
+                {/* SonarQube Metrics */}
+                {serviceMetrics[service.name]?.sonarqube && (
+                  <div className={styles.metricsSection}>
+                    <h4 className={styles.metricsTitle}>SonarQube</h4>
+                    <div className={styles.metricsGrid}>
+                      <div className={styles.metric}>
+                        <span className={styles.metricLabel}>Bugs</span>
+                        <span className={styles.metricValue}>{serviceMetrics[service.name].sonarqube.bugs}</span>
+                      </div>
+                      <div className={styles.metric}>
+                        <span className={styles.metricLabel}>Vulnerabilidades</span>
+                        <span className={styles.metricValue}>{serviceMetrics[service.name].sonarqube.vulnerabilities}</span>
+                      </div>
+                      <div className={styles.metric}>
+                        <span className={styles.metricLabel}>Code Smells</span>
+                        <span className={styles.metricValue}>{serviceMetrics[service.name].sonarqube.codeSmells}</span>
+                      </div>
+                      <div className={styles.metric}>
+                        <span className={styles.metricLabel}>Security Hotspots</span>
+                        <span className={styles.metricValue}>{serviceMetrics[service.name].sonarqube.securityHotspots}</span>
+                      </div>
+                      <div className={styles.metric}>
+                        <span className={styles.metricLabel}>Cobertura</span>
+                        <span className={styles.metricValue}>{serviceMetrics[service.name].sonarqube.coverage.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Last Build */}
+                {serviceMetrics[service.name]?.lastBuild && (
+                  <div className={styles.buildSection}>
+                    <h4 className={styles.buildTitle}>Pipeline ({serviceMetrics[service.name].lastBuild.integration})</h4>
+                    <div className={styles.buildInfo}>
+                      <div className={styles.buildRow}>
+                        <span className={styles.buildLabel}>Status:</span>
+                        <span className={`${styles.buildStatus} ${styles[`status${serviceMetrics[service.name].lastBuild.status}`]}`}>
+                          {serviceMetrics[service.name].lastBuild.status}
+                        </span>
+                      </div>
+                      <div className={styles.buildRow}>
+                        <span className={styles.buildLabel}>Build:</span>
+                        <span className={styles.buildValue}>{serviceMetrics[service.name].lastBuild.buildNumber}</span>
+                      </div>
+                      <div className={styles.buildRow}>
+                        <span className={styles.buildLabel}>Branch:</span>
+                        <span className={styles.buildValue}>{serviceMetrics[service.name].lastBuild.sourceBranch}</span>
+                      </div>
+                      <div className={styles.buildRow}>
+                        <span className={styles.buildLabel}>Finished:</span>
+                        <span className={styles.buildValue}>
+                          {new Date(serviceMetrics[service.name].lastBuild.finishTime).toLocaleString('pt-BR')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className={styles.cardFooter}>
                   {service.repositoryUrl && (

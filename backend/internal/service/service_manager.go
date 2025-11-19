@@ -12,6 +12,7 @@ type ServiceManager struct {
 	MetricsService         *MetricsService
 	KubernetesService      *KubernetesService
 	AzureDevOpsService     *AzureDevOpsService
+	SonarQubeService       *SonarQubeService
 	IntegrationService     *IntegrationService
 	FinOpsService          *FinOpsService
 	TechDocsService        *TechDocsService
@@ -60,6 +61,13 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		)
 	}
 
+	// Get SonarQube config from database
+	var sonarQubeService *SonarQubeService
+	sonarQubeConfig, err := integrationService.GetSonarQubeConfig()
+	if err == nil && sonarQubeConfig != nil {
+		sonarQubeService = NewSonarQubeService(*sonarQubeConfig, log)
+	}
+
 	// Initialize ServiceCatalog service
 	var serviceCatalogService *ServiceCatalogService
 	if kubernetesService != nil {
@@ -80,6 +88,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		MetricsService:         NewMetricsService(),
 		KubernetesService:      kubernetesService,
 		AzureDevOpsService:     azureDevOpsService,
+		SonarQubeService:       sonarQubeService,
 		IntegrationService:     integrationService,
 		FinOpsService:          finOpsService,
 		TechDocsService:        techDocsService,

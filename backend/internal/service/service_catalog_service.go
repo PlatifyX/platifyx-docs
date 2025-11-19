@@ -327,6 +327,60 @@ func (s *ServiceCatalogService) getDeploymentStatus(clientset *kubernetes.Client
 	return status, nil
 }
 
+// GetServiceMetrics returns aggregated metrics from SonarQube and last build from Azure DevOps
+func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeService *SonarQubeService, azureDevOpsService *AzureDevOpsService) map[string]interface{} {
+	metrics := make(map[string]interface{})
+	metrics["serviceName"] = serviceName
+
+	// Fetch SonarQube metrics
+	if sonarQubeService != nil {
+		sonarMetrics, err := sonarQubeService.GetProjectMeasures(serviceName)
+		if err == nil && sonarMetrics != nil {
+			metrics["sonarqube"] = map[string]interface{}{
+				"bugs":             sonarMetrics.Bugs,
+				"vulnerabilities":  sonarMetrics.Vulnerabilities,
+				"codeSmells":       sonarMetrics.CodeSmells,
+				"securityHotspots": sonarMetrics.SecurityHotspots,
+				"coverage":         sonarMetrics.Coverage,
+			}
+		}
+	}
+
+	// Fetch last build from Azure DevOps
+	if azureDevOpsService != nil {
+		builds, err := azureDevOpsService.GetBuilds(100) // Get latest 100 builds
+		if err == nil && len(builds) > 0 {
+			// Find the first build that matches this service name
+			for _, build := range builds {
+				// Check if the build definition name matches the service name
+				if build.Definition.Name == serviceName {
+					metrics["lastBuild"] = map[string]interface{}{
+						"status":      build.Result,
+						"buildNumber": build.BuildNumber,
+						"sourceBranch": build.SourceBranch,
+						"finishTime":  build.FinishTime,
+						"integration": build.Integration,
+					}
+					break
+				}
+			}
+		}
+	}
+
+	return metrics
+}
+
+// GetMultipleServiceMetrics returns metrics for multiple services
+func (s *ServiceCatalogService) GetMultipleServiceMetrics(serviceNames []string, sonarQubeService *SonarQubeService, azureDevOpsService *AzureDevOpsService) map[string]interface{} {
+	result := make(map[string]interface{})
+
+	for _, serviceName := range serviceNames {
+		result[serviceName] = s.GetServiceMetrics(serviceName, sonarQubeService, azureDevOpsService)
+	}
+
+	return result
+}
+
 // Helper function to parse yes/no to bool
 func parseBool(s string) bool {
 	return strings.ToLower(s) == "yes" || strings.ToLower(s) == "true"

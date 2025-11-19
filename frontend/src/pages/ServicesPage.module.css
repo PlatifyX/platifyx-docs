@@ -341,3 +341,118 @@
   width: 14px;
   height: 14px;
 }
+
+/* Metrics Section */
+.metricsSection {
+  margin-bottom: 16px;
+  padding: 16px;
+  background-color: var(--color-background);
+  border-radius: 8px;
+}
+
+.metricsTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 12px;
+  margin-top: 0;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metricLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metricValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* Build Section */
+.buildSection {
+  margin-bottom: 16px;
+  padding: 16px;
+  background-color: var(--color-background);
+  border-radius: 8px;
+}
+
+.buildTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 12px;
+  margin-top: 0;
+}
+
+.buildInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.buildRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.buildLabel {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.buildValue {
+  color: var(--color-text);
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.buildStatus {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.statusSucceeded,
+.statussucceeded {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: var(--color-success);
+}
+
+.statusFailed,
+.statusfailed {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+}
+
+.statusPartiallySucceeded,
+.statuspartiallysucceeded {
+  background-color: rgba(255, 187, 40, 0.1);
+  color: #FFBB28;
+}
+
+.statusCanceled,
+.statuscanceled {
+  background-color: rgba(156, 163, 175, 0.1);
+  color: var(--color-text-secondary);
+}

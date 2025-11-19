@@ -104,6 +104,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			serviceCatalog.POST("/sync", handlers.ServiceCatalogHandler.SyncServices)
 			serviceCatalog.GET("", handlers.ServiceCatalogHandler.ListServices)
 			serviceCatalog.GET("/:name/status", handlers.ServiceCatalogHandler.GetServiceStatus)
+			serviceCatalog.POST("/metrics", handlers.ServiceCatalogHandler.GetServicesMetrics)
 		}
 
 		metrics := v1.Group("/metrics")

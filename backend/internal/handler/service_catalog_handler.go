@@ -10,12 +10,16 @@ import (
 
 type ServiceCatalogHandler struct {
 	serviceCatalogService *service.ServiceCatalogService
+	sonarQubeService      *service.SonarQubeService
+	azureDevOpsService    *service.AzureDevOpsService
 	log                   *logger.Logger
 }
 
-func NewServiceCatalogHandler(serviceCatalogSvc *service.ServiceCatalogService, log *logger.Logger) *ServiceCatalogHandler {
+func NewServiceCatalogHandler(serviceCatalogSvc *service.ServiceCatalogService, sonarQubeSvc *service.SonarQubeService, azureDevOpsSvc *service.AzureDevOpsService, log *logger.Logger) *ServiceCatalogHandler {
 	return &ServiceCatalogHandler{
 		serviceCatalogService: serviceCatalogSvc,
+		sonarQubeService:      sonarQubeSvc,
+		azureDevOpsService:    azureDevOpsSvc,
 		log:                   log,
 	}
 }
@@ -91,4 +95,31 @@ func (h *ServiceCatalogHandler) GetServiceStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, status)
+}
+
+// GetServicesMetrics returns aggregated metrics (SonarQube + last build) for multiple services
+func (h *ServiceCatalogHandler) GetServicesMetrics(c *gin.Context) {
+	var request struct {
+		ServiceNames []string `json:"serviceNames"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	if h.serviceCatalogService == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Service catalog not configured",
+		})
+		return
+	}
+
+	metrics := h.serviceCatalogService.GetMultipleServiceMetrics(request.ServiceNames, h.sonarQubeService, h.azureDevOpsService)
+
+	c.JSON(http.StatusOK, gin.H{
+		"metrics": metrics,
+	})
 }
