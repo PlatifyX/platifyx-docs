@@ -342,6 +342,22 @@
   height: 14px;
 }
 
+/* Metrics Loading */
+.metricsLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+  background-color: rgba(99, 102, 241, 0.05);
+  border: 1px dashed var(--color-primary);
+  border-radius: 8px;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
 /* Metrics Section */
 .metricsSection {
   margin-bottom: 16px;

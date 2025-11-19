@@ -50,7 +50,7 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		VaultHandler:           NewVaultHandler(services.IntegrationService, log),
 		AWSSecretsHandler:      NewAWSSecretsHandler(services.IntegrationService, log),
 		ServiceTemplateHandler: NewServiceTemplateHandler(services.ServiceTemplateService, log),
-		ServiceCatalogHandler:  NewServiceCatalogHandler(services.ServiceCatalogService, services.SonarQubeService, services.AzureDevOpsService, log),
+		ServiceCatalogHandler:  NewServiceCatalogHandler(services.ServiceCatalogService, services.SonarQubeService, services.AzureDevOpsService, services.IntegrationService, log),
 		AIHandler:              NewAIHandler(services.AIService, log),
 	}
 }
