@@ -86,6 +86,12 @@ const integrationTypes = [
     logo: '/logos/prometheus.png',
   },
   {
+    id: 'loki',
+    name: 'Grafana Loki',
+    description: 'Agregação e visualização de logs',
+    logo: '/logos/loki.png',
+  },
+  {
     id: 'vault',
     name: 'HashiCorp Vault',
     description: 'Gerenciamento seguro de secrets e credenciais',
