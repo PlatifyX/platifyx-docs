@@ -121,13 +121,13 @@ function ObservabilityPage() {
         ])
 
         if (targetsRes.ok) {
-          const data = await targetsRes.json()
-          setPrometheusTargets(data.activeTargets || [])
+          const result = await targetsRes.json()
+          setPrometheusTargets(result.data?.activeTargets || [])
         }
 
         if (alertsRes.ok) {
-          const data = await alertsRes.json()
-          setPrometheusAlerts(data.alerts || [])
+          const result = await alertsRes.json()
+          setPrometheusAlerts(result.data?.alerts || [])
         }
       }
 
