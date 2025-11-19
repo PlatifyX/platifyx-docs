@@ -105,6 +105,14 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			services.POST("", handlers.ServiceHandler.Create)
 		}
 
+		// Service Catalog (discovered from Kubernetes)
+		serviceCatalog := v1.Group("/service-catalog")
+		{
+			serviceCatalog.POST("/sync", handlers.ServiceCatalogHandler.SyncServices)
+			serviceCatalog.GET("", handlers.ServiceCatalogHandler.ListServices)
+			serviceCatalog.GET("/:name/status", handlers.ServiceCatalogHandler.GetServiceStatus)
+		}
+
 		metrics := v1.Group("/metrics")
 		{
 			metrics.GET("/dashboard", handlers.MetricsHandler.GetDashboard)

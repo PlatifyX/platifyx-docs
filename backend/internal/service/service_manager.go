@@ -17,11 +17,13 @@ type ServiceManager struct {
 	FinOpsService          *FinOpsService
 	TechDocsService        *TechDocsService
 	ServiceTemplateService *ServiceTemplateService
+	ServiceCatalogService  *ServiceCatalogService
 }
 
 func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *ServiceManager {
 	// Initialize repository layer
 	integrationRepo := repository.NewIntegrationRepository(db)
+	serviceRepo := repository.NewServiceRepository(db)
 
 	// Initialize integration service
 	integrationService := NewIntegrationService(integrationRepo, log)
@@ -44,6 +46,12 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		}
 	}
 
+	// Initialize ServiceCatalog service
+	var serviceCatalogService *ServiceCatalogService
+	if kubernetesService != nil && azureDevOpsService != nil {
+		serviceCatalogService = NewServiceCatalogService(serviceRepo, kubernetesService, azureDevOpsService, log)
+	}
+
 	// Initialize FinOps service
 	finOpsService := NewFinOpsService(integrationService, log)
 
@@ -63,5 +71,6 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		FinOpsService:          finOpsService,
 		TechDocsService:        techDocsService,
 		ServiceTemplateService: serviceTemplateService,
+		ServiceCatalogService:  serviceCatalogService,
 	}
 }

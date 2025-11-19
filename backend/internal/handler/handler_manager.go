@@ -25,6 +25,7 @@ type HandlerManager struct {
 	VaultHandler           *VaultHandler
 	AWSSecretsHandler      *AWSSecretsHandler
 	ServiceTemplateHandler *ServiceTemplateHandler
+	ServiceCatalogHandler  *ServiceCatalogHandler
 }
 
 func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *HandlerManager {
@@ -48,5 +49,6 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		VaultHandler:           NewVaultHandler(services.IntegrationService, log),
 		AWSSecretsHandler:      NewAWSSecretsHandler(services.IntegrationService, log),
 		ServiceTemplateHandler: NewServiceTemplateHandler(services.ServiceTemplateService, log),
+		ServiceCatalogHandler:  NewServiceCatalogHandler(services.ServiceCatalogService, log),
 	}
 }
