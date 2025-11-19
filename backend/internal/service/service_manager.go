@@ -110,7 +110,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 			DB:       db,
 		}
 
-		cacheService, err := NewCacheService(redisConfig, log)
+		cacheService, err = NewCacheService(redisConfig, log)
 		if err != nil {
 			log.Warnw("Failed to initialize Redis cache", "error", err)
 		} else {
