@@ -59,18 +59,39 @@ func (s *ServiceCatalogService) SyncFromKubernetes() error {
 
 	for _, deployment := range deployments.Items {
 		labels := deployment.Labels
-		
+		namespace := deployment.Namespace
+
 		squad := labels["squad"]
 		application := labels["application"]
 		environment := labels["environment"]
-		namespace := deployment.Namespace
 
+		// If labels are not present, try to extract from deployment name
+		// Pattern: {squad}-{application}-{environment}
 		if squad == "" || application == "" {
-			s.log.Warnw("Deployment missing required labels", 
-				"deployment", deployment.Name,
-				"namespace", namespace,
-			)
-			continue
+			parts := strings.Split(deployment.Name, "-")
+			if len(parts) >= 3 {
+				// Last part is environment, everything else is squad-application
+				environment = parts[len(parts)-1]
+
+				// Check if environment is valid (stage or prod)
+				if environment == "stage" || environment == "prod" {
+					squad = parts[0]
+					// Application is everything between squad and environment
+					application = strings.Join(parts[1:len(parts)-1], "-")
+				} else {
+					s.log.Warnw("Unable to parse deployment name",
+						"deployment", deployment.Name,
+						"namespace", namespace,
+					)
+					continue
+				}
+			} else {
+				s.log.Warnw("Deployment missing required labels and name doesn't match pattern",
+					"deployment", deployment.Name,
+					"namespace", namespace,
+				)
+				continue
+			}
 		}
 
 		serviceName := fmt.Sprintf("%s-%s", squad, application)
