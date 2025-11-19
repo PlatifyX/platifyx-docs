@@ -125,16 +125,9 @@ function ObservabilityPage() {
         <h2 className={styles.sectionTitle}>Prometheus</h2>
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>
-            <Target size={24} className={styles.statIcon} />
-            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Targets</span>
-              <span className={styles.statValue}>{overviewStats.prometheus?.totalTargets || 0}</span>
-            </div>
-          </div>
-          <div className={styles.statCard}>
             <AlertCircle size={24} className={styles.statIcon} />
             <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Alertas Ativos</span>
+              <span className={styles.statLabel}>Alertas Ativas</span>
               <span className={styles.statValue}>{overviewStats.prometheus?.firingAlerts || 0}</span>
             </div>
           </div>
@@ -149,27 +142,6 @@ function ObservabilityPage() {
             <div className={styles.statInfo}>
               <span className={styles.statLabel}>Dashboards</span>
               <span className={styles.statValue}>{overviewStats.grafana?.totalDashboards || 0}</span>
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <AlertTriangle size={24} className={styles.statIcon} />
-            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Alertas</span>
-              <span className={styles.statValue}>{overviewStats.grafana?.totalAlerts || 0}</span>
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <AlertCircle size={24} className={styles.statIcon} />
-            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Alertas Ativos</span>
-              <span className={styles.statValue}>{overviewStats.grafana?.alertingAlerts || 0}</span>
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <Database size={24} className={styles.statIcon} />
-            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Data Sources</span>
-              <span className={styles.statValue}>{overviewStats.grafana?.totalDataSources || 0}</span>
             </div>
           </div>
         </div>
