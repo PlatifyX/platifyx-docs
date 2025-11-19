@@ -7,15 +7,22 @@ import (
 )
 
 type GitHubService struct {
-	client *github.Client
-	log    *logger.Logger
+	client       *github.Client
+	organization string
+	log          *logger.Logger
 }
 
 func NewGitHubService(config domain.GitHubConfig, log *logger.Logger) *GitHubService {
 	return &GitHubService{
-		client: github.NewClient(config),
-		log:    log,
+		client:       github.NewClient(config),
+		organization: config.Organization,
+		log:          log,
 	}
+}
+
+// GetConfiguredOrganization returns the configured GitHub organization
+func (s *GitHubService) GetConfiguredOrganization() string {
+	return s.organization
 }
 
 func (s *GitHubService) GetAuthenticatedUser() (*domain.GitHubUser, error) {

@@ -153,42 +153,44 @@ func (s *ServiceCatalogService) fetchServiceMetadata(squad, application, namespa
 
 	// Try GitHub first if available
 	if s.githubService != nil {
-		s.log.Infow("Trying to fetch from GitHub", "service", serviceName)
+		owner := s.githubService.GetConfiguredOrganization()
+		if owner == "" {
+			owner = "PlatifyX" // Fallback default
+		}
 
-		// Try different GitHub organizations/owners and branches
-		owners := []string{"PlatifyX", squad, serviceName}
+		s.log.Infow("Trying to fetch from GitHub",
+			"service", serviceName,
+			"owner", owner,
+		)
+
+		// Try different branches
 		branches := []string{"main", "master"}
 
-		for _, owner := range owners {
-			for _, branch := range branches {
-				s.log.Infow("Attempting GitHub fetch",
-					"owner", owner,
-					"repo", serviceName,
-					"branch", branch,
-					"path", "ci/pipeline.yml",
-				)
+		for _, branch := range branches {
+			s.log.Infow("Attempting GitHub fetch",
+				"owner", owner,
+				"repo", serviceName,
+				"branch", branch,
+				"path", "ci/pipeline.yml",
+			)
 
-				fileContent, err = s.githubService.GetFileContent(owner, serviceName, "ci/pipeline.yml", branch)
-				if err == nil {
-					repoURL = s.githubService.GetRepositoryURL(owner, serviceName)
-					repositoryType = "github"
-					s.log.Infow("Successfully found repository on GitHub",
-						"owner", owner,
-						"repo", serviceName,
-						"branch", branch,
-					)
-					break
-				}
-				s.log.Debugw("GitHub fetch failed, trying next option",
+			fileContent, err = s.githubService.GetFileContent(owner, serviceName, "ci/pipeline.yml", branch)
+			if err == nil {
+				repoURL = s.githubService.GetRepositoryURL(owner, serviceName)
+				repositoryType = "github"
+				s.log.Infow("Successfully found repository on GitHub",
 					"owner", owner,
 					"repo", serviceName,
 					"branch", branch,
-					"error", err.Error(),
 				)
-			}
-			if fileContent != "" {
 				break
 			}
+			s.log.Debugw("GitHub fetch failed, trying next branch",
+				"owner", owner,
+				"repo", serviceName,
+				"branch", branch,
+				"error", err.Error(),
+			)
 		}
 	}
 
