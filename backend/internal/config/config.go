@@ -13,6 +13,10 @@ type Config struct {
 
 	DatabaseURL string
 	RedisURL    string
+	RedisHost   string
+	RedisPort   string
+	RedisPass   string
+	RedisDB     string
 }
 
 func Load() *Config {
@@ -24,6 +28,10 @@ func Load() *Config {
 		Version:     getEnv("VERSION", "0.1.0"),
 		DatabaseURL: getEnv("DATABASE_URL", ""),
 		RedisURL:    getEnv("REDIS_URL", ""),
+		RedisHost:   getEnv("REDIS_HOST", ""),
+		RedisPort:   getEnv("REDIS_PORT", ""),
+		RedisPass:   getEnv("REDIS_PASSWORD", ""),
+		RedisDB:     getEnv("REDIS_DB", ""),
 	}
 }
 

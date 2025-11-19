@@ -13,14 +13,18 @@ import (
 )
 
 type TechDocsService struct {
-	docsPath string
-	log      *logger.Logger
+	docsPath      string
+	aiService     *AIService
+	diagramService *DiagramService
+	log           *logger.Logger
 }
 
-func NewTechDocsService(docsPath string, log *logger.Logger) *TechDocsService {
+func NewTechDocsService(docsPath string, aiService *AIService, diagramService *DiagramService, log *logger.Logger) *TechDocsService {
 	return &TechDocsService{
-		docsPath: docsPath,
-		log:      log,
+		docsPath:       docsPath,
+		aiService:      aiService,
+		diagramService: diagramService,
+		log:            log,
 	}
 }
 
@@ -269,4 +273,241 @@ func (s *TechDocsService) ListDocuments(dirPath string) ([]domain.TechDoc, error
 
 	s.log.Infow("Listed documents successfully", "count", len(docs))
 	return docs, nil
+}
+
+// GenerateDocumentation generates documentation using AI
+func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest) (*domain.AIResponse, error) {
+	s.log.Infow("Generating documentation with AI", "provider", req.Provider, "source", req.Source, "docType", req.DocType)
+
+	if s.aiService == nil {
+		return nil, fmt.Errorf("AI service not available")
+	}
+
+	prompt := s.buildGenerateDocPrompt(req)
+
+	response, err := s.aiService.GenerateCompletion(req.Provider, prompt, req.Model)
+	if err != nil {
+		s.log.Errorw("Failed to generate documentation", "error", err)
+		return nil, fmt.Errorf("failed to generate documentation: %w", err)
+	}
+
+	s.log.Infow("Documentation generated successfully", "provider", req.Provider, "length", len(response.Content))
+	return response, nil
+}
+
+func (s *TechDocsService) buildGenerateDocPrompt(req domain.AIGenerateDocRequest) string {
+	var prompt strings.Builder
+
+	prompt.WriteString("You are an expert technical writer. Generate comprehensive ")
+	prompt.WriteString(req.DocType)
+	prompt.WriteString(" documentation based on the following information.\n\n")
+
+	switch req.Source {
+	case "code":
+		prompt.WriteString("Analyze this code and create detailed documentation:\n\n")
+		if req.Language != "" {
+			prompt.WriteString("Programming Language: ")
+			prompt.WriteString(req.Language)
+			prompt.WriteString("\n\n")
+		}
+		prompt.WriteString("```\n")
+		prompt.WriteString(req.Code)
+		prompt.WriteString("\n```\n\n")
+
+	case "github":
+		prompt.WriteString("Create documentation for this GitHub repository:\n")
+		prompt.WriteString("Repository: ")
+		prompt.WriteString(req.RepoURL)
+		prompt.WriteString("\n")
+		if req.SourcePath != "" {
+			prompt.WriteString("Specific path: ")
+			prompt.WriteString(req.SourcePath)
+			prompt.WriteString("\n")
+		}
+		if req.Code != "" {
+			prompt.WriteString("\nCode sample:\n```\n")
+			prompt.WriteString(req.Code)
+			prompt.WriteString("\n```\n")
+		}
+		prompt.WriteString("\n")
+
+	case "azuredevops":
+		prompt.WriteString("Create documentation for this Azure DevOps project:\n")
+		prompt.WriteString("Project: ")
+		prompt.WriteString(req.ProjectName)
+		prompt.WriteString("\n")
+		if req.SourcePath != "" {
+			prompt.WriteString("Path: ")
+			prompt.WriteString(req.SourcePath)
+			prompt.WriteString("\n")
+		}
+		if req.Code != "" {
+			prompt.WriteString("\nCode sample:\n```\n")
+			prompt.WriteString(req.Code)
+			prompt.WriteString("\n```\n")
+		}
+		prompt.WriteString("\n")
+	}
+
+	// Add doc type specific instructions
+	prompt.WriteString("Documentation Requirements:\n")
+	switch req.DocType {
+	case "api":
+		prompt.WriteString("- Document all API endpoints\n")
+		prompt.WriteString("- Include request/response formats\n")
+		prompt.WriteString("- Provide example requests and responses\n")
+		prompt.WriteString("- Document authentication and authorization\n")
+		prompt.WriteString("- Include error codes and handling\n")
+
+	case "architecture":
+		prompt.WriteString("- Describe the overall system architecture\n")
+		prompt.WriteString("- Explain key components and their interactions\n")
+		prompt.WriteString("- Document design patterns used\n")
+		prompt.WriteString("- Include data flow and processing\n")
+		prompt.WriteString("- Explain scalability and performance considerations\n")
+
+	case "guide":
+		prompt.WriteString("- Provide step-by-step instructions\n")
+		prompt.WriteString("- Include prerequisites and setup\n")
+		prompt.WriteString("- Add code examples where relevant\n")
+		prompt.WriteString("- Include troubleshooting tips\n")
+		prompt.WriteString("- Provide best practices\n")
+
+	case "readme":
+		prompt.WriteString("- Clear project overview\n")
+		prompt.WriteString("- Installation instructions\n")
+		prompt.WriteString("- Usage examples\n")
+		prompt.WriteString("- Configuration options\n")
+		prompt.WriteString("- Contributing guidelines\n")
+		prompt.WriteString("- License information\n")
+
+	default:
+		prompt.WriteString("- Clear and comprehensive documentation\n")
+		prompt.WriteString("- Well-structured with sections\n")
+		prompt.WriteString("- Include code examples\n")
+		prompt.WriteString("- Add relevant links and references\n")
+	}
+
+	prompt.WriteString("\nFormat the output as Markdown with proper headings, code blocks, and formatting.\n")
+
+	return prompt.String()
+}
+
+// ImproveDocumentation improves existing documentation using AI
+func (s *TechDocsService) ImproveDocumentation(req domain.AIImproveDocRequest) (*domain.AIResponse, error) {
+	s.log.Infow("Improving documentation with AI", "provider", req.Provider, "improvementType", req.ImprovementType)
+
+	if s.aiService == nil {
+		return nil, fmt.Errorf("AI service not available")
+	}
+
+	prompt := s.buildImproveDocPrompt(req)
+
+	response, err := s.aiService.GenerateCompletion(req.Provider, prompt, req.Model)
+	if err != nil {
+		s.log.Errorw("Failed to improve documentation", "error", err)
+		return nil, fmt.Errorf("failed to improve documentation: %w", err)
+	}
+
+	s.log.Infow("Documentation improved successfully", "provider", req.Provider)
+	return response, nil
+}
+
+func (s *TechDocsService) buildImproveDocPrompt(req domain.AIImproveDocRequest) string {
+	var prompt strings.Builder
+
+	prompt.WriteString("You are an expert technical editor. Improve the following documentation.\n\n")
+
+	switch req.ImprovementType {
+	case "grammar":
+		prompt.WriteString("Focus on:\n")
+		prompt.WriteString("- Correcting grammar and spelling errors\n")
+		prompt.WriteString("- Improving sentence structure\n")
+		prompt.WriteString("- Fixing punctuation\n")
+
+	case "clarity":
+		prompt.WriteString("Focus on:\n")
+		prompt.WriteString("- Making explanations clearer and more concise\n")
+		prompt.WriteString("- Simplifying complex sentences\n")
+		prompt.WriteString("- Removing ambiguity\n")
+		prompt.WriteString("- Improving readability\n")
+
+	case "structure":
+		prompt.WriteString("Focus on:\n")
+		prompt.WriteString("- Reorganizing content for better flow\n")
+		prompt.WriteString("- Adding proper headings and sections\n")
+		prompt.WriteString("- Improving document hierarchy\n")
+		prompt.WriteString("- Adding table of contents if needed\n")
+
+	case "complete":
+		prompt.WriteString("Focus on:\n")
+		prompt.WriteString("- Fixing all grammar and spelling issues\n")
+		prompt.WriteString("- Improving clarity and readability\n")
+		prompt.WriteString("- Enhancing structure and organization\n")
+		prompt.WriteString("- Adding missing information if obvious\n")
+		prompt.WriteString("- Improving code examples\n")
+		prompt.WriteString("- Adding relevant links or references\n")
+	}
+
+	prompt.WriteString("\nOriginal documentation:\n\n")
+	prompt.WriteString(req.Content)
+	prompt.WriteString("\n\nProvide the improved version in Markdown format.\n")
+
+	return prompt.String()
+}
+
+// ChatAboutDocumentation provides Q&A about documentation using AI
+func (s *TechDocsService) ChatAboutDocumentation(req domain.AIChatRequest) (*domain.AIResponse, error) {
+	s.log.Infow("Processing chat about documentation", "provider", req.Provider)
+
+	if s.aiService == nil {
+		return nil, fmt.Errorf("AI service not available")
+	}
+
+	// Build messages with context
+	messages := []domain.ChatMessage{}
+
+	if req.Context != "" {
+		// Add system message with document context
+		messages = append(messages, domain.ChatMessage{
+			Role:    "system",
+			Content: "You are a helpful assistant that answers questions about technical documentation. Here is the relevant documentation context:\n\n" + req.Context,
+		})
+	}
+
+	// Add conversation history
+	messages = append(messages, req.Conversation...)
+
+	// Add current message
+	messages = append(messages, domain.ChatMessage{
+		Role:    "user",
+		Content: req.Message,
+	})
+
+	response, err := s.aiService.GenerateChat(req.Provider, messages, req.Model)
+	if err != nil {
+		s.log.Errorw("Failed to process chat", "error", err)
+		return nil, fmt.Errorf("failed to process chat: %w", err)
+	}
+
+	s.log.Infow("Chat processed successfully", "provider", req.Provider)
+	return response, nil
+}
+
+// GenerateDiagram generates a diagram from code or description
+func (s *TechDocsService) GenerateDiagram(req domain.GenerateDiagramRequest) (*domain.DiagramResponse, error) {
+	s.log.Infow("Generating diagram", "type", req.DiagramType, "provider", req.Provider)
+
+	if s.diagramService == nil {
+		return nil, fmt.Errorf("diagram service not available")
+	}
+
+	response, err := s.diagramService.GenerateDiagram(req)
+	if err != nil {
+		s.log.Errorw("Failed to generate diagram", "error", err)
+		return nil, fmt.Errorf("failed to generate diagram: %w", err)
+	}
+
+	s.log.Infow("Diagram generated successfully", "type", req.DiagramType)
+	return response, nil
 }

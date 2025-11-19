@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/service"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -157,4 +158,96 @@ func (h *TechDocsHandler) ListDocuments(c *gin.Context) {
 		"documents": docs,
 		"total":     len(docs),
 	})
+}
+
+// GenerateDocumentation generates documentation using AI
+func (h *TechDocsHandler) GenerateDocumentation(c *gin.Context) {
+	var req domain.AIGenerateDocRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	response, err := h.service.GenerateDocumentation(req)
+	if err != nil {
+		h.log.Errorw("Failed to generate documentation", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ImproveDocumentation improves existing documentation using AI
+func (h *TechDocsHandler) ImproveDocumentation(c *gin.Context) {
+	var req domain.AIImproveDocRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	response, err := h.service.ImproveDocumentation(req)
+	if err != nil {
+		h.log.Errorw("Failed to improve documentation", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ChatAboutDocumentation provides Q&A about documentation
+func (h *TechDocsHandler) ChatAboutDocumentation(c *gin.Context) {
+	var req domain.AIChatRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	response, err := h.service.ChatAboutDocumentation(req)
+	if err != nil {
+		h.log.Errorw("Failed to process chat", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// GenerateDiagram generates a diagram using AI
+func (h *TechDocsHandler) GenerateDiagram(c *gin.Context) {
+	var req domain.GenerateDiagramRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	response, err := h.service.GenerateDiagram(req)
+	if err != nil {
+		h.log.Errorw("Failed to generate diagram", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
 }

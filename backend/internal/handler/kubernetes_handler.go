@@ -49,9 +49,7 @@ func (h *KubernetesHandler) ListPods(c *gin.Context) {
 	}
 
 	namespace := c.Query("namespace")
-	if namespace == "" {
-		namespace = "default"
-	}
+	// If namespace is empty, it will list pods from all namespaces
 
 	pods, err := h.service.GetPods(namespace)
 	if err != nil {
@@ -78,9 +76,7 @@ func (h *KubernetesHandler) ListDeployments(c *gin.Context) {
 	}
 
 	namespace := c.Query("namespace")
-	if namespace == "" {
-		namespace = "default"
-	}
+	// If namespace is empty, it will list deployments from all namespaces
 
 	deployments, err := h.service.GetDeployments(namespace)
 	if err != nil {
@@ -107,9 +103,7 @@ func (h *KubernetesHandler) ListServices(c *gin.Context) {
 	}
 
 	namespace := c.Query("namespace")
-	if namespace == "" {
-		namespace = "default"
-	}
+	// If namespace is empty, it will list services from all namespaces
 
 	services, err := h.service.GetServices(namespace)
 	if err != nil {

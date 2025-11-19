@@ -229,6 +229,17 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			techdocs.DELETE("/document", handlers.TechDocsHandler.DeleteDocument)
 			techdocs.POST("/folder", handlers.TechDocsHandler.CreateFolder)
 			techdocs.GET("/list", handlers.TechDocsHandler.ListDocuments)
+
+			// AI-powered features
+			techdocs.POST("/generate", handlers.TechDocsHandler.GenerateDocumentation)
+			techdocs.POST("/improve", handlers.TechDocsHandler.ImproveDocumentation)
+			techdocs.POST("/chat", handlers.TechDocsHandler.ChatAboutDocumentation)
+			techdocs.POST("/diagram", handlers.TechDocsHandler.GenerateDiagram)
+		}
+
+		ai := v1.Group("/ai")
+		{
+			ai.GET("/providers", handlers.AIHandler.GetProviders)
 		}
 
 		integrations := v1.Group("/integrations")
@@ -254,6 +265,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			integrations.POST("/test/teams", handlers.IntegrationHandler.TestTeams)
 			integrations.POST("/test/argocd", handlers.IntegrationHandler.TestArgoCD)
 			integrations.POST("/test/prometheus", handlers.IntegrationHandler.TestPrometheus)
+			integrations.POST("/test/loki", handlers.IntegrationHandler.TestLoki)
 			integrations.POST("/test/vault", handlers.IntegrationHandler.TestVault)
 			integrations.POST("/test/awssecrets", handlers.IntegrationHandler.TestAWSSecrets)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)

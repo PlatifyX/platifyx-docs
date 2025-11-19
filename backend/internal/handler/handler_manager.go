@@ -26,6 +26,7 @@ type HandlerManager struct {
 	AWSSecretsHandler      *AWSSecretsHandler
 	ServiceTemplateHandler *ServiceTemplateHandler
 	ServiceCatalogHandler  *ServiceCatalogHandler
+	AIHandler              *AIHandler
 }
 
 func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *HandlerManager {
@@ -50,5 +51,6 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		AWSSecretsHandler:      NewAWSSecretsHandler(services.IntegrationService, log),
 		ServiceTemplateHandler: NewServiceTemplateHandler(services.ServiceTemplateService, log),
 		ServiceCatalogHandler:  NewServiceCatalogHandler(services.ServiceCatalogService, services.SonarQubeService, services.AzureDevOpsService, log),
+		AIHandler:              NewAIHandler(services.AIService, log),
 	}
 }
