@@ -273,8 +273,8 @@ function ObservabilityPage() {
             <thead>
               <tr>
                 <th>Nome da Alerta</th>
-                <th>Summary</th>
-                <th>Description</th>
+                <th>Resumo</th>
+                <th>Descrição</th>
               </tr>
             </thead>
             <tbody>
