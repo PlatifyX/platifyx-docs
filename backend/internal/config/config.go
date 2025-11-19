@@ -28,10 +28,10 @@ func Load() *Config {
 		Version:     getEnv("VERSION", "0.1.0"),
 		DatabaseURL: getEnv("DATABASE_URL", ""),
 		RedisURL:    getEnv("REDIS_URL", ""),
-		RedisHost:   getEnv("REDIS_HOST", "localhost"),
-		RedisPort:   getEnv("REDIS_PORT", "6379"),
+		RedisHost:   getEnv("REDIS_HOST", ""),
+		RedisPort:   getEnv("REDIS_PORT", ""),
 		RedisPass:   getEnv("REDIS_PASSWORD", ""),
-		RedisDB:     getEnv("REDIS_DB", "0"),
+		RedisDB:     getEnv("REDIS_DB", ""),
 	}
 }
 
