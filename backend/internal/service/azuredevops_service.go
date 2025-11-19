@@ -195,3 +195,29 @@ func (s *AzureDevOpsService) RejectRelease(project string, approvalID int, comme
 	s.log.Info("Release rejected successfully")
 	return nil
 }
+
+// GetFileContent fetches a file from a repository
+func (s *AzureDevOpsService) GetFileContent(repositoryName, filePath, branch string) (string, error) {
+	s.log.Infow("Fetching file content", "repository", repositoryName, "path", filePath, "branch", branch)
+
+	content, err := s.client.GetFileContent(repositoryName, filePath, branch)
+	if err != nil {
+		s.log.Errorw("Failed to fetch file content", "error", err, "repository", repositoryName, "path", filePath)
+		return "", err
+	}
+
+	return content, nil
+}
+
+// GetRepositoryURL returns the web URL for a repository
+func (s *AzureDevOpsService) GetRepositoryURL(repositoryName string) (string, error) {
+	s.log.Infow("Getting repository URL", "repository", repositoryName)
+
+	url, err := s.client.GetRepositoryURL(repositoryName)
+	if err != nil {
+		s.log.Errorw("Failed to get repository URL", "error", err, "repository", repositoryName)
+		return "", err
+	}
+
+	return url, nil
+}

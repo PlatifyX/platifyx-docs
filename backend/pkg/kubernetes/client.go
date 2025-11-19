@@ -300,3 +300,8 @@ func (c *Client) ListNodes() ([]domain.KubernetesNode, error) {
 
 	return nodes, nil
 }
+
+// GetClientset returns the Kubernetes clientset
+func (c *Client) GetClientset() *kubernetes.Clientset {
+	return c.clientset
+}

@@ -100,3 +100,10 @@ func (k *KubernetesService) GetNodes() ([]domain.KubernetesNode, error) {
 	k.log.Infow("Fetched nodes successfully", "count", len(nodes))
 	return nodes, nil
 }
+// GetClientset returns the Kubernetes clientset for direct API access
+func (k *KubernetesService) GetClientset() interface{} {
+	if k.client == nil {
+		return nil
+	}
+	return k.client.GetClientset()
+}
