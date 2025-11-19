@@ -460,3 +460,26 @@ func (h *GrafanaHandler) GetAnnotations(c *gin.Context) {
 		"total":       len(annotations),
 	})
 }
+
+func (h *GrafanaHandler) GetConfig(c *gin.Context) {
+	config, err := h.integrationService.GetGrafanaConfig()
+	if err != nil {
+		h.log.Errorw("Failed to get Grafana config", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Grafana configuration",
+		})
+		return
+	}
+
+	if config == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Grafana integration not configured",
+		})
+		return
+	}
+
+	// Return only the URL, not the API key for security
+	c.JSON(http.StatusOK, gin.H{
+		"url": config.URL,
+	})
+}

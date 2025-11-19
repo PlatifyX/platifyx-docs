@@ -186,6 +186,15 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			observability.GET("/annotations", handlers.GrafanaHandler.GetAnnotations)
 		}
 
+		// Grafana endpoints (alias for some observability endpoints)
+		grafana := v1.Group("/grafana")
+		{
+			grafana.GET("/stats", handlers.GrafanaHandler.GetStats)
+			grafana.GET("/config", handlers.GrafanaHandler.GetConfig)
+			grafana.GET("/dashboards", handlers.GrafanaHandler.SearchDashboards)
+			grafana.GET("/dashboards/:uid", handlers.GrafanaHandler.GetDashboardByUID)
+		}
+
 		code := v1.Group("/code")
 		{
 			code.GET("/stats", handlers.GitHubHandler.GetStats)

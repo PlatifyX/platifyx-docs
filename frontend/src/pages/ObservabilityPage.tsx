@@ -79,17 +79,20 @@ function ObservabilityPage() {
 
   const [overviewStats, setOverviewStats] = useState<OverviewStats>({})
   const [prometheusAlerts, setPrometheusAlerts] = useState<PrometheusAlert[]>([])
+  const [grafanaUrl, setGrafanaUrl] = useState<string>('')
+  const [dashboardUid, setDashboardUid] = useState<string>('')
 
   const fetchData = async () => {
     setLoading(true)
     setError(null)
 
     try {
-      // Fetch Prometheus and Grafana stats + Prometheus alerts
-      const [prometheusStatsRes, grafanaStatsRes, alertsRes] = await Promise.all([
+      // Fetch Prometheus stats, Grafana stats, Prometheus alerts, Grafana config, and Grafana dashboards
+      const [prometheusStatsRes, grafanaStatsRes, alertsRes, grafanaConfigRes] = await Promise.all([
         fetch(buildApiUrl('prometheus/stats')),
         fetch(buildApiUrl('grafana/stats')),
-        fetch(buildApiUrl('prometheus/alerts'))
+        fetch(buildApiUrl('prometheus/alerts')),
+        fetch(buildApiUrl('grafana/config'))
       ])
 
       const stats: OverviewStats = {}
@@ -107,6 +110,25 @@ function ObservabilityPage() {
       if (alertsRes.ok) {
         const result = await alertsRes.json()
         setPrometheusAlerts(result.data?.alerts || [])
+      }
+
+      // Fetch Grafana config and find main dashboard
+      if (grafanaConfigRes.ok) {
+        const configResult = await grafanaConfigRes.json()
+        setGrafanaUrl(configResult.url)
+
+        // Fetch dashboards to find the main one
+        const dashboardsRes = await fetch(buildApiUrl('grafana/dashboards'))
+        if (dashboardsRes.ok) {
+          const dashboardsResult = await dashboardsRes.json()
+          const dashboards = dashboardsResult.dashboards || []
+
+          // Find first starred dashboard, or just use the first dashboard
+          const mainDashboard = dashboards.find((d: GrafanaDashboard) => d.isStarred) || dashboards[0]
+          if (mainDashboard) {
+            setDashboardUid(mainDashboard.uid)
+          }
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao buscar dados de observabilidade')
@@ -136,6 +158,15 @@ function ObservabilityPage() {
 
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Grafana</h2>
+        {grafanaUrl && dashboardUid && (
+          <div className={styles.dashboardContainer}>
+            <iframe
+              src={`${grafanaUrl}/d/${dashboardUid}?orgId=1&kiosk&theme=light`}
+              className={styles.dashboardIframe}
+              title="Grafana Dashboard"
+            />
+          </div>
+        )}
       </div>
 
       {/* Tabela de Alertas do Prometheus */}
