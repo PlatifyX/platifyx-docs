@@ -118,6 +118,8 @@ function ServicesPage() {
       }
 
       const data = await response.json()
+      console.log('Metrics response:', data)
+      console.log('Service metrics:', data.metrics)
       setServiceMetrics(data.metrics || {})
     } catch (err: any) {
       console.error('Failed to fetch service metrics:', err)

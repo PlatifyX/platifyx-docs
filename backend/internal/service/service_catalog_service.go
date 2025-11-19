@@ -335,7 +335,20 @@ func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeS
 	// Fetch SonarQube metrics
 	if sonarQubeService != nil {
 		sonarMetrics, err := sonarQubeService.GetProjectMeasures(serviceName)
-		if err == nil && sonarMetrics != nil {
+		if err != nil {
+			s.log.Warnw("Failed to fetch SonarQube metrics for service",
+				"service", serviceName,
+				"error", err,
+			)
+		} else if sonarMetrics != nil {
+			s.log.Infow("Fetched SonarQube metrics",
+				"service", serviceName,
+				"bugs", sonarMetrics.Bugs,
+				"vulnerabilities", sonarMetrics.Vulnerabilities,
+				"codeSmells", sonarMetrics.CodeSmells,
+				"securityHotspots", sonarMetrics.SecurityHotspots,
+				"coverage", sonarMetrics.Coverage,
+			)
 			metrics["sonarqube"] = map[string]interface{}{
 				"bugs":             sonarMetrics.Bugs,
 				"vulnerabilities":  sonarMetrics.Vulnerabilities,
@@ -343,6 +356,8 @@ func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeS
 				"securityHotspots": sonarMetrics.SecurityHotspots,
 				"coverage":         sonarMetrics.Coverage,
 			}
+		} else {
+			s.log.Warnw("SonarQube metrics returned nil", "service", serviceName)
 		}
 	}
 
