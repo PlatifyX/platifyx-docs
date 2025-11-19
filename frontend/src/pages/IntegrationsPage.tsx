@@ -19,7 +19,6 @@ import TeamsModal from '../components/Integrations/TeamsModal'
 import ArgoCDModal from '../components/Integrations/ArgoCDModal'
 import PrometheusModal from '../components/Integrations/PrometheusModal'
 import LokiModal from '../components/Integrations/LokiModal'
-import RedisModal from '../components/Integrations/RedisModal'
 import VaultModal from '../components/Integrations/VaultModal'
 import AWSSecretsModal from '../components/Integrations/AWSSecretsModal'
 import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
@@ -357,20 +356,6 @@ function IntegrationsPage() {
 
       {showModal && (isCreating ? selectedType === 'loki' : selectedIntegration?.type === 'loki') && (
         <LokiModal
-          integration={selectedIntegration}
-          isCreating={isCreating}
-          onSave={handleSave}
-          onClose={() => {
-            setShowModal(false)
-            setSelectedIntegration(null)
-            setIsCreating(false)
-            setSelectedType(null)
-          }}
-        />
-      )}
-
-      {showModal && (isCreating ? selectedType === 'redis' : selectedIntegration?.type === 'redis') && (
-        <RedisModal
           integration={selectedIntegration}
           isCreating={isCreating}
           onSave={handleSave}

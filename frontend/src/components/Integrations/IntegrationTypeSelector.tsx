@@ -92,12 +92,6 @@ const integrationTypes = [
     logo: '/logos/loki.png',
   },
   {
-    id: 'redis',
-    name: 'Redis',
-    description: 'Cache em memória para alta performance',
-    logo: '/logos/redis.png',
-  },
-  {
     id: 'vault',
     name: 'HashiCorp Vault',
     description: 'Gerenciamento seguro de secrets e credenciais',
