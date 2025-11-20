@@ -284,23 +284,41 @@ func (s *TechDocsService) estimateTokenCount(text string) int {
 }
 
 // getModelContextLimit returns the safe context limit for a given model
+// Using very conservative limits to minimize costs and process code in smaller chunks
 func (s *TechDocsService) getModelContextLimit(provider domain.AIProvider, model string) int {
-	// Conservative limits to leave room for prompt structure and response
+	// Very conservative limits to use cheaper models and smaller chunks
 	switch provider {
 	case domain.AIProviderOpenAI:
-		if strings.Contains(model, "gpt-4") {
-			if strings.Contains(model, "turbo") || strings.Contains(model, "32k") {
-				return 25000 // GPT-4 Turbo has higher limits
-			}
-			return 6000 // GPT-4 standard
-		}
-		return 3000 // GPT-3.5-turbo and others (8k context, leaving room)
+		// Always use small chunks for OpenAI to minimize costs
+		return 2000 // Conservative for gpt-3.5-turbo (cheapest option)
 	case domain.AIProviderClaude:
-		return 80000 // Claude has very large context window
+		// Use Haiku (cheapest) with conservative chunks
+		return 2500
 	case domain.AIProviderGemini:
-		return 25000 // Gemini Pro has large context
+		// Gemini Pro with conservative chunks
+		return 2000
 	default:
-		return 3000 // Conservative default
+		return 1500 // Very conservative default
+	}
+}
+
+// getCheapestModel returns the cheapest model for the given provider
+func (s *TechDocsService) getCheapestModel(provider domain.AIProvider, requestedModel string) string {
+	// If a model was specifically requested, use it
+	if requestedModel != "" {
+		return requestedModel
+	}
+
+	// Otherwise, default to cheapest models
+	switch provider {
+	case domain.AIProviderOpenAI:
+		return "gpt-3.5-turbo" // Cheapest OpenAI model
+	case domain.AIProviderClaude:
+		return "claude-3-haiku-20240307" // Cheapest Claude model
+	case domain.AIProviderGemini:
+		return "gemini-pro" // Standard Gemini model
+	default:
+		return ""
 	}
 }
 
@@ -354,15 +372,23 @@ func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest)
 
 		s.log.Infow("Loaded full repository", "fileCount", len(files))
 
+		// Force use of cheapest model if not specified
+		req.Model = s.getCheapestModel(req.Provider, req.Model)
+		s.log.Infow("Using model", "provider", req.Provider, "model", req.Model)
+
 		// Check if content needs chunking
 		contextLimit := s.getModelContextLimit(req.Provider, req.Model)
 		s.log.Infow("Context limit for model", "provider", req.Provider, "model", req.Model, "limit", contextLimit)
 
-		// Process with chunking if needed
+		// Process with chunking (always chunk for large repos to minimize costs)
 		return s.generateDocumentationWithChunking(req, files, contextLimit)
 	}
 
 	// For non-repository sources, proceed as before
+	// Force use of cheapest model if not specified
+	req.Model = s.getCheapestModel(req.Provider, req.Model)
+	s.log.Infow("Using model for single file", "provider", req.Provider, "model", req.Model)
+
 	prompt := s.buildGenerateDocPrompt(req)
 
 	// Check if the prompt is too large
@@ -502,6 +528,7 @@ func (s *TechDocsService) prioritizeFiles(files []repoFile) []repoFile {
 }
 
 // createFileChunks splits files into chunks that fit within context limit
+// Uses aggressive chunking to minimize costs - processes few files at a time
 func (s *TechDocsService) createFileChunks(files []repoFile, contextLimit int, req domain.AIGenerateDocRequest) []string {
 	var chunks []string
 	var currentChunk strings.Builder
@@ -509,6 +536,9 @@ func (s *TechDocsService) createFileChunks(files []repoFile, contextLimit int, r
 	// Reserve space for prompt structure (roughly 500 tokens)
 	maxChunkTokens := contextLimit - 500
 	maxChunkChars := maxChunkTokens * 4
+
+	// Maximum files per chunk to keep costs low (process code in small batches)
+	const maxFilesPerChunk = 3
 
 	// Add repository header
 	header := fmt.Sprintf("Repository: %s\n\n", req.RepoURL)
@@ -521,25 +551,29 @@ func (s *TechDocsService) createFileChunks(files []repoFile, contextLimit int, r
 		fileContent := fmt.Sprintf("=== File: %s ===\n%s\n\n", file.Path, file.Content)
 		fileTokens := s.estimateTokenCount(fileContent)
 
-		// If this single file is too large, truncate it
-		if fileTokens > maxChunkTokens/2 {
+		// If this single file is too large, truncate it more aggressively
+		if fileTokens > maxChunkTokens/3 {
 			s.log.Warnw("File too large, truncating", "file", file.Path, "tokens", fileTokens)
 			truncatedContent := file.Content
-			if len(truncatedContent) > maxChunkChars/2 {
-				truncatedContent = truncatedContent[:maxChunkChars/2] + "\n... [truncated]"
+			maxContentChars := maxChunkChars / 3
+			if len(truncatedContent) > maxContentChars {
+				truncatedContent = truncatedContent[:maxContentChars] + "\n... [truncated due to size]"
 			}
 			fileContent = fmt.Sprintf("=== File: %s ===\n%s\n\n", file.Path, truncatedContent)
 			fileTokens = s.estimateTokenCount(fileContent)
 		}
 
-		// Check if adding this file would exceed the limit
-		if currentTokens+fileTokens > maxChunkTokens && filesInChunk > 0 {
+		// Check if adding this file would exceed the limit OR max files per chunk
+		shouldStartNewChunk := (currentTokens+fileTokens > maxChunkTokens || filesInChunk >= maxFilesPerChunk) && filesInChunk > 0
+
+		if shouldStartNewChunk {
 			// Save current chunk and start a new one
 			chunks = append(chunks, currentChunk.String())
 			currentChunk.Reset()
 			currentChunk.WriteString(header)
 			currentTokens = s.estimateTokenCount(header)
 			filesInChunk = 0
+			s.log.Infow("Created chunk", "chunkNumber", len(chunks), "files", filesInChunk)
 		}
 
 		// Add file to current chunk
@@ -551,6 +585,7 @@ func (s *TechDocsService) createFileChunks(files []repoFile, contextLimit int, r
 	// Add the last chunk if it has content
 	if filesInChunk > 0 {
 		chunks = append(chunks, currentChunk.String())
+		s.log.Infow("Created final chunk", "chunkNumber", len(chunks), "files", filesInChunk)
 	}
 
 	return chunks

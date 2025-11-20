@@ -103,8 +103,9 @@ func (s *AIService) generateOpenAICompletion(prompt string, model string) (*doma
 
 	client := openai.NewClient(config.APIKey, config.Organization)
 
+	// Always use cheapest model (gpt-3.5-turbo) if not specified
 	if model == "" {
-		model = "gpt-4"
+		model = "gpt-3.5-turbo"
 	}
 
 	request := openai.ChatCompletionRequest{
@@ -138,8 +139,9 @@ func (s *AIService) generateOpenAIChat(messages []domain.ChatMessage, model stri
 
 	client := openai.NewClient(config.APIKey, config.Organization)
 
+	// Always use cheapest model (gpt-3.5-turbo) if not specified
 	if model == "" {
-		model = "gpt-4"
+		model = "gpt-3.5-turbo"
 	}
 
 	openaiMessages := make([]openai.ChatMessage, len(messages))
@@ -179,8 +181,9 @@ func (s *AIService) generateClaudeCompletion(prompt string, model string) (*doma
 
 	client := claude.NewClient(config.APIKey)
 
+	// Always use cheapest model (Haiku) if not specified
 	if model == "" {
-		model = "claude-3-sonnet-20240229"
+		model = "claude-3-haiku-20240307"
 	}
 
 	request := claude.MessageRequest{
@@ -220,8 +223,9 @@ func (s *AIService) generateClaudeChat(messages []domain.ChatMessage, model stri
 
 	client := claude.NewClient(config.APIKey)
 
+	// Always use cheapest model (Haiku) if not specified
 	if model == "" {
-		model = "claude-3-sonnet-20240229"
+		model = "claude-3-haiku-20240307"
 	}
 
 	claudeMessages := make([]claude.Message, len(messages))
