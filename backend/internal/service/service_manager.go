@@ -84,7 +84,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	diagramService := NewDiagramService(aiService, log)
 
 	// Initialize TechDocs service with AI capabilities
-	techDocsService := NewTechDocsService("docs", aiService, diagramService, log)
+	techDocsService := NewTechDocsService("docs", aiService, diagramService, githubService, log)
 
 	// Initialize ServiceTemplate service
 	serviceTemplateRepo := repository.NewServiceTemplateRepository(db)

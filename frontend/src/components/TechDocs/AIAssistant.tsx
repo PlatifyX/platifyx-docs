@@ -30,6 +30,7 @@ function AIAssistant({ currentContent, onInsertContent, onClose }: AIAssistantPr
   const [azureProjects, setAzureProjects] = useState<AzureDevOpsProject[]>([])
   const [selectedProject, setSelectedProject] = useState('')
   const [loadingRepos, setLoadingRepos] = useState(false)
+  const [readFullRepo, setReadFullRepo] = useState(false)
 
   // Improve tab
   const [improveType, setImproveType] = useState('complete')
@@ -136,8 +137,16 @@ function AIAssistant({ currentContent, onInsertContent, onClose }: AIAssistantPr
         request.language = generateLanguage
       } else if (generateSource === 'github') {
         request.repoURL = selectedRepo
-        request.sourcePath = repoPath
-        request.code = generateCode
+        request.readFullRepo = readFullRepo
+
+        // If reading full repo, set save path to ia/reponame.md
+        if (readFullRepo) {
+          const repoName = selectedRepo.split('/')[1] || 'repo'
+          request.savePath = `ia/${repoName}.md`
+        } else {
+          request.sourcePath = repoPath
+          request.code = generateCode
+        }
       } else if (generateSource === 'azuredevops') {
         request.projectName = selectedProject
         request.code = generateCode
@@ -145,6 +154,12 @@ function AIAssistant({ currentContent, onInsertContent, onClose }: AIAssistantPr
 
       const response = await aiService.generateDocumentation(request)
       setResult(response.content)
+
+      // Show success message with save path if auto-saved
+      if (generateSource === 'github' && readFullRepo) {
+        const repoName = selectedRepo.split('/')[1] || 'repo'
+        alert(`Documentação gerada e salva em: ia/${repoName}.md`)
+      }
     } catch (err: any) {
       alert(`Erro: ${err.message}`)
     } finally {
@@ -385,34 +400,54 @@ function AIAssistant({ currentContent, onInsertContent, onClose }: AIAssistantPr
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label>Caminho do arquivo (ex: src/main.go):</label>
-                  <div className={styles.inputWithButton}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                     <input
-                      type="text"
-                      value={repoPath}
-                      onChange={(e) => setRepoPath(e.target.value)}
-                      placeholder="src/main.go"
+                      type="checkbox"
+                      checked={readFullRepo}
+                      onChange={(e) => setReadFullRepo(e.target.checked)}
                     />
-                    <button
-                      onClick={loadRepoCode}
-                      disabled={!repoPath || loading}
-                      className={styles.primaryBtn}
-                    >
-                      Carregar Código
-                    </button>
+                    <span>Ler repositório inteiro (todos os arquivos)</span>
+                  </label>
+                  <div className={styles.info}>
+                    <p>
+                      ✨ Quando marcado, lerá todos os arquivos do repositório e salvará automaticamente em <strong>ia/{selectedRepo.split('/')[1] || 'repo'}.md</strong>
+                    </p>
                   </div>
                 </div>
 
-                <div className={styles.formGroup}>
-                  <label>Código carregado:</label>
-                  <textarea
-                    value={generateCode}
-                    onChange={(e) => setGenerateCode(e.target.value)}
-                    placeholder="Código será carregado automaticamente..."
-                    rows={10}
-                    readOnly
-                  />
-                </div>
+                {!readFullRepo && (
+                  <>
+                    <div className={styles.formGroup}>
+                      <label>Caminho do arquivo (ex: src/main.go):</label>
+                      <div className={styles.inputWithButton}>
+                        <input
+                          type="text"
+                          value={repoPath}
+                          onChange={(e) => setRepoPath(e.target.value)}
+                          placeholder="src/main.go"
+                        />
+                        <button
+                          onClick={loadRepoCode}
+                          disabled={!repoPath || loading}
+                          className={styles.primaryBtn}
+                        >
+                          Carregar Código
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className={styles.formGroup}>
+                      <label>Código carregado:</label>
+                      <textarea
+                        value={generateCode}
+                        onChange={(e) => setGenerateCode(e.target.value)}
+                        placeholder="Código será carregado automaticamente..."
+                        rows={10}
+                        readOnly
+                      />
+                    </div>
+                  </>
+                )}
               </>
             )}
 

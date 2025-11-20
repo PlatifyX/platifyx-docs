@@ -31,6 +31,8 @@ export interface GenerateDocRequest {
   language?: string
   docType: string
   model?: string
+  readFullRepo?: boolean
+  savePath?: string
 }
 
 export interface ImproveDocRequest {

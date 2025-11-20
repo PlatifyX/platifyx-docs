@@ -13,17 +13,19 @@ import (
 )
 
 type TechDocsService struct {
-	docsPath      string
-	aiService     *AIService
+	docsPath       string
+	aiService      *AIService
 	diagramService *DiagramService
-	log           *logger.Logger
+	githubService  *GitHubService
+	log            *logger.Logger
 }
 
-func NewTechDocsService(docsPath string, aiService *AIService, diagramService *DiagramService, log *logger.Logger) *TechDocsService {
+func NewTechDocsService(docsPath string, aiService *AIService, diagramService *DiagramService, githubService *GitHubService, log *logger.Logger) *TechDocsService {
 	return &TechDocsService{
 		docsPath:       docsPath,
 		aiService:      aiService,
 		diagramService: diagramService,
+		githubService:  githubService,
 		log:            log,
 	}
 }
@@ -277,10 +279,50 @@ func (s *TechDocsService) ListDocuments(dirPath string) ([]domain.TechDoc, error
 
 // GenerateDocumentation generates documentation using AI
 func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest) (*domain.AIResponse, error) {
-	s.log.Infow("Generating documentation with AI", "provider", req.Provider, "source", req.Source, "docType", req.DocType)
+	s.log.Infow("Generating documentation with AI", "provider", req.Provider, "source", req.Source, "docType", req.DocType, "readFullRepo", req.ReadFullRepo)
 
 	if s.aiService == nil {
 		return nil, fmt.Errorf("AI service not available")
+	}
+
+	// If reading full repository from GitHub
+	if req.Source == "github" && req.ReadFullRepo {
+		if s.githubService == nil {
+			return nil, fmt.Errorf("GitHub service not available")
+		}
+
+		// Extract owner and repo from repoURL (format: "owner/repo")
+		parts := strings.Split(req.RepoURL, "/")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid repository format, expected 'owner/repo'")
+		}
+		owner, repo := parts[0], parts[1]
+
+		// Get repository info to get default branch
+		repoInfo, err := s.githubService.GetRepository(owner, repo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get repository info: %w", err)
+		}
+
+		// Get all files from repository
+		files, err := s.githubService.GetAllRepositoryFiles(owner, repo, repoInfo.DefaultBranch)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read repository files: %w", err)
+		}
+
+		// Build code content from all files
+		var codeBuilder strings.Builder
+		codeBuilder.WriteString(fmt.Sprintf("Repository: %s\n", req.RepoURL))
+		codeBuilder.WriteString(fmt.Sprintf("Total files: %d\n\n", len(files)))
+
+		for _, file := range files {
+			codeBuilder.WriteString(fmt.Sprintf("=== File: %s ===\n", file.Path))
+			codeBuilder.WriteString(file.Content)
+			codeBuilder.WriteString("\n\n")
+		}
+
+		req.Code = codeBuilder.String()
+		s.log.Infow("Loaded full repository", "fileCount", len(files), "totalSize", len(req.Code))
 	}
 
 	prompt := s.buildGenerateDocPrompt(req)
@@ -289,6 +331,16 @@ func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest)
 	if err != nil {
 		s.log.Errorw("Failed to generate documentation", "error", err)
 		return nil, fmt.Errorf("failed to generate documentation: %w", err)
+	}
+
+	// Auto-save if savePath is provided
+	if req.SavePath != "" && response.Content != "" {
+		if err := s.SaveDocument(req.SavePath, response.Content); err != nil {
+			s.log.Errorw("Failed to auto-save documentation", "error", err, "path", req.SavePath)
+			// Don't fail the request, just log the error
+		} else {
+			s.log.Infow("Documentation auto-saved successfully", "path", req.SavePath)
+		}
 	}
 
 	s.log.Infow("Documentation generated successfully", "provider", req.Provider, "length", len(response.Content))

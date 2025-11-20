@@ -9,15 +9,17 @@ const (
 )
 
 type AIGenerateDocRequest struct {
-	Provider    AIProvider `json:"provider"`
-	Source      string     `json:"source"` // "code", "github", "azuredevops"
-	SourcePath  string     `json:"sourcePath,omitempty"`
-	RepoURL     string     `json:"repoUrl,omitempty"`
-	ProjectName string     `json:"projectName,omitempty"`
-	Code        string     `json:"code,omitempty"`
-	Language    string     `json:"language,omitempty"`
-	DocType     string     `json:"docType"` // "api", "architecture", "guide", "readme"
-	Model       string     `json:"model,omitempty"`
+	Provider      AIProvider `json:"provider"`
+	Source        string     `json:"source"` // "code", "github", "azuredevops"
+	SourcePath    string     `json:"sourcePath,omitempty"`
+	RepoURL       string     `json:"repoUrl,omitempty"`
+	ProjectName   string     `json:"projectName,omitempty"`
+	Code          string     `json:"code,omitempty"`
+	Language      string     `json:"language,omitempty"`
+	DocType       string     `json:"docType"` // "api", "architecture", "guide", "readme"
+	Model         string     `json:"model,omitempty"`
+	ReadFullRepo  bool       `json:"readFullRepo,omitempty"` // Read entire repository
+	SavePath      string     `json:"savePath,omitempty"` // Custom save path (e.g., "ia/reponame.md")
 }
 
 type AIImproveDocRequest struct {

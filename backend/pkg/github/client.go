@@ -645,3 +645,134 @@ func (c *Client) GetFileContent(owner, repo, path, ref string) (string, error) {
 func (c *Client) GetRepositoryURL(owner, repo string) string {
 	return fmt.Sprintf("https://github.com/%s/%s", owner, repo)
 }
+
+// GitHubFile represents a file or directory in GitHub
+type GitHubFile struct {
+	Type string `json:"type"` // "file" or "dir"
+	Path string `json:"path"`
+	Name string `json:"name"`
+}
+
+// ListDirectoryContents lists all contents of a directory
+func (c *Client) ListDirectoryContents(owner, repo, path, ref string) ([]GitHubFile, error) {
+	apiPath := fmt.Sprintf("/repos/%s/%s/contents/%s", owner, repo, path)
+	if ref != "" {
+		apiPath = fmt.Sprintf("%s?ref=%s", apiPath, ref)
+	}
+
+	resp, err := c.doRequest("GET", apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var rawFiles []struct {
+		Type string `json:"type"`
+		Path string `json:"path"`
+		Name string `json:"name"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&rawFiles); err != nil {
+		return nil, fmt.Errorf("failed to decode directory contents: %w", err)
+	}
+
+	files := make([]GitHubFile, 0, len(rawFiles))
+	for _, raw := range rawFiles {
+		files = append(files, GitHubFile{
+			Type: raw.Type,
+			Path: raw.Path,
+			Name: raw.Name,
+		})
+	}
+
+	return files, nil
+}
+
+// GitHubRepositoryFile represents a file with its content
+type GitHubRepositoryFile struct {
+	Path    string
+	Content string
+}
+
+// GetAllRepositoryFiles gets all files from a repository recursively
+func (c *Client) GetAllRepositoryFiles(owner, repo, ref string) ([]GitHubRepositoryFile, error) {
+	var allFiles []GitHubRepositoryFile
+
+	// Start from root directory
+	if err := c.walkDirectory(owner, repo, "", ref, &allFiles); err != nil {
+		return nil, err
+	}
+
+	return allFiles, nil
+}
+
+// walkDirectory recursively walks through repository directories
+func (c *Client) walkDirectory(owner, repo, path, ref string, files *[]GitHubRepositoryFile) error {
+	contents, err := c.ListDirectoryContents(owner, repo, path, ref)
+	if err != nil {
+		return err
+	}
+
+	for _, item := range contents {
+		if item.Type == "file" {
+			// Only include source code files, ignore binaries and large files
+			if c.shouldIncludeFile(item.Path) {
+				content, err := c.GetFileContent(owner, repo, item.Path, ref)
+				if err != nil {
+					// Log error but continue with other files
+					continue
+				}
+				*files = append(*files, GitHubRepositoryFile{
+					Path:    item.Path,
+					Content: content,
+				})
+			}
+		} else if item.Type == "dir" {
+			// Recursively process subdirectories, but skip common directories
+			if !c.shouldSkipDirectory(item.Name) {
+				if err := c.walkDirectory(owner, repo, item.Path, ref, files); err != nil {
+					// Log error but continue with other directories
+					continue
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// shouldIncludeFile checks if a file should be included in the documentation
+func (c *Client) shouldIncludeFile(path string) bool {
+	// Include common source code extensions
+	extensions := []string{
+		".go", ".js", ".ts", ".tsx", ".jsx", ".py", ".java", ".c", ".cpp", ".h", ".hpp",
+		".cs", ".rb", ".php", ".swift", ".kt", ".rs", ".scala", ".sh", ".yml", ".yaml",
+		".json", ".xml", ".sql", ".md", ".txt", ".proto", ".graphql",
+	}
+
+	pathLower := strings.ToLower(path)
+	for _, ext := range extensions {
+		if strings.HasSuffix(pathLower, ext) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// shouldSkipDirectory checks if a directory should be skipped
+func (c *Client) shouldSkipDirectory(name string) bool {
+	skipDirs := []string{
+		"node_modules", "vendor", ".git", ".github", "dist", "build",
+		"target", "bin", "obj", ".vscode", ".idea", "coverage",
+	}
+
+	nameLower := strings.ToLower(name)
+	for _, skip := range skipDirs {
+		if nameLower == skip || strings.HasPrefix(nameLower, ".") {
+			return true
+		}
+	}
+
+	return false
+}
