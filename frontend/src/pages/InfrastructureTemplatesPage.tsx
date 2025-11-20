@@ -23,7 +23,7 @@ function InfrastructureTemplatesPage() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/v1/infrastructure-templates')
+      const response = await fetch('http://localhost:8060/api/v1/infrastructure-templates')
       const data = await response.json()
       setTemplates(data.templates || [])
     } catch (error) {
