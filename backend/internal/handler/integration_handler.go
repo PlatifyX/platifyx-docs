@@ -22,17 +22,38 @@ import (
 
 type IntegrationHandler struct {
 	service *service.IntegrationService
+	cache   *service.CacheService
 	log     *logger.Logger
 }
 
-func NewIntegrationHandler(svc *service.IntegrationService, log *logger.Logger) *IntegrationHandler {
+func NewIntegrationHandler(svc *service.IntegrationService, cache *service.CacheService, log *logger.Logger) *IntegrationHandler {
 	return &IntegrationHandler{
 		service: svc,
+		cache:   cache,
 		log:     log,
 	}
 }
 
 func (h *IntegrationHandler) List(c *gin.Context) {
+	cacheKey := service.BuildKey("integrations", "list")
+
+	// Try to get from cache if cache is available
+	if h.cache != nil {
+		var cachedResult struct {
+			Integrations []domain.Integration `json:"integrations"`
+			Total        int                  `json:"total"`
+		}
+
+		err := h.cache.GetJSON(cacheKey, &cachedResult)
+		if err == nil {
+			h.log.Debugw("Cache HIT", "key", cacheKey)
+			c.JSON(http.StatusOK, cachedResult)
+			return
+		}
+		h.log.Debugw("Cache MISS", "key", cacheKey)
+	}
+
+	// Cache miss or cache disabled, fetch from database
 	integrations, err := h.service.GetAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -41,10 +62,19 @@ func (h *IntegrationHandler) List(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	result := gin.H{
 		"integrations": integrations,
 		"total":        len(integrations),
-	})
+	}
+
+	// Store in cache if cache is available
+	if h.cache != nil {
+		if err := h.cache.Set(cacheKey, result, service.CacheDuration5Minutes); err != nil {
+			h.log.Warnw("Failed to cache integrations list", "error", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 func (h *IntegrationHandler) GetByID(c *gin.Context) {
@@ -112,6 +142,13 @@ func (h *IntegrationHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Invalidate cache
+	if h.cache != nil {
+		cacheKey := service.BuildKey("integrations", "list")
+		h.cache.Delete(cacheKey)
+		h.log.Debugw("Cache invalidated", "key", cacheKey)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Integration updated successfully",
 	})
@@ -155,6 +192,13 @@ func (h *IntegrationHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Invalidate cache
+	if h.cache != nil {
+		cacheKey := service.BuildKey("integrations", "list")
+		h.cache.Delete(cacheKey)
+		h.log.Debugw("Cache invalidated", "key", cacheKey)
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"message":     "Integration created successfully",
 		"integration": integration,
@@ -177,6 +221,13 @@ func (h *IntegrationHandler) Delete(c *gin.Context) {
 			"error": "Failed to delete integration",
 		})
 		return
+	}
+
+	// Invalidate cache
+	if h.cache != nil {
+		cacheKey := service.BuildKey("integrations", "list")
+		h.cache.Delete(cacheKey)
+		h.log.Debugw("Cache invalidated", "key", cacheKey)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

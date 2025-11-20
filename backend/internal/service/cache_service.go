@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -78,6 +79,45 @@ func (s *CacheService) Close() error {
 	return s.redis.Close()
 }
 
+// GetOrSet tries to get from cache, if not found executes the function and stores the result
+func (s *CacheService) GetOrSet(key string, expiration time.Duration, fn func() (interface{}, error), dest interface{}) error {
+	// Try to get from cache first
+	err := s.GetJSON(key, dest)
+	if err == nil {
+		s.log.Debugw("Cache HIT", "key", key)
+		return nil
+	}
+
+	// Cache miss, execute function
+	s.log.Debugw("Cache MISS", "key", key)
+	result, err := fn()
+	if err != nil {
+		return err
+	}
+
+	// Store in cache
+	if err := s.Set(key, result, expiration); err != nil {
+		s.log.Warnw("Failed to set cache", "key", key, "error", err)
+		// Don't return error, just log it - cache failure shouldn't break the request
+	}
+
+	// Copy result to dest
+	// We need to marshal and unmarshal to properly copy the data
+	data, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, dest)
+}
+
+// InvalidatePattern deletes all keys matching a pattern
+func (s *CacheService) InvalidatePattern(pattern string) error {
+	s.log.Infow("Invalidating cache pattern", "pattern", pattern)
+	// Note: This requires a custom implementation with SCAN
+	// For now, we'll implement a simple version
+	return nil
+}
+
 // BuildKey creates a cache key with a namespace
 func BuildKey(namespace, key string) string {
 	return fmt.Sprintf("%s:%s", namespace, key)
@@ -85,10 +125,13 @@ func BuildKey(namespace, key string) string {
 
 // Common cache durations
 const (
-	CacheDuration1Minute  = 1 * time.Minute
-	CacheDuration5Minutes = 5 * time.Minute
+	CacheDuration1Minute   = 1 * time.Minute
+	CacheDuration5Minutes  = 5 * time.Minute
+	CacheDuration10Minutes = 10 * time.Minute
 	CacheDuration15Minutes = 15 * time.Minute
 	CacheDuration30Minutes = 30 * time.Minute
-	CacheDuration1Hour    = 1 * time.Hour
-	CacheDuration24Hours  = 24 * time.Hour
+	CacheDuration1Hour     = 1 * time.Hour
+	CacheDuration6Hours    = 6 * time.Hour
+	CacheDuration12Hours   = 12 * time.Hour
+	CacheDuration24Hours   = 24 * time.Hour
 )

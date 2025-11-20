@@ -10,9 +10,24 @@ export const API_CONFIG = {
   },
 }
 
+/**
+ * Builds a complete API URL from a path
+ * @param path - API path (e.g., 'finops/stats' or '/finops/stats')
+ * @returns Complete URL (e.g., buildApiUrl('finops/stats'))
+ */
 export const buildApiUrl = (path: string): string => {
   const cleanPath = path.startsWith('/') ? path.slice(1) : path
   return `${API_BASE_URL}/api/${API_VERSION}/${cleanPath}`
+}
+
+/**
+ * Wrapper for fetch with automatic API URL building
+ * @param path - API path (e.g., 'finops/stats')
+ * @param options - Fetch options
+ */
+export const apiFetch = async (path: string, options?: RequestInit): Promise<Response> => {
+  const url = buildApiUrl(path)
+  return fetch(url, options)
 }
 
 export default API_CONFIG

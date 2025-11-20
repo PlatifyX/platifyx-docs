@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
 import styles from './AzureDevOpsModal.module.css'
+import { buildApiUrl } from '../../config/api'
 
 interface Integration {
   id: number
@@ -36,7 +37,7 @@ function ArgoCDModal({ integration, isCreating, onSave, onClose }: ArgoCDModalPr
     setTestResult(null)
 
     try {
-      const response = await fetch('http://localhost:8060/api/v1/integrations/test/argocd', {
+      const response = await fetch(buildApiUrl('integrations/test/argocd'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

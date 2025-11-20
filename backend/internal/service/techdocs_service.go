@@ -7,9 +7,12 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
+	"github.com/PlatifyX/platifyx-core/pkg/cache"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
+	"github.com/google/uuid"
 )
 
 type TechDocsService struct {
@@ -18,15 +21,24 @@ type TechDocsService struct {
 	diagramService *DiagramService
 	githubService  *GitHubService
 	log            *logger.Logger
+	progressStore  *cache.RedisClient
+	progressTTL    time.Duration
 }
 
-func NewTechDocsService(docsPath string, aiService *AIService, diagramService *DiagramService, githubService *GitHubService, log *logger.Logger) *TechDocsService {
+const (
+	techDocsProgressKeyPrefix = "techdocs:progress:"
+	techDocsProgressTTL       = 2 * time.Hour
+)
+
+func NewTechDocsService(docsPath string, aiService *AIService, diagramService *DiagramService, githubService *GitHubService, progressStore *cache.RedisClient, log *logger.Logger) *TechDocsService {
 	return &TechDocsService{
 		docsPath:       docsPath,
 		aiService:      aiService,
 		diagramService: diagramService,
 		githubService:  githubService,
 		log:            log,
+		progressStore:  progressStore,
+		progressTTL:    techDocsProgressTTL,
 	}
 }
 
@@ -311,13 +323,13 @@ func (s *TechDocsService) getCheapestModel(provider domain.AIProvider, requested
 	var cheapestModel string
 	switch provider {
 	case domain.AIProviderOpenAI:
-		cheapestModel = "gpt-3.5-turbo" // Cheapest OpenAI model (~90% cheaper than GPT-4)
+		cheapestModel = "gpt-4.1-mini" // Cheapest OpenAI model (~90% cheaper than GPT-4)
 	case domain.AIProviderClaude:
 		cheapestModel = "claude-3-haiku-20240307" // Cheapest Claude model (~95% cheaper than Opus)
 	case domain.AIProviderGemini:
 		cheapestModel = "gemini-pro" // Standard Gemini model
 	default:
-		cheapestModel = "gpt-3.5-turbo" // Default to cheapest overall
+		cheapestModel = "gpt-4.1-mini" // Default to cheapest overall
 	}
 
 	// Log if we're overriding a requested model
@@ -336,42 +348,72 @@ type repoFile struct {
 	Content string
 }
 
-// GenerateDocumentation generates documentation using AI
-func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest) (*domain.AIResponse, error) {
-	s.log.Infow("Generating documentation with AI", "provider", req.Provider, "source", req.Source, "docType", req.DocType, "readFullRepo", req.ReadFullRepo)
+func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest) (*domain.TechDocsProgress, error) {
+	s.log.Infow("Queueing documentation generation", "provider", req.Provider, "source", req.Source, "docType", req.DocType, "readFullRepo", req.ReadFullRepo)
 
 	if s.aiService == nil {
 		return nil, fmt.Errorf("AI service not available")
 	}
 
+	if s.progressStore == nil {
+		return nil, fmt.Errorf("progress store not configured")
+	}
+
+	progress := s.newProgressRecord(req)
+	if err := s.persistProgress(progress); err != nil {
+		s.log.Errorw("Failed to persist progress", "error", err)
+		return nil, fmt.Errorf("failed to persist progress: %w", err)
+	}
+
+	go s.runGenerateDocumentationJob(progress.ID, req)
+
+	return progress, nil
+}
+
+func (s *TechDocsService) runGenerateDocumentationJob(progressID string, req domain.AIGenerateDocRequest) {
+	defer func() {
+		if r := recover(); r != nil {
+			s.markProgressFailed(progressID, fmt.Errorf("panic: %v", r))
+		}
+	}()
+
+	s.setProgressRunning(progressID, "Preparando documentação")
+
+	response, err := s.executeDocumentationGeneration(progressID, req)
+	if err != nil {
+		s.markProgressFailed(progressID, err)
+		return
+	}
+
+	s.markProgressCompleted(progressID, response)
+}
+
+func (s *TechDocsService) executeDocumentationGeneration(progressID string, req domain.AIGenerateDocRequest) (*domain.AIResponse, error) {
 	var files []repoFile
 
-	// If reading full repository from GitHub
 	if req.Source == "github" && req.ReadFullRepo {
 		if s.githubService == nil {
 			return nil, fmt.Errorf("GitHub service not available")
 		}
 
-		// Extract owner and repo from repoURL (format: "owner/repo")
+		s.updateProgressMessage(progressID, "Lendo repositório do GitHub")
+
 		parts := strings.Split(req.RepoURL, "/")
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("invalid repository format, expected 'owner/repo'")
 		}
 		owner, repo := parts[0], parts[1]
 
-		// Get repository info to get default branch
 		repoInfo, err := s.githubService.GetRepository(owner, repo)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get repository info: %w", err)
 		}
 
-		// Get all files from repository
 		ghFiles, err := s.githubService.GetAllRepositoryFiles(owner, repo, repoInfo.DefaultBranch)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read repository files: %w", err)
 		}
 
-		// Convert to our internal structure
 		for _, f := range ghFiles {
 			files = append(files, repoFile{
 				Path:    f.Path,
@@ -381,38 +423,34 @@ func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest)
 
 		s.log.Infow("Loaded full repository", "fileCount", len(files))
 
-		// Force use of cheapest model if not specified
 		req.Model = s.getCheapestModel(req.Provider, req.Model)
 		s.log.Infow("Using model", "provider", req.Provider, "model", req.Model)
 
-		// Check if content needs chunking
 		contextLimit := s.getModelContextLimit(req.Provider, req.Model)
 		s.log.Infow("Context limit for model", "provider", req.Provider, "model", req.Model, "limit", contextLimit)
 
-		// Process with chunking (always chunk for large repos to minimize costs)
-		return s.generateDocumentationWithChunking(req, files, contextLimit)
+		return s.generateDocumentationWithChunking(req, files, contextLimit, progressID)
 	}
 
-	// For non-repository sources, proceed as before
-	// Force use of cheapest model if not specified
 	req.Model = s.getCheapestModel(req.Provider, req.Model)
 	s.log.Infow("Using model for single file", "provider", req.Provider, "model", req.Model)
 
 	prompt := s.buildGenerateDocPrompt(req)
 
-	// Check if the prompt is too large
 	estimatedTokens := s.estimateTokenCount(prompt)
 	contextLimit := s.getModelContextLimit(req.Provider, req.Model)
 
 	if estimatedTokens > contextLimit {
 		s.log.Warnw("Prompt exceeds context limit, truncating", "estimated", estimatedTokens, "limit", contextLimit)
-		// Truncate the code section if it's too large
-		maxCodeChars := contextLimit * 4 * 3 / 4 // Use 75% of limit for code
+		maxCodeChars := contextLimit * 4 * 3 / 4
 		if len(req.Code) > maxCodeChars {
 			req.Code = req.Code[:maxCodeChars] + "\n\n... [Content truncated due to size limits]"
 			prompt = s.buildGenerateDocPrompt(req)
 		}
 	}
+
+	s.setProgressTotal(progressID, 1)
+	s.updateChunkProgress(progressID, 1, 1, "Gerando documentação")
 
 	response, err := s.aiService.GenerateCompletion(req.Provider, prompt, req.Model)
 	if err != nil {
@@ -420,13 +458,11 @@ func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest)
 		return nil, fmt.Errorf("failed to generate documentation: %w", err)
 	}
 
-	// Auto-save if savePath is provided
 	if req.SavePath != "" && response.Content != "" {
 		if err := s.SaveDocument(req.SavePath, response.Content); err != nil {
 			s.log.Errorw("Failed to auto-save documentation", "error", err, "path", req.SavePath)
-			// Don't fail the request, just log the error
 		} else {
-			s.log.Infow("Documentation auto-saved successfully", "path", req.SavePath)
+			s.updateProgressMessage(progressID, fmt.Sprintf("Documento salvo em %s", req.SavePath))
 		}
 	}
 
@@ -435,7 +471,7 @@ func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest)
 }
 
 // generateDocumentationWithChunking processes large repositories in chunks
-func (s *TechDocsService) generateDocumentationWithChunking(req domain.AIGenerateDocRequest, files []repoFile, contextLimit int) (*domain.AIResponse, error) {
+func (s *TechDocsService) generateDocumentationWithChunking(req domain.AIGenerateDocRequest, files []repoFile, contextLimit int, progressID string) (*domain.AIResponse, error) {
 	// Prioritize important files first
 	prioritizedFiles := s.prioritizeFiles(files)
 
@@ -448,17 +484,20 @@ func (s *TechDocsService) generateDocumentationWithChunking(req domain.AIGenerat
 		return nil, fmt.Errorf("no files to process after chunking")
 	}
 
-	// If only one chunk, process normally
+	s.setProgressTotal(progressID, len(chunks))
+
 	if len(chunks) == 1 {
+		s.updateChunkProgress(progressID, 1, 1, "Gerando documentação")
 		req.Code = chunks[0]
 		prompt := s.buildGenerateDocPrompt(req)
 		return s.aiService.GenerateCompletion(req.Provider, prompt, req.Model)
 	}
 
-	// Process each chunk and collect results
 	var chunkResults []string
 	for i, chunk := range chunks {
 		s.log.Infow("Processing chunk", "chunk", i+1, "total", len(chunks), "size", len(chunk))
+
+		s.updateChunkProgress(progressID, i+1, len(chunks), fmt.Sprintf("Processando chunk %d/%d", i+1, len(chunks)))
 
 		chunkReq := req
 		chunkReq.Code = chunk
@@ -473,6 +512,9 @@ func (s *TechDocsService) generateDocumentationWithChunking(req domain.AIGenerat
 		}
 
 		chunkResults = append(chunkResults, response.Content)
+		bar := s.renderProgressBar(i+1, len(chunks))
+		percent := int(float64(i+1) / float64(len(chunks)) * 100)
+		s.log.Infow("Documentation progress", "chunk", i+1, "totalChunks", len(chunks), "percent", percent, "bar", bar)
 	}
 
 	// Combine all chunk results
@@ -490,6 +532,7 @@ func (s *TechDocsService) generateDocumentationWithChunking(req domain.AIGenerat
 			s.log.Errorw("Failed to auto-save documentation", "error", err, "path", req.SavePath)
 		} else {
 			s.log.Infow("Documentation auto-saved successfully", "path", req.SavePath)
+			s.updateProgressMessage(progressID, fmt.Sprintf("Documento salvo em %s", req.SavePath))
 		}
 	}
 
@@ -604,47 +647,47 @@ func (s *TechDocsService) createFileChunks(files []repoFile, contextLimit int, r
 func (s *TechDocsService) buildChunkDocPrompt(req domain.AIGenerateDocRequest, chunkNum, totalChunks int) string {
 	var prompt strings.Builder
 
-	prompt.WriteString("You are an expert technical writer. ")
+	prompt.WriteString("Você é um redator técnico especialista. ")
 
 	if totalChunks > 1 {
-		prompt.WriteString(fmt.Sprintf("This is part %d of %d of a large repository. ", chunkNum, totalChunks))
-		prompt.WriteString("Focus on documenting the files provided in this section. ")
+		prompt.WriteString(fmt.Sprintf("Esta é a parte %d de %d de um repositório grande. ", chunkNum, totalChunks))
+		prompt.WriteString("Foque em documentar apenas os arquivos desta seção. ")
 	}
 
-	prompt.WriteString("Generate comprehensive ")
+	prompt.WriteString("Gere documentação completa de ")
 	prompt.WriteString(req.DocType)
-	prompt.WriteString(" documentation based on the following code:\n\n")
+	prompt.WriteString(" com base no código a seguir. Escreva tudo em português do Brasil.\n\n")
 
 	prompt.WriteString(req.Code)
 	prompt.WriteString("\n\n")
 
-	// Add doc type specific instructions
-	prompt.WriteString("Documentation Requirements:\n")
+	prompt.WriteString("Requisitos da documentação:\n")
 	switch req.DocType {
 	case "api":
-		prompt.WriteString("- Document all API endpoints found in this section\n")
-		prompt.WriteString("- Include request/response formats\n")
-		prompt.WriteString("- Provide example requests\n")
+		prompt.WriteString("- Documente todos os endpoints encontrados nesta seção\n")
+		prompt.WriteString("- Inclua formatos de requisição e resposta\n")
+		prompt.WriteString("- Forneça exemplos de requisições\n")
 	case "architecture":
-		prompt.WriteString("- Describe the components in this section\n")
-		prompt.WriteString("- Explain their interactions\n")
-		prompt.WriteString("- Document design patterns used\n")
+		prompt.WriteString("- Descreva os componentes desta seção\n")
+		prompt.WriteString("- Explique as interações entre eles\n")
+		prompt.WriteString("- Documente os padrões de projeto utilizados\n")
 	case "guide":
-		prompt.WriteString("- Provide clear explanations\n")
-		prompt.WriteString("- Include code examples from these files\n")
-		prompt.WriteString("- Add setup instructions if relevant\n")
+		prompt.WriteString("- Forneça explicações claras\n")
+		prompt.WriteString("- Inclua exemplos de código desses arquivos\n")
+		prompt.WriteString("- Adicione instruções de configuração se relevantes\n")
 	case "readme":
-		prompt.WriteString("- Document the functionality in these files\n")
-		prompt.WriteString("- Include usage examples\n")
-		prompt.WriteString("- Note important configurations\n")
+		prompt.WriteString("- Documente a funcionalidade presente nesses arquivos\n")
+		prompt.WriteString("- Inclua exemplos de uso\n")
+		prompt.WriteString("- Destaque configurações importantes\n")
 	}
 
 	if totalChunks > 1 {
-		prompt.WriteString("\nNote: Create a focused section for these files. ")
-		prompt.WriteString("The sections will be combined later, so use clear headings.\n")
+		prompt.WriteString("\nObservação: gere uma seção focada apenas nesses arquivos. ")
+		prompt.WriteString("As seções serão combinadas depois, então use títulos claros.\n")
 	}
 
-	prompt.WriteString("\nFormat the output as Markdown with proper headings and code blocks.\n")
+	prompt.WriteString("\nInclua ao menos um diagrama Mermaid dentro de um bloco ```mermaid``` representando a arquitetura ou fluxo descrito.\n")
+	prompt.WriteString("\nFormate a saída em Markdown com títulos adequados e blocos de código.\n")
 
 	return prompt.String()
 }
@@ -653,24 +696,22 @@ func (s *TechDocsService) buildChunkDocPrompt(req domain.AIGenerateDocRequest, c
 func (s *TechDocsService) combineChunkResults(results []string, docType string) string {
 	var combined strings.Builder
 
-	// Add a main header based on doc type
 	switch docType {
 	case "api":
-		combined.WriteString("# API Documentation\n\n")
+		combined.WriteString("# Documentação de API\n\n")
 	case "architecture":
-		combined.WriteString("# Architecture Documentation\n\n")
+		combined.WriteString("# Documentação de Arquitetura\n\n")
 	case "guide":
-		combined.WriteString("# Developer Guide\n\n")
+		combined.WriteString("# Guia do Desenvolvedor\n\n")
 	case "readme":
-		combined.WriteString("# Project Documentation\n\n")
+		combined.WriteString("# Documentação do Projeto\n\n")
 	default:
-		combined.WriteString("# Documentation\n\n")
+		combined.WriteString("# Documentação\n\n")
 	}
 
-	combined.WriteString("This documentation was generated from multiple sections of the repository.\n\n")
+	combined.WriteString("Esta documentação foi gerada a partir de múltiplas seções do repositório.\n\n")
 	combined.WriteString("---\n\n")
 
-	// Combine all results
 	for i, result := range results {
 		if i > 0 {
 			combined.WriteString("\n---\n\n")
@@ -681,18 +722,180 @@ func (s *TechDocsService) combineChunkResults(results []string, docType string) 
 	return combined.String()
 }
 
+func (s *TechDocsService) newProgressRecord(req domain.AIGenerateDocRequest) *domain.TechDocsProgress {
+	now := time.Now()
+	return &domain.TechDocsProgress{
+		ID:          uuid.NewString(),
+		Status:      domain.TechDocsProgressStatusQueued,
+		Percent:     0,
+		Chunk:       0,
+		TotalChunks: 0,
+		Message:     "Aguardando processamento",
+		Provider:    req.Provider,
+		Model:       req.Model,
+		DocType:     req.DocType,
+		Source:      req.Source,
+		SavePath:    req.SavePath,
+		RepoURL:     req.RepoURL,
+		StartedAt:   now,
+		UpdatedAt:   now,
+	}
+}
+
+func (s *TechDocsService) progressKey(id string) string {
+	return techDocsProgressKeyPrefix + id
+}
+
+func (s *TechDocsService) persistProgress(progress *domain.TechDocsProgress) error {
+	if s.progressStore == nil {
+		return fmt.Errorf("progress store not configured")
+	}
+
+	return s.progressStore.Set(s.progressKey(progress.ID), progress, s.progressTTL)
+}
+
+func (s *TechDocsService) updateProgress(progressID string, updater func(*domain.TechDocsProgress)) {
+	if s.progressStore == nil || progressID == "" {
+		return
+	}
+
+	progress, err := s.GetDocumentationProgress(progressID)
+	if err != nil {
+		s.log.Warnw("Failed to load progress", "progressId", progressID, "error", err)
+		return
+	}
+
+	updater(progress)
+	progress.UpdatedAt = time.Now()
+	if progress.Percent < 0 {
+		progress.Percent = 0
+	}
+	if progress.Percent > 100 {
+		progress.Percent = 100
+	}
+
+	if err := s.persistProgress(progress); err != nil {
+		s.log.Warnw("Failed to persist progress", "progressId", progressID, "error", err)
+	}
+}
+
+func (s *TechDocsService) setProgressRunning(progressID string, message string) {
+	s.updateProgress(progressID, func(p *domain.TechDocsProgress) {
+		p.Status = domain.TechDocsProgressStatusRunning
+		p.Message = message
+	})
+}
+
+func (s *TechDocsService) setProgressTotal(progressID string, total int) {
+	if total <= 0 {
+		total = 1
+	}
+	s.updateProgress(progressID, func(p *domain.TechDocsProgress) {
+		p.TotalChunks = total
+	})
+}
+
+func (s *TechDocsService) updateChunkProgress(progressID string, chunk, total int, message string) {
+	if total <= 0 {
+		total = 1
+	}
+	if chunk < 0 {
+		chunk = 0
+	}
+	if chunk > total {
+		chunk = total
+	}
+	percent := int(float64(chunk) / float64(total) * 100)
+	s.updateProgress(progressID, func(p *domain.TechDocsProgress) {
+		p.Chunk = chunk
+		p.TotalChunks = total
+		p.Percent = percent
+		p.Message = message
+	})
+}
+
+func (s *TechDocsService) updateProgressMessage(progressID string, message string) {
+	s.updateProgress(progressID, func(p *domain.TechDocsProgress) {
+		p.Message = message
+	})
+}
+
+func (s *TechDocsService) markProgressFailed(progressID string, err error) {
+	if err == nil {
+		err = fmt.Errorf("unknown error")
+	}
+	s.updateProgress(progressID, func(p *domain.TechDocsProgress) {
+		p.Status = domain.TechDocsProgressStatusFailed
+		p.Message = "Falha na geração"
+		p.ErrorMessage = err.Error()
+	})
+}
+
+func (s *TechDocsService) markProgressCompleted(progressID string, response *domain.AIResponse) {
+	if response == nil {
+		return
+	}
+	s.updateProgress(progressID, func(p *domain.TechDocsProgress) {
+		p.Status = domain.TechDocsProgressStatusComplete
+		p.Percent = 100
+		p.Chunk = p.TotalChunks
+		p.Message = "Documentação concluída"
+		p.ResultContent = response.Content
+		p.Provider = response.Provider
+		p.Model = response.Model
+	})
+}
+
+func (s *TechDocsService) GetDocumentationProgress(id string) (*domain.TechDocsProgress, error) {
+	if s.progressStore == nil {
+		return nil, fmt.Errorf("progress store not configured")
+	}
+	var progress domain.TechDocsProgress
+	if err := s.progressStore.GetJSON(s.progressKey(id), &progress); err != nil {
+		return nil, err
+	}
+	return &progress, nil
+}
+
+func (s *TechDocsService) renderProgressBar(current, total int) string {
+	if total <= 0 {
+		return "[----------] 0%"
+	}
+
+	const segments = 20
+	ratio := float64(current) / float64(total)
+	filled := int(ratio * segments)
+	if filled > segments {
+		filled = segments
+	}
+	if filled < 0 {
+		filled = 0
+	}
+
+	bar := strings.Repeat("#", filled) + strings.Repeat("-", segments-filled)
+	percent := int(ratio * 100)
+	if percent > 100 {
+		percent = 100
+	}
+	if percent < 0 {
+		percent = 0
+	}
+
+	return fmt.Sprintf("[%s] %d%%", bar, percent)
+}
+
 func (s *TechDocsService) buildGenerateDocPrompt(req domain.AIGenerateDocRequest) string {
 	var prompt strings.Builder
 
-	prompt.WriteString("You are an expert technical writer. Generate comprehensive ")
+	prompt.WriteString("Você é um redator técnico especialista. Gere documentação completa de ")
 	prompt.WriteString(req.DocType)
-	prompt.WriteString(" documentation based on the following information.\n\n")
+	prompt.WriteString(" com base nas informações a seguir. Escreva tudo em português do Brasil.\n\n")
 
 	switch req.Source {
 	case "code":
-		prompt.WriteString("Analyze this code and create detailed documentation:\n\n")
+		prompt.WriteString("Analise este código e produza documentação detalhada:\n\n")
 		if req.Language != "" {
-			prompt.WriteString("Programming Language: ")
+			prompt.WriteString("Linguagem de Programação: ")
 			prompt.WriteString(req.Language)
 			prompt.WriteString("\n\n")
 		}
@@ -701,80 +904,80 @@ func (s *TechDocsService) buildGenerateDocPrompt(req domain.AIGenerateDocRequest
 		prompt.WriteString("\n```\n\n")
 
 	case "github":
-		prompt.WriteString("Create documentation for this GitHub repository:\n")
-		prompt.WriteString("Repository: ")
+		prompt.WriteString("Crie documentação para este repositório GitHub:\n")
+		prompt.WriteString("Repositório: ")
 		prompt.WriteString(req.RepoURL)
 		prompt.WriteString("\n")
 		if req.SourcePath != "" {
-			prompt.WriteString("Specific path: ")
+			prompt.WriteString("Caminho específico: ")
 			prompt.WriteString(req.SourcePath)
 			prompt.WriteString("\n")
 		}
 		if req.Code != "" {
-			prompt.WriteString("\nCode sample:\n```\n")
+			prompt.WriteString("\nTrecho de código:\n```\n")
 			prompt.WriteString(req.Code)
 			prompt.WriteString("\n```\n")
 		}
 		prompt.WriteString("\n")
 
 	case "azuredevops":
-		prompt.WriteString("Create documentation for this Azure DevOps project:\n")
-		prompt.WriteString("Project: ")
+		prompt.WriteString("Crie documentação para este projeto Azure DevOps:\n")
+		prompt.WriteString("Projeto: ")
 		prompt.WriteString(req.ProjectName)
 		prompt.WriteString("\n")
 		if req.SourcePath != "" {
-			prompt.WriteString("Path: ")
+			prompt.WriteString("Caminho: ")
 			prompt.WriteString(req.SourcePath)
 			prompt.WriteString("\n")
 		}
 		if req.Code != "" {
-			prompt.WriteString("\nCode sample:\n```\n")
+			prompt.WriteString("\nTrecho de código:\n```\n")
 			prompt.WriteString(req.Code)
 			prompt.WriteString("\n```\n")
 		}
 		prompt.WriteString("\n")
 	}
 
-	// Add doc type specific instructions
-	prompt.WriteString("Documentation Requirements:\n")
+	prompt.WriteString("Requisitos da documentação:\n")
 	switch req.DocType {
 	case "api":
-		prompt.WriteString("- Document all API endpoints\n")
-		prompt.WriteString("- Include request/response formats\n")
-		prompt.WriteString("- Provide example requests and responses\n")
-		prompt.WriteString("- Document authentication and authorization\n")
-		prompt.WriteString("- Include error codes and handling\n")
+		prompt.WriteString("- Documente todos os endpoints da API\n")
+		prompt.WriteString("- Inclua formatos de requisição e resposta\n")
+		prompt.WriteString("- Forneça exemplos de requisições e respostas\n")
+		prompt.WriteString("- Documente autenticação e autorização\n")
+		prompt.WriteString("- Liste códigos de erro e tratamentos\n")
 
 	case "architecture":
-		prompt.WriteString("- Describe the overall system architecture\n")
-		prompt.WriteString("- Explain key components and their interactions\n")
-		prompt.WriteString("- Document design patterns used\n")
-		prompt.WriteString("- Include data flow and processing\n")
-		prompt.WriteString("- Explain scalability and performance considerations\n")
+		prompt.WriteString("- Descreva a arquitetura geral do sistema\n")
+		prompt.WriteString("- Explique os componentes principais e suas interações\n")
+		prompt.WriteString("- Documente os padrões de projeto utilizados\n")
+		prompt.WriteString("- Detalhe fluxos de dados e processamento\n")
+		prompt.WriteString("- Explique aspectos de escalabilidade e desempenho\n")
 
 	case "guide":
-		prompt.WriteString("- Provide step-by-step instructions\n")
-		prompt.WriteString("- Include prerequisites and setup\n")
-		prompt.WriteString("- Add code examples where relevant\n")
-		prompt.WriteString("- Include troubleshooting tips\n")
-		prompt.WriteString("- Provide best practices\n")
+		prompt.WriteString("- Forneça instruções passo a passo\n")
+		prompt.WriteString("- Liste pré-requisitos e configuração\n")
+		prompt.WriteString("- Inclua exemplos de código quando relevante\n")
+		prompt.WriteString("- Adicione dicas de troubleshooting\n")
+		prompt.WriteString("- Compartilhe boas práticas\n")
 
 	case "readme":
-		prompt.WriteString("- Clear project overview\n")
-		prompt.WriteString("- Installation instructions\n")
-		prompt.WriteString("- Usage examples\n")
-		prompt.WriteString("- Configuration options\n")
-		prompt.WriteString("- Contributing guidelines\n")
-		prompt.WriteString("- License information\n")
+		prompt.WriteString("- Visão geral clara do projeto\n")
+		prompt.WriteString("- Instruções de instalação\n")
+		prompt.WriteString("- Exemplos de uso\n")
+		prompt.WriteString("- Opções de configuração\n")
+		prompt.WriteString("- Diretrizes de contribuição\n")
+		prompt.WriteString("- Informações de licença\n")
 
 	default:
-		prompt.WriteString("- Clear and comprehensive documentation\n")
-		prompt.WriteString("- Well-structured with sections\n")
-		prompt.WriteString("- Include code examples\n")
-		prompt.WriteString("- Add relevant links and references\n")
+		prompt.WriteString("- Documentação clara e abrangente\n")
+		prompt.WriteString("- Estrutura bem organizada em seções\n")
+		prompt.WriteString("- Inclua exemplos de código\n")
+		prompt.WriteString("- Adicione links e referências relevantes\n")
 	}
 
-	prompt.WriteString("\nFormat the output as Markdown with proper headings, code blocks, and formatting.\n")
+	prompt.WriteString("\nInclua ao menos um diagrama Mermaid dentro de um bloco ```mermaid``` representando a estrutura descrita.\n")
+	prompt.WriteString("\nFormate a saída em Markdown com títulos apropriados, blocos de código e boa formatação.\n")
 
 	return prompt.String()
 }
@@ -802,42 +1005,42 @@ func (s *TechDocsService) ImproveDocumentation(req domain.AIImproveDocRequest) (
 func (s *TechDocsService) buildImproveDocPrompt(req domain.AIImproveDocRequest) string {
 	var prompt strings.Builder
 
-	prompt.WriteString("You are an expert technical editor. Improve the following documentation.\n\n")
+	prompt.WriteString("Você é um editor técnico especialista. Melhore a documentação a seguir e responda em português do Brasil.\n\n")
 
 	switch req.ImprovementType {
 	case "grammar":
-		prompt.WriteString("Focus on:\n")
-		prompt.WriteString("- Correcting grammar and spelling errors\n")
-		prompt.WriteString("- Improving sentence structure\n")
-		prompt.WriteString("- Fixing punctuation\n")
+		prompt.WriteString("Foque em:\n")
+		prompt.WriteString("- Corrigir erros de gramática e ortografia\n")
+		prompt.WriteString("- Melhorar a estrutura das frases\n")
+		prompt.WriteString("- Ajustar pontuação\n")
 
 	case "clarity":
-		prompt.WriteString("Focus on:\n")
-		prompt.WriteString("- Making explanations clearer and more concise\n")
-		prompt.WriteString("- Simplifying complex sentences\n")
-		prompt.WriteString("- Removing ambiguity\n")
-		prompt.WriteString("- Improving readability\n")
+		prompt.WriteString("Foque em:\n")
+		prompt.WriteString("- Tornar as explicações mais claras e concisas\n")
+		prompt.WriteString("- Simplificar frases complexas\n")
+		prompt.WriteString("- Remover ambiguidades\n")
+		prompt.WriteString("- Melhorar a legibilidade\n")
 
 	case "structure":
-		prompt.WriteString("Focus on:\n")
-		prompt.WriteString("- Reorganizing content for better flow\n")
-		prompt.WriteString("- Adding proper headings and sections\n")
-		prompt.WriteString("- Improving document hierarchy\n")
-		prompt.WriteString("- Adding table of contents if needed\n")
+		prompt.WriteString("Foque em:\n")
+		prompt.WriteString("- Reorganizar o conteúdo para melhor fluidez\n")
+		prompt.WriteString("- Adicionar títulos e seções adequados\n")
+		prompt.WriteString("- Melhorar a hierarquia do documento\n")
+		prompt.WriteString("- Adicionar índice se necessário\n")
 
 	case "complete":
-		prompt.WriteString("Focus on:\n")
-		prompt.WriteString("- Fixing all grammar and spelling issues\n")
-		prompt.WriteString("- Improving clarity and readability\n")
-		prompt.WriteString("- Enhancing structure and organization\n")
-		prompt.WriteString("- Adding missing information if obvious\n")
-		prompt.WriteString("- Improving code examples\n")
-		prompt.WriteString("- Adding relevant links or references\n")
+		prompt.WriteString("Foque em:\n")
+		prompt.WriteString("- Corrigir todos os problemas de gramática e ortografia\n")
+		prompt.WriteString("- Melhorar clareza e legibilidade\n")
+		prompt.WriteString("- Aperfeiçoar estrutura e organização\n")
+		prompt.WriteString("- Acrescentar informações faltantes quando óbvias\n")
+		prompt.WriteString("- Aprimorar exemplos de código\n")
+		prompt.WriteString("- Adicionar links ou referências relevantes\n")
 	}
 
-	prompt.WriteString("\nOriginal documentation:\n\n")
+	prompt.WriteString("\nDocumentação original:\n\n")
 	prompt.WriteString(req.Content)
-	prompt.WriteString("\n\nProvide the improved version in Markdown format.\n")
+	prompt.WriteString("\n\nForneça a versão aprimorada em Markdown.\n")
 
 	return prompt.String()
 }

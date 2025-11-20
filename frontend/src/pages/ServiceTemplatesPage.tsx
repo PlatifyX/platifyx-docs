@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Code, Rocket } from 'lucide-react'
 import styles from './IntegrationsPage.module.css'
+import { buildApiUrl } from '../config/api'
 
 interface Template {
   id: string
@@ -28,7 +29,7 @@ function ServiceTemplatesPage() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/templates')
+      const response = await fetch(buildApiUrl('templates'))
       const data = await response.json()
       setTemplates(data.templates || [])
     } catch (err) {
@@ -43,7 +44,7 @@ function ServiceTemplatesPage() {
 
     setCreating(true)
     try {
-      const response = await fetch('http://localhost:8060/api/v1/services/create', {
+      const response = await fetch(buildApiUrl('services/create'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

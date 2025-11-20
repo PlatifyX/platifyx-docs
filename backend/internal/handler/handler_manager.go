@@ -37,7 +37,7 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		KubernetesHandler:      NewKubernetesHandler(services.KubernetesService, log),
 		AzureDevOpsHandler:     NewAzureDevOpsHandler(services.IntegrationService, log),
 		SonarQubeHandler:       NewSonarQubeHandler(services.IntegrationService, log),
-		IntegrationHandler:     NewIntegrationHandler(services.IntegrationService, log),
+		IntegrationHandler:     NewIntegrationHandler(services.IntegrationService, services.CacheService, log),
 		FinOpsHandler:          NewFinOpsHandler(services.FinOpsService, log),
 		GrafanaHandler:         NewGrafanaHandler(services.IntegrationService, log),
 		GitHubHandler:          NewGitHubHandler(services.IntegrationService, log),

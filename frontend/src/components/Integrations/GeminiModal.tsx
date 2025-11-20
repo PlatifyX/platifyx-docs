@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
 import styles from './AzureDevOpsModal.module.css'
+import { buildApiUrl } from '../../config/api'
 
 interface Integration {
   id: number
@@ -34,7 +35,7 @@ function GeminiModal({ integration, isCreating, onSave, onClose }: GeminiModalPr
     setTestResult(null)
 
     try {
-      const response = await fetch('http://localhost:8060/api/v1/integrations/test/gemini', {
+      const response = await fetch(buildApiUrl('integrations/test/gemini'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -35,6 +35,27 @@ export interface GenerateDocRequest {
   savePath?: string
 }
 
+export type TechDocsProgressStatus = 'queued' | 'running' | 'completed' | 'failed'
+
+export interface TechDocsProgress {
+  id: string
+  status: TechDocsProgressStatus
+  percent: number
+  chunk: number
+  totalChunks: number
+  message: string
+  provider?: string
+  model?: string
+  docType?: string
+  source?: string
+  savePath?: string
+  repoUrl?: string
+  resultContent?: string
+  errorMessage?: string
+  startedAt: string
+  updatedAt: string
+}
+
 export interface ImproveDocRequest {
   provider: string
   content: string
@@ -132,7 +153,7 @@ export const aiService = {
     }
   },
 
-  async generateDocumentation(request: GenerateDocRequest): Promise<AIResponse> {
+  async generateDocumentation(request: GenerateDocRequest): Promise<TechDocsProgress> {
     const response = await fetch(buildApiUrl('techdocs/generate'), {
       method: 'POST',
       headers: {
@@ -144,7 +165,18 @@ export const aiService = {
       const error = await response.json()
       throw new Error(error.error || 'Failed to generate documentation')
     }
-    return response.json()
+    const data = await response.json()
+    return data.progress
+  },
+
+  async getDocumentationProgress(progressId: string): Promise<TechDocsProgress> {
+    const response = await fetch(buildApiUrl(`techdocs/progress/${progressId}`))
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error || 'Failed to fetch documentation progress')
+    }
+    const data = await response.json()
+    return data.progress
   },
 
   async improveDocumentation(request: ImproveDocRequest): Promise<AIResponse> {

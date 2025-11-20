@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, PlayCircle, CheckCircle, XCircle, Clock, Calendar } from 'lucide-react'
 import styles from './PipelineRunsModal.module.css'
+import { buildApiUrl } from '../../config/api'
 
 interface PipelineRun {
   id: number
@@ -29,7 +30,7 @@ function PipelineRunsModal({ pipelineId, pipelineName, onClose }: PipelineRunsMo
 
   const fetchRuns = async () => {
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/ci/pipelines/${pipelineId}/runs`)
+      const response = await fetch(buildApiUrl(`ci/pipelines/${pipelineId}/runs`))
       if (!response.ok) throw new Error('Failed to fetch runs')
       const data = await response.json()
       setRuns(data.runs || [])

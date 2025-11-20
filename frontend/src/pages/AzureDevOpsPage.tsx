@@ -6,6 +6,7 @@ import BuildsTab from '../components/AzureDevOps/BuildsTab'
 import ReleasesTab from '../components/AzureDevOps/ReleasesTab'
 import CIFilters, { FilterValues } from '../components/AzureDevOps/CIFilters'
 import styles from './AzureDevOpsPage.module.css'
+import { buildApiUrl } from '../config/api'
 
 type TabType = 'pipelines' | 'builds' | 'releases'
 type IntegrationType = 'all' | 'azuredevops' | 'github' | 'jenkins'
@@ -49,7 +50,7 @@ function AzureDevOpsPage() {
       if (filters.startDate) params.append('startDate', filters.startDate)
       if (filters.endDate) params.append('endDate', filters.endDate)
 
-      const response = await fetch(`http://localhost:8060/api/v1/ci/stats?${params.toString()}`)
+      const response = await fetch(buildApiUrl(`ci/stats?${params.toString()}`))
       if (!response.ok) throw new Error('Failed to fetch stats')
       const data = await response.json()
       setStats(data)

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { FolderOpen, Bug, Shield, Code, TrendingUp, Copy, CheckCircle, XCircle } from 'lucide-react'
 import { QualityFilterValues } from './QualityFilters'
 import styles from './QualityTabs.module.css'
+import { buildApiUrl } from '../../config/api'
 
 interface Project {
   key: string
@@ -46,7 +47,7 @@ function ProjectsTab({ filters }: ProjectsTabProps) {
       const params = new URLSearchParams()
       if (filters.integration) params.append('integration', filters.integration)
 
-      const response = await fetch(`http://localhost:8060/api/v1/quality/projects?${params.toString()}`)
+      const response = await fetch(buildApiUrl(`quality/projects?${params.toString()}`))
       if (!response.ok) throw new Error('Failed to fetch projects')
       const data = await response.json()
 
@@ -77,7 +78,7 @@ function ProjectsTab({ filters }: ProjectsTabProps) {
       const params = new URLSearchParams()
       if (integration) params.append('integration', integration)
 
-      const response = await fetch(`http://localhost:8060/api/v1/quality/projects/${projectKey}?${params.toString()}`)
+      const response = await fetch(buildApiUrl(`quality/projects/${projectKey}?${params.toString()}`))
       if (!response.ok) return
 
       const details = await response.json()

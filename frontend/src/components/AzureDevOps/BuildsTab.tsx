@@ -4,6 +4,7 @@ import BuildLogsModal from './BuildLogsModal'
 import QueueBuildModal from './QueueBuildModal'
 import { FilterValues } from './CIFilters'
 import styles from './AzureDevOpsTabs.module.css'
+import { buildApiUrl } from '../../config/api'
 
 interface Build {
   id: number
@@ -47,7 +48,7 @@ function BuildsTab({ filters }: BuildsTabProps) {
       if (filters.startDate) params.append('startDate', filters.startDate)
       if (filters.endDate) params.append('endDate', filters.endDate)
 
-      const response = await fetch(`http://localhost:8060/api/v1/ci/builds?${params.toString()}`)
+      const response = await fetch(buildApiUrl(`ci/builds?${params.toString()}`))
       if (!response.ok) throw new Error('Failed to fetch builds')
       const data = await response.json()
       setBuilds(data.builds || [])

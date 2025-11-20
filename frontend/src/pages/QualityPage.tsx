@@ -5,6 +5,7 @@ import ProjectsTab from '../components/Quality/ProjectsTab'
 import IssuesTab from '../components/Quality/IssuesTab'
 import QualityFilters, { QualityFilterValues } from '../components/Quality/QualityFilters'
 import styles from './QualityPage.module.css'
+import { buildApiUrl } from '../config/api'
 
 type TabType = 'projects' | 'issues'
 
@@ -41,7 +42,7 @@ function QualityPage() {
       if (filters.integration) params.append('integration', filters.integration)
       if (filters.project) params.append('project', filters.project)
 
-      const response = await fetch(`http://localhost:8060/api/v1/quality/stats?${params.toString()}`)
+      const response = await fetch(buildApiUrl(`quality/stats?${params.toString()}`))
       if (!response.ok) throw new Error('Failed to fetch stats')
       const data = await response.json()
       setStats(data)

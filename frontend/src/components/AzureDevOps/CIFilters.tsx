@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Filter, X, Calendar, FolderTree, Building2 } from 'lucide-react'
 import styles from './CIFilters.module.css'
+import { buildApiUrl } from '../../config/api'
 
 interface Pipeline {
   id: number
@@ -36,7 +37,7 @@ function CIFilters({ onFilterChange, initialFilters }: CIFiltersProps) {
 
   const fetchPipelines = async () => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/ci/pipelines')
+      const response = await fetch(buildApiUrl('ci/pipelines'))
       if (response.ok) {
         const data = await response.json()
         setPipelines(data.pipelines || [])

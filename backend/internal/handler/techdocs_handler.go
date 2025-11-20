@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/service"
@@ -171,7 +172,7 @@ func (h *TechDocsHandler) GenerateDocumentation(c *gin.Context) {
 		return
 	}
 
-	response, err := h.service.GenerateDocumentation(req)
+	progress, err := h.service.GenerateDocumentation(req)
 	if err != nil {
 		h.log.Errorw("Failed to generate documentation", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -180,7 +181,36 @@ func (h *TechDocsHandler) GenerateDocumentation(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusAccepted, gin.H{
+		"progress": progress,
+	})
+}
+
+func (h *TechDocsHandler) GetProgress(c *gin.Context) {
+	progressID := c.Param("id")
+	if progressID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "progress id is required",
+		})
+		return
+	}
+
+	progress, err := h.service.GetDocumentationProgress(progressID)
+	if err != nil {
+		h.log.Errorw("Failed to get documentation progress", "error", err, "progressId", progressID)
+		status := http.StatusInternalServerError
+		if strings.Contains(strings.ToLower(err.Error()), "not found") {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"progress": progress,
+	})
 }
 
 // ImproveDocumentation improves existing documentation using AI

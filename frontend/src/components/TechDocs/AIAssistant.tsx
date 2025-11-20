@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Sparkles, Wand2, MessageSquare, Network, X, Download, Copy, Check, RefreshCw } from 'lucide-react'
-import { aiService, AIProvider, Repository, AzureDevOpsProject } from '../../services/aiService'
+import { aiService, AIProvider, Repository, AzureDevOpsProject, TechDocsProgress } from '../../services/aiService'
 import styles from './AIAssistant.module.css'
 
 interface AIAssistantProps {
@@ -10,6 +10,8 @@ interface AIAssistantProps {
 }
 
 type TabType = 'generate' | 'improve' | 'chat' | 'diagram'
+
+const TECHDOCS_PROGRESS_STORAGE_KEY = 'platifyx-techdocs-progress'
 
 function AIAssistant({ currentContent, onInsertContent, onClose }: AIAssistantProps) {
   const [activeTab, setActiveTab] = useState<TabType>('generate')
@@ -31,6 +33,8 @@ function AIAssistant({ currentContent, onInsertContent, onClose }: AIAssistantPr
   const [selectedProject, setSelectedProject] = useState('')
   const [loadingRepos, setLoadingRepos] = useState(false)
   const [readFullRepo, setReadFullRepo] = useState(false)
+  const [generationProgress, setGenerationProgress] = useState<TechDocsProgress | null>(null)
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Improve tab
   const [improveType, setImproveType] = useState('complete')
@@ -56,6 +60,93 @@ function AIAssistant({ currentContent, onInsertContent, onClose }: AIAssistantPr
       loadAzureProjects()
     }
   }, [generateSource])
+
+  const persistProgressId = (id: string) => {
+    localStorage.setItem(TECHDOCS_PROGRESS_STORAGE_KEY, id)
+  }
+
+  const clearPersistedProgress = () => {
+    localStorage.removeItem(TECHDOCS_PROGRESS_STORAGE_KEY)
+  }
+
+  const stopProgressPolling = () => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current)
+      progressIntervalRef.current = null
+    }
+  }
+
+  const fetchProgress = async (progressId: string, silent = false) => {
+    try {
+      const latest = await aiService.getDocumentationProgress(progressId)
+      setGenerationProgress(latest)
+
+      if (latest.status === 'completed') {
+        setResult(latest.resultContent || '')
+        if (latest.savePath) {
+          alert(`Documentação gerada e salva em: ${latest.savePath}`)
+        }
+        setLoading(false)
+        stopProgressPolling()
+        clearPersistedProgress()
+        setGenerationProgress(null)
+        return
+      }
+
+      if (latest.status === 'failed') {
+        setLoading(false)
+        stopProgressPolling()
+        clearPersistedProgress()
+        if (latest.errorMessage) {
+          alert(latest.errorMessage)
+        } else if (!silent) {
+          alert('Falha ao gerar documentação')
+        }
+        return
+      }
+    } catch (err) {
+      console.error('Error fetching documentation progress:', err)
+      if (!silent) {
+        alert('Não foi possível consultar o progresso atual. Tente novamente.')
+      }
+      setLoading(false)
+      stopProgressPolling()
+      clearPersistedProgress()
+      setGenerationProgress(null)
+    }
+  }
+
+  const startProgressPolling = (progressId: string) => {
+    stopProgressPolling()
+    progressIntervalRef.current = window.setInterval(() => {
+      fetchProgress(progressId, true)
+    }, 3000)
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'queued':
+        return 'Na fila'
+      case 'running':
+        return 'Processando'
+      case 'failed':
+        return 'Falhou'
+      case 'completed':
+        return 'Concluído'
+      default:
+        return status
+    }
+  }
+
+  useEffect(() => {
+    const stored = localStorage.getItem(TECHDOCS_PROGRESS_STORAGE_KEY)
+    if (stored) {
+      setLoading(true)
+      fetchProgress(stored)
+      startProgressPolling(stored)
+    }
+    return () => stopProgressPolling()
+  }, [])
 
   const loadProviders = async () => {
     try {
@@ -122,8 +213,14 @@ function AIAssistant({ currentContent, onInsertContent, onClose }: AIAssistantPr
       return
     }
 
+    if (generationProgress && generationProgress.status !== 'failed' && generationProgress.status !== 'completed') {
+      alert('Já existe uma geração em andamento. Acompanhe o progresso ou aguarde finalizar.')
+      return
+    }
+
     setLoading(true)
     setResult('')
+    setGenerationProgress(null)
 
     try {
       const request: any = {
@@ -152,17 +249,17 @@ function AIAssistant({ currentContent, onInsertContent, onClose }: AIAssistantPr
         request.code = generateCode
       }
 
-      const response = await aiService.generateDocumentation(request)
-      setResult(response.content)
-
-      // Show success message with save path if auto-saved
-      if (generateSource === 'github' && readFullRepo) {
-        const repoName = selectedRepo.split('/')[1] || 'repo'
-        alert(`Documentação gerada e salva em: ia/${repoName}.md`)
+      const progress = await aiService.generateDocumentation(request)
+      if (!progress || !progress.id) {
+        throw new Error('Não foi possível iniciar a geração')
       }
+
+      setGenerationProgress(progress)
+      persistProgressId(progress.id)
+      fetchProgress(progress.id, true)
+      startProgressPolling(progress.id)
     } catch (err: any) {
       alert(`Erro: ${err.message}`)
-    } finally {
       setLoading(false)
     }
   }
@@ -614,6 +711,40 @@ function AIAssistant({ currentContent, onInsertContent, onClose }: AIAssistantPr
             <button onClick={handleGenerateDiagram} disabled={loading} className={styles.primaryBtn}>
               {loading ? 'Gerando...' : 'Gerar Diagrama'}
             </button>
+          </div>
+        )}
+
+        {generationProgress && (
+          <div
+            className={`${styles.progressPanel} ${
+              generationProgress.status === 'failed' ? styles.progressPanelError : ''
+            }`}
+          >
+            <div className={styles.progressHeader}>
+              <div>
+                <strong>Progresso da documentação</strong>
+                <span>{generationProgress.message}</span>
+              </div>
+              <span className={styles.progressValue}>{generationProgress.percent}%</span>
+            </div>
+            <div className={styles.progressBar}>
+              <div
+                className={styles.progressBarFill}
+                style={{ width: `${generationProgress.percent}%` }}
+              />
+            </div>
+            <div className={styles.progressDetails}>
+              <span className={styles.progressStatus}>{getStatusLabel(generationProgress.status)}</span>
+              {generationProgress.totalChunks > 0 && (
+                <span>
+                  {generationProgress.chunk}/{generationProgress.totalChunks} blocos
+                </span>
+              )}
+              <span>ID: {generationProgress.id}</span>
+            </div>
+            {generationProgress.status === 'failed' && generationProgress.errorMessage && (
+              <p className={styles.progressErrorText}>{generationProgress.errorMessage}</p>
+            )}
           </div>
         )}
 

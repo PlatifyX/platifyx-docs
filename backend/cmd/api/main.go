@@ -91,7 +91,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 
 	router.Use(middleware.Logger(log))
 	router.Use(middleware.Recovery(log))
-	router.Use(middleware.CORS())
+	router.Use(middleware.CORS(cfg.AllowedOrigins))
 
 	v1 := router.Group("/api/v1")
 	{
@@ -232,6 +232,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 
 			// AI-powered features
 			techdocs.POST("/generate", handlers.TechDocsHandler.GenerateDocumentation)
+			techdocs.GET("/progress/:id", handlers.TechDocsHandler.GetProgress)
 			techdocs.POST("/improve", handlers.TechDocsHandler.ImproveDocumentation)
 			techdocs.POST("/chat", handlers.TechDocsHandler.ChatAboutDocumentation)
 			techdocs.POST("/diagram", handlers.TechDocsHandler.GenerateDiagram)

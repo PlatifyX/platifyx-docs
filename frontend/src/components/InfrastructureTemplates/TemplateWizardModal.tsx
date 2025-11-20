@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X, ChevronRight, ChevronLeft, Download, CheckCircle2, FileText } from 'lucide-react'
 import JSZip from 'jszip'
 import styles from './TemplateWizardModal.module.css'
+import { buildApiUrl } from '../../config/api'
 
 interface Template {
   type: string
@@ -92,7 +93,7 @@ function TemplateWizardModal({ template, onClose }: TemplateWizardModalProps) {
     setPreviewMode(true)
     setLoading(true)
     try {
-      const response = await fetch('http://localhost:8060/api/v1/infrastructure-templates/preview', {
+      const response = await fetch(buildApiUrl('infrastructure-templates/preview'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +115,7 @@ function TemplateWizardModal({ template, onClose }: TemplateWizardModalProps) {
   const handleGenerate = async () => {
     setLoading(true)
     try {
-      const response = await fetch('http://localhost:8060/api/v1/infrastructure-templates/generate', {
+      const response = await fetch(buildApiUrl('infrastructure-templates/generate'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

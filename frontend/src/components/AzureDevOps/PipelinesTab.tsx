@@ -3,6 +3,7 @@ import { GitBranch, FolderOpen, Package } from 'lucide-react'
 import PipelineRunsModal from './PipelineRunsModal'
 import { FilterValues } from './CIFilters'
 import styles from './AzureDevOpsTabs.module.css'
+import { buildApiUrl } from '../../config/api'
 
 interface Pipeline {
   id: number
@@ -36,7 +37,7 @@ function PipelinesTab({ filters }: PipelinesTabProps) {
       if (filters.integration) params.append('integration', filters.integration)
       if (filters.project) params.append('project', filters.project)
 
-      const response = await fetch(`http://localhost:8060/api/v1/ci/pipelines?${params.toString()}`)
+      const response = await fetch(buildApiUrl(`ci/pipelines?${params.toString()}`))
       if (!response.ok) throw new Error('Failed to fetch pipelines')
       const data = await response.json()
       setPipelines(data.pipelines || [])

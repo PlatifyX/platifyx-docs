@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
 import styles from './AzureDevOpsModal.module.css'
+import { buildApiUrl } from '../../config/api'
 
 interface Integration {
   id: number
@@ -36,7 +37,7 @@ function VaultModal({ integration, isCreating, onSave, onClose }: VaultModalProp
     setTestResult(null)
 
     try {
-      const response = await fetch('http://localhost:8060/api/v1/integrations/test/vault', {
+      const response = await fetch(buildApiUrl('integrations/test/vault'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

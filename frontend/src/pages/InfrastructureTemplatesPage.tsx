@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import {  Package, Clock, Cog, Layers, Plus } from 'lucide-react'
 import TemplateWizardModal from '../components/InfrastructureTemplates/TemplateWizardModal'
 import styles from './InfrastructureTemplatesPage.module.css'
+import { buildApiUrl } from '../config/api'
 
 interface Template {
   type: string
@@ -23,7 +24,7 @@ function InfrastructureTemplatesPage() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/infrastructure-templates')
+      const response = await fetch(buildApiUrl('infrastructure-templates'))
       const data = await response.json()
       setTemplates(data.templates || [])
     } catch (error) {

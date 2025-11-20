@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Filter } from 'lucide-react'
 import styles from './QualityFilters.module.css'
+import { buildApiUrl } from '../../config/api'
 
 export interface QualityFilterValues {
   integration: string
@@ -30,7 +31,7 @@ function QualityFilters({ onFilterChange, initialFilters }: QualityFiltersProps)
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/quality/projects')
+      const response = await fetch(buildApiUrl('quality/projects'))
       if (!response.ok) throw new Error('Failed to fetch projects')
       const data = await response.json()
       setProjects(data.projects || [])

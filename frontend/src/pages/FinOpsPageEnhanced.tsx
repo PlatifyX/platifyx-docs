@@ -5,6 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart
 } from 'recharts'
 import styles from './FinOpsPage.module.css'
+import { buildApiUrl } from '../config/api'
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
@@ -33,10 +34,10 @@ function FinOpsPageEnhanced() {
     try {
       // Fetch all data in parallel
       const [monthlyRes, serviceRes, forecastRes, spRes] = await Promise.all([
-        fetch('http://localhost:8060/api/v1/finops/aws/monthly'),
-        fetch(`http://localhost:8060/api/v1/finops/aws/by-service?months=${monthsToShow}`),
-        fetch('http://localhost:8060/api/v1/finops/aws/forecast'),
-        fetch('http://localhost:8060/api/v1/finops/aws/savings-plans-utilization'),
+        fetch(buildApiUrl('finops/aws/monthly')),
+        fetch(buildApiUrl(`finops/aws/by-service?months=${monthsToShow}`)),
+        fetch(buildApiUrl('finops/aws/forecast')),
+        fetch(buildApiUrl('finops/aws/savings-plans-utilization')),
       ])
 
       const monthlyData = await monthlyRes.json()

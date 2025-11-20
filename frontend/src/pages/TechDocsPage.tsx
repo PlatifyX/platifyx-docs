@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { FileText, Folder, Plus, Edit2, Trash2, Save, X, FolderPlus, Sparkles } from 'lucide-react'
 import AIAssistant from '../components/TechDocs/AIAssistant'
 import styles from './TechDocsPage.module.css'
+import { buildApiUrl } from '../config/api'
 
 interface TreeNode {
   path: string
@@ -37,7 +38,7 @@ function TechDocsPage() {
 
   const fetchTree = async () => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/techdocs/tree')
+      const response = await fetch(buildApiUrl('techdocs/tree'))
       if (!response.ok) throw new Error('Failed to fetch document tree')
       const data = await response.json()
       setTree(data.tree || [])
@@ -50,7 +51,7 @@ function TechDocsPage() {
 
   const fetchDocument = async (path: string) => {
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/techdocs/document?path=${encodeURIComponent(path)}`)
+      const response = await fetch(buildApiUrl(`techdocs/document?path=${encodeURIComponent(path)}`))
       if (!response.ok) throw new Error('Failed to fetch document')
       const data = await response.json()
       setSelectedDoc(data)
@@ -66,7 +67,7 @@ function TechDocsPage() {
     if (!selectedDoc) return
 
     try {
-      const response = await fetch('http://localhost:8060/api/v1/techdocs/document', {
+      const response = await fetch(buildApiUrl('techdocs/document'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +97,7 @@ function TechDocsPage() {
     if (!confirmed) return
 
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/techdocs/document?path=${encodeURIComponent(selectedDoc.path)}`, {
+      const response = await fetch(buildApiUrl(`techdocs/document?path=${encodeURIComponent(selectedDoc.path)}`), {
         method: 'DELETE',
       })
 
@@ -118,7 +119,7 @@ function TechDocsPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:8060/api/v1/techdocs/document', {
+      const response = await fetch(buildApiUrl('techdocs/document'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,7 +149,7 @@ function TechDocsPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:8060/api/v1/techdocs/folder', {
+      const response = await fetch(buildApiUrl('techdocs/folder'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

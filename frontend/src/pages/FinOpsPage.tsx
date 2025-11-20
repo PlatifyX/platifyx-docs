@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import styles from './FinOpsPage.module.css'
+import { buildApiUrl } from '../config/api'
 
 interface FinOpsStats {
   totalCost: number
@@ -46,8 +47,8 @@ function FinOpsPage() {
       const queryParams = new URLSearchParams()
       if (providerFilter) queryParams.append('provider', providerFilter)
 
-      console.log('Fetching stats from:', `http://localhost:8060/api/v1/finops/stats?${queryParams}`)
-      const response = await fetch(`http://localhost:8060/api/v1/finops/stats?${queryParams}`)
+      console.log('Fetching stats from:', buildApiUrl(`finops/stats?${queryParams}`))
+      const response = await fetch(buildApiUrl(`finops/stats?${queryParams}`))
 
       if (!response.ok) {
         console.error('Stats response not OK:', response.status, response.statusText)
@@ -71,8 +72,8 @@ function FinOpsPage() {
       const queryParams = new URLSearchParams()
       if (providerFilter) queryParams.append('provider', providerFilter)
 
-      console.log('Fetching resources from:', `http://localhost:8060/api/v1/finops/resources?${queryParams}`)
-      const response = await fetch(`http://localhost:8060/api/v1/finops/resources?${queryParams}`)
+      console.log('Fetching resources from:', buildApiUrl(`finops/resources?${queryParams}`))
+      const response = await fetch(buildApiUrl(`finops/resources?${queryParams}`))
 
       if (!response.ok) {
         console.error('Resources response not OK:', response.status, response.statusText)

@@ -4,11 +4,14 @@ import (
 	"database/sql"
 
 	"github.com/PlatifyX/platifyx-core/internal/config"
+	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/repository"
+	"github.com/PlatifyX/platifyx-core/pkg/cache"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 )
 
 type ServiceManager struct {
+	CacheService           *CacheService
 	MetricsService         *MetricsService
 	KubernetesService      *KubernetesService
 	AzureDevOpsService     *AzureDevOpsService
@@ -84,8 +87,37 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	aiService := NewAIService(integrationService, log)
 	diagramService := NewDiagramService(aiService, log)
 
-	// Initialize TechDocs service with AI capabilities
-	techDocsService := NewTechDocsService("docs", aiService, diagramService, githubService, log)
+	// Initialize Cache Service (Redis)
+	var cacheService *CacheService
+	var redisClient *cache.RedisClient
+	if cfg.RedisEnabled && cfg.CacheEnabled {
+		redisConfig := domain.RedisConfig{
+			Host:     cfg.RedisHost,
+			Port:     cfg.RedisPort,
+			Password: cfg.RedisPass,
+			DB:       cfg.RedisDB,
+		}
+
+		cache, err := NewCacheService(redisConfig, log)
+		if err != nil {
+			log.Warnw("Failed to initialize cache service, continuing without cache", "error", err)
+		} else {
+			cacheService = cache
+			redisClient = cache.redis
+			log.Infow("Cache service initialized successfully",
+				"host", cfg.RedisHost,
+				"port", cfg.RedisPort,
+				"db", cfg.RedisDB,
+			)
+		}
+	} else {
+		log.Infow("Cache disabled",
+			"redisEnabled", cfg.RedisEnabled,
+			"cacheEnabled", cfg.CacheEnabled,
+		)
+	}
+
+	techDocsService := NewTechDocsService("docs", aiService, diagramService, githubService, redisClient, log)
 
 	// Initialize ServiceTemplate service
 	serviceTemplateRepo := repository.NewServiceTemplateRepository(db)
@@ -95,6 +127,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	templateService := NewTemplateService(log)
 
 	return &ServiceManager{
+		CacheService:           cacheService,
 		MetricsService:         NewMetricsService(),
 		KubernetesService:      kubernetesService,
 		AzureDevOpsService:     azureDevOpsService,
