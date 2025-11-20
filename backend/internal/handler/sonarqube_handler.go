@@ -14,12 +14,14 @@ import (
 
 type SonarQubeHandler struct {
 	integrationService *service.IntegrationService
+	cache              *service.CacheService
 	log                *logger.Logger
 }
 
-func NewSonarQubeHandler(integrationService *service.IntegrationService, log *logger.Logger) *SonarQubeHandler {
+func NewSonarQubeHandler(integrationService *service.IntegrationService, cache *service.CacheService, log *logger.Logger) *SonarQubeHandler {
 	return &SonarQubeHandler{
 		integrationService: integrationService,
+		cache:              cache,
 		log:                log,
 	}
 }
@@ -39,6 +41,20 @@ func (h *SonarQubeHandler) ListProjects(c *gin.Context) {
 	// Get filter parameters
 	filterIntegration := c.Query("integration")
 
+	// Build cache key
+	cacheKey := service.BuildKey("sonarqube:projects", filterIntegration)
+
+	// Try cache first
+	if h.cache != nil {
+		var cachedData map[string]interface{}
+		if err := h.cache.GetJSON(cacheKey, &cachedData); err == nil {
+			h.log.Debugw("Cache HIT", "key", cacheKey)
+			c.JSON(http.StatusOK, cachedData)
+			return
+		}
+	}
+
+	// Cache MISS
 	configs, err := h.integrationService.GetAllSonarQubeConfigs()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -87,10 +103,19 @@ func (h *SonarQubeHandler) ListProjects(c *gin.Context) {
 		return allProjects[i].Name < allProjects[j].Name
 	})
 
-	c.JSON(http.StatusOK, gin.H{
+	result := gin.H{
 		"projects": allProjects,
 		"total":    len(allProjects),
-	})
+	}
+
+	// Store in cache (15 minutes TTL)
+	if h.cache != nil {
+		if err := h.cache.Set(cacheKey, result, service.CacheDuration15Minutes); err != nil {
+			h.log.Warnw("Failed to cache SonarQube projects", "error", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 func (h *SonarQubeHandler) GetProjectDetails(c *gin.Context) {

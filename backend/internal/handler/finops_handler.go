@@ -11,12 +11,14 @@ import (
 
 type FinOpsHandler struct {
 	service *service.FinOpsService
+	cache   *service.CacheService
 	log     *logger.Logger
 }
 
-func NewFinOpsHandler(service *service.FinOpsService, log *logger.Logger) *FinOpsHandler {
+func NewFinOpsHandler(service *service.FinOpsService, cache *service.CacheService, log *logger.Logger) *FinOpsHandler {
 	return &FinOpsHandler{
 		service: service,
+		cache:   cache,
 		log:     log,
 	}
 }
@@ -26,11 +28,32 @@ func (h *FinOpsHandler) GetStats(c *gin.Context) {
 	provider := c.Query("provider")     // azure, gcp, aws, or empty for all
 	integration := c.Query("integration") // specific integration name
 
+	// Build cache key
+	cacheKey := service.BuildKey("finops:stats", provider+":"+integration)
+
+	// Try cache first
+	if h.cache != nil {
+		var cachedStats interface{}
+		if err := h.cache.GetJSON(cacheKey, &cachedStats); err == nil {
+			h.log.Debugw("Cache HIT", "key", cacheKey)
+			c.JSON(http.StatusOK, cachedStats)
+			return
+		}
+	}
+
+	// Cache MISS - fetch from service
 	stats, err := h.service.GetStats(provider, integration)
 	if err != nil {
 		h.log.Errorw("Failed to get FinOps stats", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Store in cache (1 hour TTL for cost data)
+	if h.cache != nil {
+		if err := h.cache.Set(cacheKey, stats, service.CacheDuration1Hour); err != nil {
+			h.log.Warnw("Failed to cache FinOps stats", "error", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, stats)
@@ -68,11 +91,31 @@ func (h *FinOpsHandler) ListResources(c *gin.Context) {
 
 // GetAWSMonthlyCosts returns monthly cost data from AWS for the last year
 func (h *FinOpsHandler) GetAWSMonthlyCosts(c *gin.Context) {
+	cacheKey := service.BuildKey("finops:aws", "monthly")
+
+	// Try cache first
+	if h.cache != nil {
+		var cachedData interface{}
+		if err := h.cache.GetJSON(cacheKey, &cachedData); err == nil {
+			h.log.Debugw("Cache HIT", "key", cacheKey)
+			c.JSON(http.StatusOK, cachedData)
+			return
+		}
+	}
+
+	// Cache MISS
 	data, err := h.service.GetAWSCostsByMonth()
 	if err != nil {
 		h.log.Errorw("Failed to get AWS monthly costs", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Store in cache (6 hours TTL - AWS data updates daily)
+	if h.cache != nil {
+		if err := h.cache.Set(cacheKey, data, service.CacheDuration6Hours); err != nil {
+			h.log.Warnw("Failed to cache AWS monthly costs", "error", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, data)
@@ -90,11 +133,31 @@ func (h *FinOpsHandler) GetAWSCostsByService(c *gin.Context) {
 		}
 	}
 
+	cacheKey := service.BuildKey("finops:aws:byservice", strconv.Itoa(months))
+
+	// Try cache first
+	if h.cache != nil {
+		var cachedData interface{}
+		if err := h.cache.GetJSON(cacheKey, &cachedData); err == nil {
+			h.log.Debugw("Cache HIT", "key", cacheKey)
+			c.JSON(http.StatusOK, cachedData)
+			return
+		}
+	}
+
+	// Cache MISS
 	data, err := h.service.GetAWSCostsByService(months)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS costs by service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Store in cache (6 hours TTL)
+	if h.cache != nil {
+		if err := h.cache.Set(cacheKey, data, service.CacheDuration6Hours); err != nil {
+			h.log.Warnw("Failed to cache AWS costs by service", "error", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, data)

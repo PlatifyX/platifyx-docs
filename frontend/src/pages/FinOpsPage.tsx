@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { DollarSign, TrendingUp, TrendingDown, Server, Activity, Package, Filter } from 'lucide-react'
 import styles from './FinOpsPage.module.css'
 import { buildApiUrl } from '../config/api'
 
@@ -111,48 +112,91 @@ function FinOpsPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>FinOps</h1>
-        <div className={styles.filters}>
-          <select
-            className={styles.filterSelect}
-            value={providerFilter}
-            onChange={(e) => setProviderFilter(e.target.value)}
-          >
-            <option value="">Todos os Provedores</option>
-            <option value="azure">Azure</option>
-            <option value="gcp">GCP</option>
-            <option value="aws">AWS</option>
-          </select>
+        <div className={styles.headerContent}>
+          <DollarSign size={40} className={styles.headerIcon} />
+          <div>
+            <h1 className={styles.title}>FinOps</h1>
+            <p className={styles.subtitle}>Gestão de custos e otimização de recursos cloud</p>
+          </div>
+        </div>
+        <div className={styles.headerActions}>
+          <div className={styles.filterBox}>
+            <Filter size={18} />
+            <select
+              className={styles.filterSelect}
+              value={providerFilter}
+              onChange={(e) => setProviderFilter(e.target.value)}
+            >
+              <option value="">Todos os Provedores</option>
+              <option value="azure">Azure</option>
+              <option value="gcp">GCP</option>
+              <option value="aws">AWS</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {stats && (
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>
-            <div className={styles.statLabel}>Custo Mensal</div>
-            <div className={styles.statValue}>{formatCurrency(stats.monthlyCost)}</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Custo Diário</div>
-            <div className={styles.statValue}>{formatCurrency(stats.dailyCost)}</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Tendência</div>
-            <div className={`${styles.statValue} ${stats.costTrend >= 0 ? styles.trendUp : styles.trendDown}`}>
-              {stats.costTrend >= 0 ? '+' : ''}{stats.costTrend.toFixed(1)}%
+            <div className={styles.statIconWrapper} style={{ backgroundColor: '#10b98115' }}>
+              <DollarSign size={24} style={{ color: '#10b981' }} />
+            </div>
+            <div className={styles.statContent}>
+              <div className={styles.statLabel}>Custo Mensal</div>
+              <div className={styles.statValue}>{formatCurrency(stats.monthlyCost)}</div>
             </div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statLabel}>Total de Recursos</div>
-            <div className={styles.statValue}>{stats.totalResources}</div>
+            <div className={styles.statIconWrapper} style={{ backgroundColor: '#3b82f615' }}>
+              <Activity size={24} style={{ color: '#3b82f6' }} />
+            </div>
+            <div className={styles.statContent}>
+              <div className={styles.statLabel}>Custo Diário</div>
+              <div className={styles.statValue}>{formatCurrency(stats.dailyCost)}</div>
+            </div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statLabel}>Recursos Ativos</div>
-            <div className={styles.statValue}>{stats.activeResources}</div>
+            <div className={styles.statIconWrapper} style={{ backgroundColor: stats.costTrend >= 0 ? '#10b98115' : '#ef444415' }}>
+              {stats.costTrend >= 0 ? (
+                <TrendingUp size={24} style={{ color: '#10b981' }} />
+              ) : (
+                <TrendingDown size={24} style={{ color: '#ef4444' }} />
+              )}
+            </div>
+            <div className={styles.statContent}>
+              <div className={styles.statLabel}>Tendência</div>
+              <div className={`${styles.statValue} ${stats.costTrend >= 0 ? styles.trendUp : styles.trendDown}`}>
+                {stats.costTrend >= 0 ? '+' : ''}{stats.costTrend.toFixed(1)}%
+              </div>
+            </div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statLabel}>Recursos Inativos</div>
-            <div className={styles.statValue}>{stats.inactiveResources}</div>
+            <div className={styles.statIconWrapper} style={{ backgroundColor: '#8b5cf615' }}>
+              <Package size={24} style={{ color: '#8b5cf6' }} />
+            </div>
+            <div className={styles.statContent}>
+              <div className={styles.statLabel}>Total de Recursos</div>
+              <div className={styles.statValue}>{stats.totalResources}</div>
+            </div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statIconWrapper} style={{ backgroundColor: '#10b98115' }}>
+              <Server size={24} style={{ color: '#10b981' }} />
+            </div>
+            <div className={styles.statContent}>
+              <div className={styles.statLabel}>Recursos Ativos</div>
+              <div className={styles.statValue}>{stats.activeResources}</div>
+            </div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statIconWrapper} style={{ backgroundColor: '#64748b15' }}>
+              <Server size={24} style={{ color: '#64748b' }} />
+            </div>
+            <div className={styles.statContent}>
+              <div className={styles.statLabel}>Recursos Inativos</div>
+              <div className={styles.statValue}>{stats.inactiveResources}</div>
+            </div>
           </div>
         </div>
       )}

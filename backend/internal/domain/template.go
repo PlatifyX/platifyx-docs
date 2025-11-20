@@ -6,10 +6,14 @@ import "fmt"
 type InfraTemplateType string
 
 const (
-	InfraTemplateTypeAPI        InfraTemplateType = "api"
-	InfraTemplateTypeWorker     InfraTemplateType = "worker"
-	InfraTemplateTypeCronJob    InfraTemplateType = "cronjob"
-	InfraTemplateTypeDeployment InfraTemplateType = "deployment"
+	InfraTemplateTypeAPI         InfraTemplateType = "api"
+	InfraTemplateTypeWorker      InfraTemplateType = "worker"
+	InfraTemplateTypeCronJob     InfraTemplateType = "cronjob"
+	InfraTemplateTypeDeployment  InfraTemplateType = "deployment"
+	InfraTemplateTypeFrontend    InfraTemplateType = "frontend"
+	InfraTemplateTypeStatefulSet InfraTemplateType = "statefulset"
+	InfraTemplateTypeDatabase    InfraTemplateType = "database"
+	InfraTemplateTypeMessaging   InfraTemplateType = "messaging"
 )
 
 // CreateTemplateRequest represents a request to create a new service from infrastructure template

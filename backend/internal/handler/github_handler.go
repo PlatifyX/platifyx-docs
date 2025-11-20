@@ -10,12 +10,14 @@ import (
 
 type GitHubHandler struct {
 	integrationService *service.IntegrationService
+	cache              *service.CacheService
 	log                *logger.Logger
 }
 
-func NewGitHubHandler(integrationSvc *service.IntegrationService, log *logger.Logger) *GitHubHandler {
+func NewGitHubHandler(integrationSvc *service.IntegrationService, cache *service.CacheService, log *logger.Logger) *GitHubHandler {
 	return &GitHubHandler{
 		integrationService: integrationSvc,
+		cache:              cache,
 		log:                log,
 	}
 }
@@ -32,6 +34,19 @@ func (h *GitHubHandler) getService() (*service.GitHubService, error) {
 }
 
 func (h *GitHubHandler) GetStats(c *gin.Context) {
+	cacheKey := service.BuildKey("github", "stats")
+
+	// Try cache first
+	if h.cache != nil {
+		var cachedStats interface{}
+		if err := h.cache.GetJSON(cacheKey, &cachedStats); err == nil {
+			h.log.Debugw("Cache HIT", "key", cacheKey)
+			c.JSON(http.StatusOK, cachedStats)
+			return
+		}
+	}
+
+	// Cache MISS
 	svc, err := h.getService()
 	if err != nil {
 		h.log.Errorw("Failed to get GitHub service", "error", err)
@@ -49,6 +64,14 @@ func (h *GitHubHandler) GetStats(c *gin.Context) {
 	}
 
 	stats := svc.GetStats()
+
+	// Store in cache (5 minutes TTL)
+	if h.cache != nil {
+		if err := h.cache.Set(cacheKey, stats, service.CacheDuration5Minutes); err != nil {
+			h.log.Warnw("Failed to cache GitHub stats", "error", err)
+		}
+	}
+
 	c.JSON(http.StatusOK, stats)
 }
 
@@ -82,6 +105,19 @@ func (h *GitHubHandler) GetAuthenticatedUser(c *gin.Context) {
 }
 
 func (h *GitHubHandler) ListRepositories(c *gin.Context) {
+	cacheKey := service.BuildKey("github", "repositories")
+
+	// Try cache first
+	if h.cache != nil {
+		var cachedData map[string]interface{}
+		if err := h.cache.GetJSON(cacheKey, &cachedData); err == nil {
+			h.log.Debugw("Cache HIT", "key", cacheKey)
+			c.JSON(http.StatusOK, cachedData)
+			return
+		}
+	}
+
+	// Cache MISS
 	svc, err := h.getService()
 	if err != nil {
 		h.log.Errorw("Failed to get GitHub service", "error", err)
@@ -107,10 +143,19 @@ func (h *GitHubHandler) ListRepositories(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	result := gin.H{
 		"repositories": repos,
 		"total":        len(repos),
-	})
+	}
+
+	// Store in cache (10 minutes TTL)
+	if h.cache != nil {
+		if err := h.cache.Set(cacheKey, result, service.CacheDuration10Minutes); err != nil {
+			h.log.Warnw("Failed to cache GitHub repositories", "error", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 func (h *GitHubHandler) GetRepository(c *gin.Context) {

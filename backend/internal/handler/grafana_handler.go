@@ -11,12 +11,14 @@ import (
 
 type GrafanaHandler struct {
 	integrationService *service.IntegrationService
+	cache              *service.CacheService
 	log                *logger.Logger
 }
 
-func NewGrafanaHandler(integrationSvc *service.IntegrationService, log *logger.Logger) *GrafanaHandler {
+func NewGrafanaHandler(integrationSvc *service.IntegrationService, cache *service.CacheService, log *logger.Logger) *GrafanaHandler {
 	return &GrafanaHandler{
 		integrationService: integrationSvc,
+		cache:              cache,
 		log:                log,
 	}
 }
@@ -83,6 +85,23 @@ func (h *GrafanaHandler) GetHealth(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) SearchDashboards(c *gin.Context) {
+	query := c.Query("query")
+	tags := c.QueryArray("tag")
+
+	// Build cache key based on search params
+	cacheKey := service.BuildKey("grafana:dashboards", query)
+
+	// Try cache first
+	if h.cache != nil {
+		var cachedData map[string]interface{}
+		if err := h.cache.GetJSON(cacheKey, &cachedData); err == nil {
+			h.log.Debugw("Cache HIT", "key", cacheKey)
+			c.JSON(http.StatusOK, cachedData)
+			return
+		}
+	}
+
+	// Cache MISS
 	svc, err := h.getService()
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
@@ -99,9 +118,6 @@ func (h *GrafanaHandler) SearchDashboards(c *gin.Context) {
 		return
 	}
 
-	query := c.Query("query")
-	tags := c.QueryArray("tag")
-
 	dashboards, err := svc.SearchDashboards(query, tags)
 	if err != nil {
 		h.log.Errorw("Failed to search dashboards", "error", err)
@@ -111,10 +127,19 @@ func (h *GrafanaHandler) SearchDashboards(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	result := gin.H{
 		"dashboards": dashboards,
 		"total":      len(dashboards),
-	})
+	}
+
+	// Store in cache (5 minutes TTL)
+	if h.cache != nil {
+		if err := h.cache.Set(cacheKey, result, service.CacheDuration5Minutes); err != nil {
+			h.log.Warnw("Failed to cache Grafana dashboards", "error", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 func (h *GrafanaHandler) GetDashboardByUID(c *gin.Context) {

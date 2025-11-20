@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
 import { FileText, Folder, Plus, Edit2, Trash2, Save, X, FolderPlus, Sparkles } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
+import rehypeSanitize from 'rehype-sanitize'
 import AIAssistant from '../components/TechDocs/AIAssistant'
 import styles from './TechDocsPage.module.css'
 import { buildApiUrl } from '../config/api'
@@ -297,7 +301,39 @@ function TechDocsPage() {
                     placeholder="Escreva seu conteúdo em markdown..."
                   />
                 ) : (
-                  <pre className={styles.viewer}>{selectedDoc.content}</pre>
+                  <div className={styles.markdownViewer}>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                      components={{
+                        h1: ({ node, ...props }) => <h1 className={styles.mdH1} {...props} />,
+                        h2: ({ node, ...props }) => <h2 className={styles.mdH2} {...props} />,
+                        h3: ({ node, ...props }) => <h3 className={styles.mdH3} {...props} />,
+                        h4: ({ node, ...props }) => <h4 className={styles.mdH4} {...props} />,
+                        p: ({ node, ...props }) => <p className={styles.mdP} {...props} />,
+                        code: ({ node, inline, ...props }: any) =>
+                          inline ?
+                            <code className={styles.mdCodeInline} {...props} /> :
+                            <code className={styles.mdCodeBlock} {...props} />,
+                        pre: ({ node, ...props }) => <pre className={styles.mdPre} {...props} />,
+                        ul: ({ node, ...props }) => <ul className={styles.mdUl} {...props} />,
+                        ol: ({ node, ...props }) => <ol className={styles.mdOl} {...props} />,
+                        li: ({ node, ...props }) => <li className={styles.mdLi} {...props} />,
+                        a: ({ node, ...props }) => <a className={styles.mdLink} {...props} target="_blank" rel="noopener noreferrer" />,
+                        blockquote: ({ node, ...props }) => <blockquote className={styles.mdBlockquote} {...props} />,
+                        table: ({ node, ...props }) => <table className={styles.mdTable} {...props} />,
+                        thead: ({ node, ...props }) => <thead className={styles.mdThead} {...props} />,
+                        tbody: ({ node, ...props }) => <tbody className={styles.mdTbody} {...props} />,
+                        tr: ({ node, ...props }) => <tr className={styles.mdTr} {...props} />,
+                        th: ({ node, ...props }) => <th className={styles.mdTh} {...props} />,
+                        td: ({ node, ...props }) => <td className={styles.mdTd} {...props} />,
+                        hr: ({ node, ...props }) => <hr className={styles.mdHr} {...props} />,
+                        img: ({ node, ...props }) => <img className={styles.mdImg} {...props} />,
+                      }}
+                    >
+                      {selectedDoc.content}
+                    </ReactMarkdown>
+                  </div>
                 )}
               </div>
             </>
