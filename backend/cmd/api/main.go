@@ -359,6 +359,14 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			serviceTemplates.GET("/:id", handlers.ServiceTemplateHandler.GetServiceByID)
 			serviceTemplates.POST("/create", handlers.ServiceTemplateHandler.CreateService)
 		}
+
+		// Infrastructure templates (Backstage-style)
+		infraTemplates := v1.Group("/infrastructure-templates")
+		{
+			infraTemplates.GET("", handlers.TemplateHandler.ListTemplates)
+			infraTemplates.POST("/generate", handlers.TemplateHandler.GenerateTemplate)
+			infraTemplates.POST("/preview", handlers.TemplateHandler.PreviewTemplate)
+		}
 	}
 
 	return router
