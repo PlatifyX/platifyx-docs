@@ -123,8 +123,27 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	serviceTemplateRepo := repository.NewServiceTemplateRepository(db)
 	serviceTemplateService := NewServiceTemplateService(serviceTemplateRepo, log)
 
+	// Get AWS Secrets Manager config from database
+	var awsSecretsService *AWSSecretsService
+	awsSecretsConfig, err := integrationService.GetAWSSecretsConfig()
+	if err == nil && awsSecretsConfig != nil {
+		log.Infow("Initializing AWS Secrets Manager service",
+			"region", awsSecretsConfig.Region,
+			"hasAccessKey", awsSecretsConfig.AccessKeyID != "",
+		)
+		awsSecretsService, err = NewAWSSecretsService(*awsSecretsConfig, log)
+		if err != nil {
+			log.Errorw("Failed to initialize AWS Secrets Manager service", "error", err)
+			awsSecretsService = nil
+		}
+	} else {
+		log.Warnw("AWS Secrets Manager integration not configured or disabled",
+			"error", err,
+		)
+	}
+
 	// Initialize Infrastructure Template service (for Backstage-style templates)
-	templateService := NewTemplateService(log)
+	templateService := NewTemplateService(log, awsSecretsService)
 
 	return &ServiceManager{
 		CacheService:           cacheService,
