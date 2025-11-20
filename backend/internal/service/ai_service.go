@@ -103,8 +103,14 @@ func (s *AIService) generateOpenAICompletion(prompt string, model string) (*doma
 
 	client := openai.NewClient(config.APIKey, config.Organization)
 
-	if model == "" {
-		model = "gpt-4"
+	// ALWAYS force cheapest model (gpt-3.5-turbo) to minimize costs
+	requestedModel := model
+	model = "gpt-3.5-turbo"
+
+	if requestedModel != "" && requestedModel != model {
+		s.log.Infow("Forcing cheapest OpenAI model",
+			"requested", requestedModel,
+			"forced", model)
 	}
 
 	request := openai.ChatCompletionRequest{
@@ -138,8 +144,14 @@ func (s *AIService) generateOpenAIChat(messages []domain.ChatMessage, model stri
 
 	client := openai.NewClient(config.APIKey, config.Organization)
 
-	if model == "" {
-		model = "gpt-4"
+	// ALWAYS force cheapest model (gpt-3.5-turbo) to minimize costs
+	requestedModel := model
+	model = "gpt-3.5-turbo"
+
+	if requestedModel != "" && requestedModel != model {
+		s.log.Infow("Forcing cheapest OpenAI model for chat",
+			"requested", requestedModel,
+			"forced", model)
 	}
 
 	openaiMessages := make([]openai.ChatMessage, len(messages))
@@ -179,8 +191,14 @@ func (s *AIService) generateClaudeCompletion(prompt string, model string) (*doma
 
 	client := claude.NewClient(config.APIKey)
 
-	if model == "" {
-		model = "claude-3-sonnet-20240229"
+	// ALWAYS force cheapest model (Haiku) to minimize costs
+	requestedModel := model
+	model = "claude-3-haiku-20240307"
+
+	if requestedModel != "" && requestedModel != model {
+		s.log.Infow("Forcing cheapest Claude model",
+			"requested", requestedModel,
+			"forced", model)
 	}
 
 	request := claude.MessageRequest{
@@ -220,8 +238,14 @@ func (s *AIService) generateClaudeChat(messages []domain.ChatMessage, model stri
 
 	client := claude.NewClient(config.APIKey)
 
-	if model == "" {
-		model = "claude-3-sonnet-20240229"
+	// ALWAYS force cheapest model (Haiku) to minimize costs
+	requestedModel := model
+	model = "claude-3-haiku-20240307"
+
+	if requestedModel != "" && requestedModel != model {
+		s.log.Infow("Forcing cheapest Claude model for chat",
+			"requested", requestedModel,
+			"forced", model)
 	}
 
 	claudeMessages := make([]claude.Message, len(messages))
@@ -267,8 +291,14 @@ func (s *AIService) generateGeminiCompletion(prompt string, model string) (*doma
 
 	client := gemini.NewClient(config.APIKey)
 
-	if model == "" {
-		model = "gemini-pro"
+	// ALWAYS force cheapest model (gemini-pro) to minimize costs
+	requestedModel := model
+	model = "gemini-pro"
+
+	if requestedModel != "" && requestedModel != model {
+		s.log.Infow("Forcing cheapest Gemini model",
+			"requested", requestedModel,
+			"forced", model)
 	}
 
 	request := gemini.GenerateContentRequest{
@@ -305,8 +335,14 @@ func (s *AIService) generateGeminiChat(messages []domain.ChatMessage, model stri
 
 	client := gemini.NewClient(config.APIKey)
 
-	if model == "" {
-		model = "gemini-pro"
+	// ALWAYS force cheapest model (gemini-pro) to minimize costs
+	requestedModel := model
+	model = "gemini-pro"
+
+	if requestedModel != "" && requestedModel != model {
+		s.log.Infow("Forcing cheapest Gemini model for chat",
+			"requested", requestedModel,
+			"forced", model)
 	}
 
 	// Combine messages into a single prompt for Gemini

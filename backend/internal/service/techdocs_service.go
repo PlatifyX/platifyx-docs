@@ -277,6 +277,65 @@ func (s *TechDocsService) ListDocuments(dirPath string) ([]domain.TechDoc, error
 	return docs, nil
 }
 
+// estimateTokenCount estimates the number of tokens in a string
+// Using rough approximation: 1 token ≈ 4 characters
+func (s *TechDocsService) estimateTokenCount(text string) int {
+	return len(text) / 4
+}
+
+// getModelContextLimit returns the safe context limit for a given model
+// Using very conservative limits to minimize costs and process code in smaller chunks
+func (s *TechDocsService) getModelContextLimit(provider domain.AIProvider, model string) int {
+	// Very conservative limits to use cheaper models and smaller chunks
+	switch provider {
+	case domain.AIProviderOpenAI:
+		// Always use small chunks for OpenAI to minimize costs
+		return 2000 // Conservative for gpt-3.5-turbo (cheapest option)
+	case domain.AIProviderClaude:
+		// Use Haiku (cheapest) with conservative chunks
+		return 2500
+	case domain.AIProviderGemini:
+		// Gemini Pro with conservative chunks
+		return 2000
+	default:
+		return 1500 // Very conservative default
+	}
+}
+
+// getCheapestModel ALWAYS returns the cheapest model for the given provider
+// IGNORES any requested model to ensure cost minimization
+func (s *TechDocsService) getCheapestModel(provider domain.AIProvider, requestedModel string) string {
+	// ALWAYS use cheapest models, regardless of what was requested
+	// This ensures cost minimization at all times
+
+	var cheapestModel string
+	switch provider {
+	case domain.AIProviderOpenAI:
+		cheapestModel = "gpt-3.5-turbo" // Cheapest OpenAI model (~90% cheaper than GPT-4)
+	case domain.AIProviderClaude:
+		cheapestModel = "claude-3-haiku-20240307" // Cheapest Claude model (~95% cheaper than Opus)
+	case domain.AIProviderGemini:
+		cheapestModel = "gemini-pro" // Standard Gemini model
+	default:
+		cheapestModel = "gpt-3.5-turbo" // Default to cheapest overall
+	}
+
+	// Log if we're overriding a requested model
+	if requestedModel != "" && requestedModel != cheapestModel {
+		s.log.Infow("Forcing cheapest model (cost optimization)",
+			"requested", requestedModel,
+			"forced", cheapestModel,
+			"provider", provider)
+	}
+
+	return cheapestModel
+}
+
+type repoFile struct {
+	Path    string
+	Content string
+}
+
 // GenerateDocumentation generates documentation using AI
 func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest) (*domain.AIResponse, error) {
 	s.log.Infow("Generating documentation with AI", "provider", req.Provider, "source", req.Source, "docType", req.DocType, "readFullRepo", req.ReadFullRepo)
@@ -284,6 +343,8 @@ func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest)
 	if s.aiService == nil {
 		return nil, fmt.Errorf("AI service not available")
 	}
+
+	var files []repoFile
 
 	// If reading full repository from GitHub
 	if req.Source == "github" && req.ReadFullRepo {
@@ -305,27 +366,53 @@ func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest)
 		}
 
 		// Get all files from repository
-		files, err := s.githubService.GetAllRepositoryFiles(owner, repo, repoInfo.DefaultBranch)
+		ghFiles, err := s.githubService.GetAllRepositoryFiles(owner, repo, repoInfo.DefaultBranch)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read repository files: %w", err)
 		}
 
-		// Build code content from all files
-		var codeBuilder strings.Builder
-		codeBuilder.WriteString(fmt.Sprintf("Repository: %s\n", req.RepoURL))
-		codeBuilder.WriteString(fmt.Sprintf("Total files: %d\n\n", len(files)))
-
-		for _, file := range files {
-			codeBuilder.WriteString(fmt.Sprintf("=== File: %s ===\n", file.Path))
-			codeBuilder.WriteString(file.Content)
-			codeBuilder.WriteString("\n\n")
+		// Convert to our internal structure
+		for _, f := range ghFiles {
+			files = append(files, repoFile{
+				Path:    f.Path,
+				Content: f.Content,
+			})
 		}
 
-		req.Code = codeBuilder.String()
-		s.log.Infow("Loaded full repository", "fileCount", len(files), "totalSize", len(req.Code))
+		s.log.Infow("Loaded full repository", "fileCount", len(files))
+
+		// Force use of cheapest model if not specified
+		req.Model = s.getCheapestModel(req.Provider, req.Model)
+		s.log.Infow("Using model", "provider", req.Provider, "model", req.Model)
+
+		// Check if content needs chunking
+		contextLimit := s.getModelContextLimit(req.Provider, req.Model)
+		s.log.Infow("Context limit for model", "provider", req.Provider, "model", req.Model, "limit", contextLimit)
+
+		// Process with chunking (always chunk for large repos to minimize costs)
+		return s.generateDocumentationWithChunking(req, files, contextLimit)
 	}
 
+	// For non-repository sources, proceed as before
+	// Force use of cheapest model if not specified
+	req.Model = s.getCheapestModel(req.Provider, req.Model)
+	s.log.Infow("Using model for single file", "provider", req.Provider, "model", req.Model)
+
 	prompt := s.buildGenerateDocPrompt(req)
+
+	// Check if the prompt is too large
+	estimatedTokens := s.estimateTokenCount(prompt)
+	contextLimit := s.getModelContextLimit(req.Provider, req.Model)
+
+	if estimatedTokens > contextLimit {
+		s.log.Warnw("Prompt exceeds context limit, truncating", "estimated", estimatedTokens, "limit", contextLimit)
+		// Truncate the code section if it's too large
+		maxCodeChars := contextLimit * 4 * 3 / 4 // Use 75% of limit for code
+		if len(req.Code) > maxCodeChars {
+			req.Code = req.Code[:maxCodeChars] + "\n\n... [Content truncated due to size limits]"
+			prompt = s.buildGenerateDocPrompt(req)
+		}
+	}
 
 	response, err := s.aiService.GenerateCompletion(req.Provider, prompt, req.Model)
 	if err != nil {
@@ -345,6 +432,253 @@ func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest)
 
 	s.log.Infow("Documentation generated successfully", "provider", req.Provider, "length", len(response.Content))
 	return response, nil
+}
+
+// generateDocumentationWithChunking processes large repositories in chunks
+func (s *TechDocsService) generateDocumentationWithChunking(req domain.AIGenerateDocRequest, files []repoFile, contextLimit int) (*domain.AIResponse, error) {
+	// Prioritize important files first
+	prioritizedFiles := s.prioritizeFiles(files)
+
+	// Create chunks of files that fit within context limit
+	chunks := s.createFileChunks(prioritizedFiles, contextLimit, req)
+
+	s.log.Infow("Created file chunks", "totalFiles", len(files), "chunks", len(chunks))
+
+	if len(chunks) == 0 {
+		return nil, fmt.Errorf("no files to process after chunking")
+	}
+
+	// If only one chunk, process normally
+	if len(chunks) == 1 {
+		req.Code = chunks[0]
+		prompt := s.buildGenerateDocPrompt(req)
+		return s.aiService.GenerateCompletion(req.Provider, prompt, req.Model)
+	}
+
+	// Process each chunk and collect results
+	var chunkResults []string
+	for i, chunk := range chunks {
+		s.log.Infow("Processing chunk", "chunk", i+1, "total", len(chunks), "size", len(chunk))
+
+		chunkReq := req
+		chunkReq.Code = chunk
+
+		// Modify the prompt to indicate this is part of a multi-chunk process
+		prompt := s.buildChunkDocPrompt(chunkReq, i+1, len(chunks))
+
+		response, err := s.aiService.GenerateCompletion(req.Provider, prompt, req.Model)
+		if err != nil {
+			s.log.Errorw("Failed to process chunk", "chunk", i+1, "error", err)
+			return nil, fmt.Errorf("failed to process chunk %d: %w", i+1, err)
+		}
+
+		chunkResults = append(chunkResults, response.Content)
+	}
+
+	// Combine all chunk results
+	combinedContent := s.combineChunkResults(chunkResults, req.DocType)
+
+	response := &domain.AIResponse{
+		Provider: req.Provider,
+		Model:    req.Model,
+		Content:  combinedContent,
+	}
+
+	// Auto-save if savePath is provided
+	if req.SavePath != "" && response.Content != "" {
+		if err := s.SaveDocument(req.SavePath, response.Content); err != nil {
+			s.log.Errorw("Failed to auto-save documentation", "error", err, "path", req.SavePath)
+		} else {
+			s.log.Infow("Documentation auto-saved successfully", "path", req.SavePath)
+		}
+	}
+
+	s.log.Infow("Documentation generated successfully with chunking", "chunks", len(chunks), "totalLength", len(combinedContent))
+	return response, nil
+}
+
+// prioritizeFiles sorts files by importance for documentation
+func (s *TechDocsService) prioritizeFiles(files []repoFile) []repoFile {
+	// Create priority buckets
+	highPriority := []repoFile{}
+	mediumPriority := []repoFile{}
+	lowPriority := []repoFile{}
+
+	for _, file := range files {
+		fileName := strings.ToLower(filepath.Base(file.Path))
+		filePath := strings.ToLower(file.Path)
+
+		// High priority: READMEs, main files, configs
+		if strings.Contains(fileName, "readme") ||
+			strings.Contains(fileName, "main.") ||
+			strings.Contains(fileName, "index.") ||
+			strings.Contains(fileName, "app.") ||
+			fileName == "package.json" ||
+			fileName == "go.mod" ||
+			fileName == "requirements.txt" ||
+			fileName == "dockerfile" {
+			highPriority = append(highPriority, file)
+		} else if strings.Contains(filePath, "test") ||
+			strings.Contains(filePath, "spec") ||
+			strings.Contains(fileName, "_test.") ||
+			strings.Contains(fileName, ".test.") {
+			// Low priority: tests
+			lowPriority = append(lowPriority, file)
+		} else {
+			// Medium priority: everything else
+			mediumPriority = append(mediumPriority, file)
+		}
+	}
+
+	// Combine in priority order
+	result := append(highPriority, mediumPriority...)
+	result = append(result, lowPriority...)
+	return result
+}
+
+// createFileChunks splits files into chunks that fit within context limit
+// Uses aggressive chunking to minimize costs - processes few files at a time
+func (s *TechDocsService) createFileChunks(files []repoFile, contextLimit int, req domain.AIGenerateDocRequest) []string {
+	var chunks []string
+	var currentChunk strings.Builder
+
+	// Reserve space for prompt structure (roughly 500 tokens)
+	maxChunkTokens := contextLimit - 500
+	maxChunkChars := maxChunkTokens * 4
+
+	// Maximum files per chunk to keep costs low (process code in small batches)
+	const maxFilesPerChunk = 3
+
+	// Add repository header
+	header := fmt.Sprintf("Repository: %s\n\n", req.RepoURL)
+	currentChunk.WriteString(header)
+	currentTokens := s.estimateTokenCount(header)
+
+	filesInChunk := 0
+
+	for _, file := range files {
+		fileContent := fmt.Sprintf("=== File: %s ===\n%s\n\n", file.Path, file.Content)
+		fileTokens := s.estimateTokenCount(fileContent)
+
+		// If this single file is too large, truncate it more aggressively
+		if fileTokens > maxChunkTokens/3 {
+			s.log.Warnw("File too large, truncating", "file", file.Path, "tokens", fileTokens)
+			truncatedContent := file.Content
+			maxContentChars := maxChunkChars / 3
+			if len(truncatedContent) > maxContentChars {
+				truncatedContent = truncatedContent[:maxContentChars] + "\n... [truncated due to size]"
+			}
+			fileContent = fmt.Sprintf("=== File: %s ===\n%s\n\n", file.Path, truncatedContent)
+			fileTokens = s.estimateTokenCount(fileContent)
+		}
+
+		// Check if adding this file would exceed the limit OR max files per chunk
+		shouldStartNewChunk := (currentTokens+fileTokens > maxChunkTokens || filesInChunk >= maxFilesPerChunk) && filesInChunk > 0
+
+		if shouldStartNewChunk {
+			// Save current chunk and start a new one
+			chunks = append(chunks, currentChunk.String())
+			currentChunk.Reset()
+			currentChunk.WriteString(header)
+			currentTokens = s.estimateTokenCount(header)
+			filesInChunk = 0
+			s.log.Infow("Created chunk", "chunkNumber", len(chunks), "files", filesInChunk)
+		}
+
+		// Add file to current chunk
+		currentChunk.WriteString(fileContent)
+		currentTokens += fileTokens
+		filesInChunk++
+	}
+
+	// Add the last chunk if it has content
+	if filesInChunk > 0 {
+		chunks = append(chunks, currentChunk.String())
+		s.log.Infow("Created final chunk", "chunkNumber", len(chunks), "files", filesInChunk)
+	}
+
+	return chunks
+}
+
+// buildChunkDocPrompt builds a prompt for a specific chunk
+func (s *TechDocsService) buildChunkDocPrompt(req domain.AIGenerateDocRequest, chunkNum, totalChunks int) string {
+	var prompt strings.Builder
+
+	prompt.WriteString("You are an expert technical writer. ")
+
+	if totalChunks > 1 {
+		prompt.WriteString(fmt.Sprintf("This is part %d of %d of a large repository. ", chunkNum, totalChunks))
+		prompt.WriteString("Focus on documenting the files provided in this section. ")
+	}
+
+	prompt.WriteString("Generate comprehensive ")
+	prompt.WriteString(req.DocType)
+	prompt.WriteString(" documentation based on the following code:\n\n")
+
+	prompt.WriteString(req.Code)
+	prompt.WriteString("\n\n")
+
+	// Add doc type specific instructions
+	prompt.WriteString("Documentation Requirements:\n")
+	switch req.DocType {
+	case "api":
+		prompt.WriteString("- Document all API endpoints found in this section\n")
+		prompt.WriteString("- Include request/response formats\n")
+		prompt.WriteString("- Provide example requests\n")
+	case "architecture":
+		prompt.WriteString("- Describe the components in this section\n")
+		prompt.WriteString("- Explain their interactions\n")
+		prompt.WriteString("- Document design patterns used\n")
+	case "guide":
+		prompt.WriteString("- Provide clear explanations\n")
+		prompt.WriteString("- Include code examples from these files\n")
+		prompt.WriteString("- Add setup instructions if relevant\n")
+	case "readme":
+		prompt.WriteString("- Document the functionality in these files\n")
+		prompt.WriteString("- Include usage examples\n")
+		prompt.WriteString("- Note important configurations\n")
+	}
+
+	if totalChunks > 1 {
+		prompt.WriteString("\nNote: Create a focused section for these files. ")
+		prompt.WriteString("The sections will be combined later, so use clear headings.\n")
+	}
+
+	prompt.WriteString("\nFormat the output as Markdown with proper headings and code blocks.\n")
+
+	return prompt.String()
+}
+
+// combineChunkResults combines documentation from multiple chunks
+func (s *TechDocsService) combineChunkResults(results []string, docType string) string {
+	var combined strings.Builder
+
+	// Add a main header based on doc type
+	switch docType {
+	case "api":
+		combined.WriteString("# API Documentation\n\n")
+	case "architecture":
+		combined.WriteString("# Architecture Documentation\n\n")
+	case "guide":
+		combined.WriteString("# Developer Guide\n\n")
+	case "readme":
+		combined.WriteString("# Project Documentation\n\n")
+	default:
+		combined.WriteString("# Documentation\n\n")
+	}
+
+	combined.WriteString("This documentation was generated from multiple sections of the repository.\n\n")
+	combined.WriteString("---\n\n")
+
+	// Combine all results
+	for i, result := range results {
+		if i > 0 {
+			combined.WriteString("\n---\n\n")
+		}
+		combined.WriteString(result)
+	}
+
+	return combined.String()
 }
 
 func (s *TechDocsService) buildGenerateDocPrompt(req domain.AIGenerateDocRequest) string {

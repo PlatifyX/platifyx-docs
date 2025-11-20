@@ -20,6 +20,7 @@ type ServiceManager struct {
 	ServiceCatalogService  *ServiceCatalogService
 	AIService              *AIService
 	DiagramService         *DiagramService
+	TemplateService        *TemplateService
 }
 
 func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *ServiceManager {
@@ -90,6 +91,9 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	serviceTemplateRepo := repository.NewServiceTemplateRepository(db)
 	serviceTemplateService := NewServiceTemplateService(serviceTemplateRepo, log)
 
+	// Initialize Infrastructure Template service (for Backstage-style templates)
+	templateService := NewTemplateService(log)
+
 	return &ServiceManager{
 		MetricsService:         NewMetricsService(),
 		KubernetesService:      kubernetesService,
@@ -102,5 +106,6 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		ServiceCatalogService:  serviceCatalogService,
 		AIService:              aiService,
 		DiagramService:         diagramService,
+		TemplateService:        templateService,
 	}
 }
