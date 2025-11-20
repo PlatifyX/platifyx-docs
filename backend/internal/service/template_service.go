@@ -22,31 +22,31 @@ func NewTemplateService(log *logger.Logger) *TemplateService {
 func (s *TemplateService) ListTemplates() (*domain.ListTemplatesResponse, error) {
 	templates := []domain.TemplateInfo{
 		{
-			Type:        domain.TemplateTypeAPI,
+			Type:        domain.InfraTemplateTypeAPI,
 			Name:        "API Service",
 			Description: "REST API service with deployment, service, and optional ingress",
-			Languages:   []domain.Language{domain.LanguageGo, domain.LanguageNodeJS, domain.LanguagePython, domain.LanguageJava},
+			Languages:   []string{domain.LanguageGo, domain.LanguageNodeJS, domain.LanguagePython, domain.LanguageJava},
 			Icon:        "🌐",
 		},
 		{
-			Type:        domain.TemplateTypeWorker,
+			Type:        domain.InfraTemplateTypeWorker,
 			Name:        "Background Worker",
 			Description: "Background worker/consumer service",
-			Languages:   []domain.Language{domain.LanguageGo, domain.LanguageNodeJS, domain.LanguagePython},
+			Languages:   []string{domain.LanguageGo, domain.LanguageNodeJS, domain.LanguagePython},
 			Icon:        "⚙️",
 		},
 		{
-			Type:        domain.TemplateTypeCronJob,
+			Type:        domain.InfraTemplateTypeCronJob,
 			Name:        "Scheduled Job",
 			Description: "Kubernetes CronJob for scheduled tasks",
-			Languages:   []domain.Language{domain.LanguageGo, domain.LanguageNodeJS, domain.LanguagePython},
+			Languages:   []string{domain.LanguageGo, domain.LanguageNodeJS, domain.LanguagePython},
 			Icon:        "⏰",
 		},
 		{
-			Type:        domain.TemplateTypeDeployment,
+			Type:        domain.InfraTemplateTypeDeployment,
 			Name:        "Generic Deployment",
 			Description: "Generic deployment without service/ingress",
-			Languages:   []domain.Language{domain.LanguageGo, domain.LanguageNodeJS, domain.LanguagePython, domain.LanguageJava, domain.LanguageDotNet},
+			Languages:   []string{domain.LanguageGo, domain.LanguageNodeJS, domain.LanguagePython, domain.LanguageJava, domain.LanguageDotNet},
 			Icon:        "📦",
 		},
 	}
@@ -75,14 +75,14 @@ func (s *TemplateService) GenerateTemplate(req domain.CreateTemplateRequest) (*d
 		prefix := fmt.Sprintf("cd/%s", env)
 
 		// Generate deployment/cronjob
-		if req.TemplateType == domain.TemplateTypeCronJob {
+		if req.TemplateType == domain.InfraTemplateTypeCronJob {
 			files[fmt.Sprintf("%s/cronjob.yaml", prefix)] = s.generateCronJob(req, env)
 		} else {
 			files[fmt.Sprintf("%s/deployment.yaml", prefix)] = s.generateDeployment(req, env)
 		}
 
 		// Generate service (only for API type or if explicitly needed)
-		if req.TemplateType == domain.TemplateTypeAPI {
+		if req.TemplateType == domain.InfraTemplateTypeAPI {
 			files[fmt.Sprintf("%s/service.yaml", prefix)] = s.generateService(req, env)
 		}
 
@@ -204,10 +204,6 @@ func (s *TemplateService) generateDeployment(req domain.CreateTemplateRequest, e
 
 	resourceName := req.GetResourceName(env)
 	nodeGroup := fmt.Sprintf("%s-app", env)
-	branch := "main"
-	if env == "stage" {
-		branch = "stage"
-	}
 
 	sb.WriteString(fmt.Sprintf(`apiVersion: apps/v1
 kind: Deployment

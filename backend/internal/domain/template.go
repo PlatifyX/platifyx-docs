@@ -2,49 +2,37 @@ package domain
 
 import "fmt"
 
-// TemplateType represents the type of template
-type TemplateType string
+// InfraTemplateType represents the type of infrastructure template
+type InfraTemplateType string
 
 const (
-	TemplateTypeAPI        TemplateType = "api"
-	TemplateTypeWorker     TemplateType = "worker"
-	TemplateTypeCronJob    TemplateType = "cronjob"
-	TemplateTypeDeployment TemplateType = "deployment"
+	InfraTemplateTypeAPI        InfraTemplateType = "api"
+	InfraTemplateTypeWorker     InfraTemplateType = "worker"
+	InfraTemplateTypeCronJob    InfraTemplateType = "cronjob"
+	InfraTemplateTypeDeployment InfraTemplateType = "deployment"
 )
 
-// Language represents programming language
-type Language string
-
-const (
-	LanguageGo         Language = "go"
-	LanguageNodeJS     Language = "nodejs"
-	LanguagePython     Language = "python"
-	LanguageJava       Language = "java"
-	LanguageDotNet     Language = "dotnet"
-	LanguageTypeScript Language = "typescript"
-)
-
-// CreateTemplateRequest represents a request to create a new service from template
+// CreateTemplateRequest represents a request to create a new service from infrastructure template
 type CreateTemplateRequest struct {
-	Squad         string       `json:"squad" binding:"required"`        // e.g., "cxm"
-	AppName       string       `json:"appName" binding:"required"`      // e.g., "distribution"
-	TemplateType  TemplateType `json:"templateType" binding:"required"` // api, worker, cronjob, etc
-	Language      Language     `json:"language" binding:"required"`     // go, nodejs, python, etc
-	Version       string       `json:"version" binding:"required"`      // e.g., "1.23.0"
-	Port          int          `json:"port"`                            // Container port (default: 80)
-	UseSecret     bool         `json:"useSecret"`                       // Whether to use external secret
-	UseIngress    bool         `json:"useIngress"`                      // Whether to use ingress
-	IngressHost   string       `json:"ingressHost,omitempty"`           // Ingress hostname if useIngress=true
-	HasTests      bool         `json:"hasTests"`                        // Whether has unit tests
-	IsMonorepo    bool         `json:"isMonorepo"`                      // Whether is a monorepo
-	AppPath       string       `json:"appPath"`                         // Path to app in repo (default: ".")
-	CPULimit      string       `json:"cpuLimit"`                        // e.g., "500m"
-	CPURequest    string       `json:"cpuRequest"`                      // e.g., "250m"
-	MemoryLimit   string       `json:"memoryLimit"`                     // e.g., "512Mi"
-	MemoryRequest string       `json:"memoryRequest"`                   // e.g., "256Mi"
-	Replicas      int          `json:"replicas"`                        // Number of replicas
-	CronSchedule  string       `json:"cronSchedule,omitempty"`          // For cronjobs only
-	DockerImages  []string     `json:"dockerImages,omitempty"`          // Additional docker images
+	Squad         string            `json:"squad" binding:"required"`        // e.g., "cxm"
+	AppName       string            `json:"appName" binding:"required"`      // e.g., "distribution"
+	TemplateType  InfraTemplateType `json:"templateType" binding:"required"` // api, worker, cronjob, etc
+	Language      string            `json:"language" binding:"required"`     // go, nodejs, python, etc (uses constants from service_template.go)
+	Version       string            `json:"version" binding:"required"`      // e.g., "1.23.0"
+	Port          int               `json:"port"`                            // Container port (default: 80)
+	UseSecret     bool              `json:"useSecret"`                       // Whether to use external secret
+	UseIngress    bool              `json:"useIngress"`                      // Whether to use ingress
+	IngressHost   string            `json:"ingressHost,omitempty"`           // Ingress hostname if useIngress=true
+	HasTests      bool              `json:"hasTests"`                        // Whether has unit tests
+	IsMonorepo    bool              `json:"isMonorepo"`                      // Whether is a monorepo
+	AppPath       string            `json:"appPath"`                         // Path to app in repo (default: ".")
+	CPULimit      string            `json:"cpuLimit"`                        // e.g., "500m"
+	CPURequest    string            `json:"cpuRequest"`                      // e.g., "250m"
+	MemoryLimit   string            `json:"memoryLimit"`                     // e.g., "512Mi"
+	MemoryRequest string            `json:"memoryRequest"`                   // e.g., "256Mi"
+	Replicas      int               `json:"replicas"`                        // Number of replicas
+	CronSchedule  string            `json:"cronSchedule,omitempty"`          // For cronjobs only
+	DockerImages  []string          `json:"dockerImages,omitempty"`          // Additional docker images
 }
 
 // TemplateResponse represents the generated template files
@@ -55,24 +43,18 @@ type TemplateResponse struct {
 	Metadata       map[string]interface{} `json:"metadata"`       // Additional metadata
 }
 
-// TemplateFile represents a single generated file
-type TemplateFile struct {
-	Path    string `json:"path"`
-	Content string `json:"content"`
-}
-
 // ListTemplatesResponse represents available templates
 type ListTemplatesResponse struct {
 	Templates []TemplateInfo `json:"templates"`
 }
 
-// TemplateInfo represents template metadata
+// TemplateInfo represents infrastructure template metadata
 type TemplateInfo struct {
-	Type        TemplateType `json:"type"`
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	Languages   []Language   `json:"languages"`
-	Icon        string       `json:"icon,omitempty"`
+	Type        InfraTemplateType `json:"type"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Languages   []string          `json:"languages"`
+	Icon        string            `json:"icon,omitempty"`
 }
 
 // ValidateTemplateRequest validates and normalizes the request
@@ -101,7 +83,7 @@ func (r *CreateTemplateRequest) Validate() error {
 	}
 
 	// Validate cronjob schedule
-	if r.TemplateType == TemplateTypeCronJob && r.CronSchedule == "" {
+	if r.TemplateType == InfraTemplateTypeCronJob && r.CronSchedule == "" {
 		return fmt.Errorf("cronSchedule is required for cronjob type")
 	}
 
