@@ -1,20 +1,25 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 )
 
 type TemplateService struct {
-	log *logger.Logger
+	log               *logger.Logger
+	awsSecretsService *AWSSecretsService
 }
 
-func NewTemplateService(log *logger.Logger) *TemplateService {
+func NewTemplateService(log *logger.Logger, awsSecretsService *AWSSecretsService) *TemplateService {
 	return &TemplateService{
-		log: log,
+		log:               log,
+		awsSecretsService: awsSecretsService,
 	}
 }
 
@@ -148,6 +153,21 @@ func (s *TemplateService) GenerateTemplate(req domain.CreateTemplateRequest) (*d
 			"type":     req.TemplateType,
 		},
 	}
+
+	// Create secrets in AWS if requested and service is available
+	if req.UseSecret && s.awsSecretsService != nil {
+		createdSecrets, err := s.createAWSSecrets(req)
+		if err != nil {
+			s.log.Warnw("Failed to create AWS secrets, continuing with template generation", "error", err)
+			// Add warning to instructions
+			instructions = append(instructions, "⚠️  WARNING: Failed to create AWS secrets automatically. Please create them manually.")
+		} else {
+			response.Metadata["awsSecrets"] = createdSecrets
+			s.log.Infow("AWS secrets created successfully", "secrets", createdSecrets)
+		}
+	}
+
+	response.Instructions = instructions
 
 	s.log.Infow("Template generated successfully", "repository", response.RepositoryName, "files", len(files))
 	return response, nil
@@ -711,11 +731,20 @@ func (s *TemplateService) generateInstructions(req domain.CreateTemplateRequest)
 	}
 
 	if req.UseSecret {
-		instructions = append(instructions, []string{
-			fmt.Sprintf("5. Create secrets in AWS Secrets Manager:"),
-			fmt.Sprintf("   - Production: %s-prod", repoName),
-			fmt.Sprintf("   - Staging: %s-stage", repoName),
-		}...)
+		if s.awsSecretsService != nil {
+			instructions = append(instructions, []string{
+				"5. ✅ AWS Secrets created automatically:",
+				fmt.Sprintf("   - Production: %s-prod", repoName),
+				fmt.Sprintf("   - Staging: %s-stage", repoName),
+				"   ⚠️  Update the placeholder values (CHANGE_ME_*) with real values",
+			}...)
+		} else {
+			instructions = append(instructions, []string{
+				"5. Create secrets in AWS Secrets Manager:",
+				fmt.Sprintf("   - Production: %s-prod", repoName),
+				fmt.Sprintf("   - Staging: %s-stage", repoName),
+			}...)
+		}
 	}
 
 	instructions = append(instructions, []string{
@@ -725,6 +754,141 @@ func (s *TemplateService) generateInstructions(req domain.CreateTemplateRequest)
 	}...)
 
 	return instructions
+}
+
+// createAWSSecrets creates secrets in AWS Secrets Manager for both environments
+func (s *TemplateService) createAWSSecrets(req domain.CreateTemplateRequest) (map[string]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	repoName := req.GetRepositoryName()
+	createdSecrets := make(map[string]string)
+
+	// Define environments to create secrets for
+	environments := []string{"stage", "prod"}
+
+	for _, env := range environments {
+		secretName := fmt.Sprintf("%s-%s", repoName, env)
+
+		// Generate default secret values based on template type and language
+		secretValues := s.generateDefaultSecretValues(req, env)
+
+		// Convert to JSON string
+		secretString, err := json.Marshal(secretValues)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal secret values for %s: %w", secretName, err)
+		}
+
+		// Create description
+		description := fmt.Sprintf("Secret for %s service (%s environment) - Squad: %s - Type: %s",
+			req.AppName, env, req.Squad, req.TemplateType)
+
+		// Create tags
+		tags := map[string]string{
+			"squad":       req.Squad,
+			"app":         req.AppName,
+			"environment": env,
+			"language":    string(req.Language),
+			"type":        string(req.TemplateType),
+			"managed-by":  "platifyx-templates",
+			"created-at":  time.Now().Format(time.RFC3339),
+		}
+
+		// Try to create the secret
+		err = s.awsSecretsService.CreateSecret(ctx, secretName, description, string(secretString), tags)
+		if err != nil {
+			// Check if secret already exists, if so try to update it
+			if strings.Contains(err.Error(), "already exists") || strings.Contains(err.Error(), "ResourceExistsException") {
+				s.log.Infow("Secret already exists, updating instead", "name", secretName)
+				err = s.awsSecretsService.UpdateSecret(ctx, secretName, string(secretString))
+				if err != nil {
+					return nil, fmt.Errorf("failed to update existing secret %s: %w", secretName, err)
+				}
+				createdSecrets[secretName] = "updated"
+			} else {
+				return nil, fmt.Errorf("failed to create secret %s: %w", secretName, err)
+			}
+		} else {
+			createdSecrets[secretName] = "created"
+			s.log.Infow("Secret created successfully", "name", secretName, "env", env)
+		}
+	}
+
+	return createdSecrets, nil
+}
+
+// generateDefaultSecretValues generates default secret values based on template type
+func (s *TemplateService) generateDefaultSecretValues(req domain.CreateTemplateRequest, env string) map[string]string {
+	values := make(map[string]string)
+
+	// Common secrets for all types
+	values["ENVIRONMENT"] = env
+	values["APP_NAME"] = req.AppName
+	values["SQUAD"] = req.Squad
+
+	// Template-specific secrets
+	switch req.TemplateType {
+	case domain.InfraTemplateTypeAPI, domain.InfraTemplateTypeFrontend:
+		values["API_KEY"] = "CHANGE_ME_api_key_placeholder"
+		values["JWT_SECRET"] = "CHANGE_ME_jwt_secret_placeholder"
+		values["PORT"] = fmt.Sprintf("%d", req.Port)
+
+	case domain.InfraTemplateTypeWorker:
+		values["WORKER_THREADS"] = "4"
+		values["KAFKA_BROKERS"] = "CHANGE_ME_kafka_broker_url"
+		values["KAFKA_GROUP_ID"] = fmt.Sprintf("%s-%s-%s", req.Squad, req.AppName, env)
+
+	case domain.InfraTemplateTypeCronJob:
+		values["CRON_SCHEDULE"] = req.CronSchedule
+		values["JOB_TIMEOUT"] = "3600"
+
+	case domain.InfraTemplateTypeDatabase:
+		values["DB_HOST"] = "CHANGE_ME_database_host"
+		values["DB_PORT"] = "5432"
+		values["DB_NAME"] = fmt.Sprintf("%s_%s", req.AppName, env)
+		values["DB_USER"] = "CHANGE_ME_database_user"
+		values["DB_PASSWORD"] = "CHANGE_ME_database_password"
+
+	case domain.InfraTemplateTypeMessaging:
+		values["MESSAGE_BROKER_URL"] = "CHANGE_ME_broker_url"
+		values["MESSAGE_BROKER_USER"] = "CHANGE_ME_broker_user"
+		values["MESSAGE_BROKER_PASSWORD"] = "CHANGE_ME_broker_password"
+	}
+
+	// Language-specific secrets
+	switch req.Language {
+	case domain.LanguageNodeJS, domain.LanguageTypeScript:
+		values["NODE_ENV"] = env
+		if env == "prod" {
+			values["NODE_ENV"] = "production"
+		} else {
+			values["NODE_ENV"] = "development"
+		}
+
+	case domain.LanguagePython:
+		values["PYTHONUNBUFFERED"] = "1"
+		values["PYTHONDONTWRITEBYTECODE"] = "1"
+
+	case domain.LanguageGo:
+		values["GO_ENV"] = env
+		values["GOMAXPROCS"] = "4"
+	}
+
+	// Add database connection string example if not database type
+	if req.TemplateType != domain.InfraTemplateTypeDatabase {
+		values["DATABASE_URL"] = "CHANGE_ME_postgresql://user:password@host:5432/dbname"
+	}
+
+	// Add common infrastructure secrets
+	values["LOG_LEVEL"] = "info"
+	if env == "stage" {
+		values["LOG_LEVEL"] = "debug"
+	}
+
+	values["METRICS_ENABLED"] = "true"
+	values["TRACING_ENABLED"] = "true"
+
+	return values
 }
 
 // boolToYesNo converts bool to "yes"/"no"
