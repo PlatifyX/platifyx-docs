@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X, ChevronRight, ChevronLeft, Download, CheckCircle2, FileText } from 'lucide-react'
 import JSZip from 'jszip'
 import styles from './TemplateWizardModal.module.css'
@@ -441,7 +442,7 @@ function TemplateWizardModal({ template, onClose }: TemplateWizardModalProps) {
     }
   }
 
-  return (
+  const modalContent = (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
@@ -502,6 +503,17 @@ function TemplateWizardModal({ template, onClose }: TemplateWizardModalProps) {
       </div>
     </div>
   )
+
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
+
+  if (!mounted) return null
+
+  return createPortal(modalContent, document.body)
 }
 
 export default TemplateWizardModal
