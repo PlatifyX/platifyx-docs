@@ -13,7 +13,8 @@ import {
   Plug,
   FileText,
   Github,
-  Network
+  Network,
+  Boxes
 } from 'lucide-react'
 import styles from './Sidebar.module.css'
 
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
   { path: '/techdocs', label: 'TechDocs', icon: <FileText size={20} /> },
   { path: '/diagrams', label: 'Diagramas', icon: <Network size={20} /> },
   { path: '/templates', label: 'Templates', icon: <FileText size={20} /> },
+  { path: '/infrastructure-templates', label: 'Infra Templates', icon: <Boxes size={20} /> },
   { path: '/integrations', label: 'Integrações', icon: <Plug size={20} /> },
   { path: '/settings', label: 'Configurações', icon: <Settings size={20} /> },
 ]

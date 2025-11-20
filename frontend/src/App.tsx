@@ -8,6 +8,7 @@ import GitHubPage from './pages/GitHubPage'
 import AzureDevOpsPage from './pages/AzureDevOpsPage'
 import IntegrationsPage from './pages/IntegrationsPage'
 import ServiceTemplatesPage from './pages/ServiceTemplatesPage'
+import InfrastructureTemplatesPage from './pages/InfrastructureTemplatesPage'
 import QualityPage from './pages/QualityPage'
 import FinOpsPageEnhanced from './pages/FinOpsPageEnhanced'
 import TechDocsPage from './pages/TechDocsPage'
@@ -30,6 +31,7 @@ function App() {
           <Route path="/integrations" element={<IntegrationsPage />} />
           <Route path="/techdocs" element={<TechDocsPage />} />
           <Route path="/templates" element={<ServiceTemplatesPage />} />
+          <Route path="/infrastructure-templates" element={<InfrastructureTemplatesPage />} />
         </Routes>
       </Layout>
     </Router>
