@@ -302,24 +302,33 @@ func (s *TechDocsService) getModelContextLimit(provider domain.AIProvider, model
 	}
 }
 
-// getCheapestModel returns the cheapest model for the given provider
+// getCheapestModel ALWAYS returns the cheapest model for the given provider
+// IGNORES any requested model to ensure cost minimization
 func (s *TechDocsService) getCheapestModel(provider domain.AIProvider, requestedModel string) string {
-	// If a model was specifically requested, use it
-	if requestedModel != "" {
-		return requestedModel
-	}
+	// ALWAYS use cheapest models, regardless of what was requested
+	// This ensures cost minimization at all times
 
-	// Otherwise, default to cheapest models
+	var cheapestModel string
 	switch provider {
 	case domain.AIProviderOpenAI:
-		return "gpt-3.5-turbo" // Cheapest OpenAI model
+		cheapestModel = "gpt-3.5-turbo" // Cheapest OpenAI model (~90% cheaper than GPT-4)
 	case domain.AIProviderClaude:
-		return "claude-3-haiku-20240307" // Cheapest Claude model
+		cheapestModel = "claude-3-haiku-20240307" // Cheapest Claude model (~95% cheaper than Opus)
 	case domain.AIProviderGemini:
-		return "gemini-pro" // Standard Gemini model
+		cheapestModel = "gemini-pro" // Standard Gemini model
 	default:
-		return ""
+		cheapestModel = "gpt-3.5-turbo" // Default to cheapest overall
 	}
+
+	// Log if we're overriding a requested model
+	if requestedModel != "" && requestedModel != cheapestModel {
+		s.log.Infow("Forcing cheapest model (cost optimization)",
+			"requested", requestedModel,
+			"forced", cheapestModel,
+			"provider", provider)
+	}
+
+	return cheapestModel
 }
 
 type repoFile struct {
