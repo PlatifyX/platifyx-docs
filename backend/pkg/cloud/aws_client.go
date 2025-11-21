@@ -632,12 +632,9 @@ func (c *AWSClient) getEC2Recommendations(ctx context.Context, coClient *compute
 		// Calculate savings
 		var currentCost, recommendedCost, savings, savingsPercent float64
 
-		if rec.CurrentPerformanceRisk != nil {
+		if rec.CurrentPerformanceRisk != "" {
 			// If we have performance risk, it means there's a potential for optimization
 			// Estimate based on typical instance pricing differences
-
-			// Parse instance type to determine action
-			action := determineRecommendationAction(currentInstanceType, recommendedInstanceType)
 
 			// Estimate monthly costs (simplified - in production would use actual pricing)
 			currentCost = estimateInstanceCost(currentInstanceType)
@@ -727,11 +724,6 @@ func (c *AWSClient) getEBSRecommendations(ctx context.Context, coClient *compute
 
 			// Extract volume ID from ARN
 			volumeID := extractVolumeIDFromArn(volumeArn)
-
-			currentConfig := ""
-			if rec.CurrentConfiguration != nil && rec.CurrentConfiguration.VolumeType != nil {
-				currentConfig = fmt.Sprintf("%s", rec.CurrentConfiguration.VolumeType)
-			}
 
 			recommendedConfig := "Create a snapshot and delete."
 			recommendedAction := "Excluir recursos ociosos ou não usados"
