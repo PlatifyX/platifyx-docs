@@ -368,6 +368,61 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			infraTemplates.POST("/generate", handlers.TemplateHandler.GenerateTemplate)
 			infraTemplates.POST("/preview", handlers.TemplateHandler.PreviewTemplate)
 		}
+
+		// Settings - User Management System
+		settings := v1.Group("/settings")
+		{
+			// Users
+			settings.GET("/users", handlers.SettingsHandler.ListUsers)
+			settings.GET("/users/stats", handlers.SettingsHandler.GetUserStats)
+			settings.GET("/users/:id", handlers.SettingsHandler.GetUser)
+			settings.POST("/users", handlers.SettingsHandler.CreateUser)
+			settings.PUT("/users/:id", handlers.SettingsHandler.UpdateUser)
+			settings.DELETE("/users/:id", handlers.SettingsHandler.DeleteUser)
+
+			// Roles
+			settings.GET("/roles", handlers.SettingsHandler.ListRoles)
+			settings.GET("/roles/:id", handlers.SettingsHandler.GetRole)
+			settings.POST("/roles", handlers.SettingsHandler.CreateRole)
+			settings.PUT("/roles/:id", handlers.SettingsHandler.UpdateRole)
+			settings.DELETE("/roles/:id", handlers.SettingsHandler.DeleteRole)
+
+			// Permissions
+			settings.GET("/permissions", handlers.SettingsHandler.ListPermissions)
+
+			// Teams
+			settings.GET("/teams", handlers.SettingsHandler.ListTeams)
+			settings.GET("/teams/:id", handlers.SettingsHandler.GetTeam)
+			settings.POST("/teams", handlers.SettingsHandler.CreateTeam)
+			settings.PUT("/teams/:id", handlers.SettingsHandler.UpdateTeam)
+			settings.DELETE("/teams/:id", handlers.SettingsHandler.DeleteTeam)
+			settings.POST("/teams/:id/members", handlers.SettingsHandler.AddTeamMember)
+			settings.DELETE("/teams/:id/members/:userId", handlers.SettingsHandler.RemoveTeamMember)
+
+			// SSO
+			settings.GET("/sso", handlers.SettingsHandler.ListSSOConfigs)
+			settings.GET("/sso/:provider", handlers.SettingsHandler.GetSSOConfig)
+			settings.POST("/sso", handlers.SettingsHandler.CreateOrUpdateSSOConfig)
+			settings.DELETE("/sso/:provider", handlers.SettingsHandler.DeleteSSOConfig)
+
+			// Audit
+			settings.GET("/audit", handlers.SettingsHandler.ListAuditLogs)
+			settings.GET("/audit/stats", handlers.SettingsHandler.GetAuditStats)
+		}
+
+		// Authentication
+		auth := v1.Group("/auth")
+		{
+			auth.POST("/login", handlers.AuthHandler.Login)
+			auth.POST("/logout", handlers.AuthHandler.Logout)
+			auth.POST("/refresh", handlers.AuthHandler.RefreshToken)
+			auth.GET("/me", handlers.AuthHandler.Me)
+			auth.POST("/change-password", handlers.AuthHandler.ChangePassword)
+
+			// SSO Login
+			auth.GET("/sso/:provider", handlers.SSOHandler.LoginWithSSO)
+			auth.GET("/callback/:provider", handlers.SSOHandler.CallbackSSO)
+		}
 	}
 
 	return router
