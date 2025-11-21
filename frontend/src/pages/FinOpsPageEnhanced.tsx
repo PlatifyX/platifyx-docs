@@ -84,11 +84,11 @@ function FinOpsPageEnhanced() {
       console.log('SP Data:', spData)
       console.log('Recommendations Data:', recommendationsData)
 
-      setMonthlyCosts(monthlyData || [])
-      setServiceCosts((serviceData || []).sort((a: ServiceCost, b: ServiceCost) => b.cost - a.cost).slice(0, 10))
-      setForecast(forecastData || [])
-      setSpUtilization(spData || null)
-      setRecommendations(recommendationsData || [])
+      setMonthlyCosts(monthlyData.data || [])
+      setServiceCosts((serviceData.data || []).sort((a: ServiceCost, b: ServiceCost) => b.cost - a.cost).slice(0, 10))
+      setForecast(forecastData.data || [])
+      setSpUtilization(spData.data || null)
+      setRecommendations(recommendationsData.data || [])
     } catch (error) {
       console.error('Error fetching FinOps data:', error)
     } finally {
