@@ -273,12 +273,15 @@ func (r *TeamRepository) GetStats() (map[string]interface{}, error) {
 	stats := make(map[string]interface{})
 
 	// Total de equipes
-	err := r.db.QueryRow("SELECT COUNT(*) FROM teams").Scan(&stats["total"])
+	var total int
+	err := r.db.QueryRow("SELECT COUNT(*) FROM teams").Scan(&total)
 	if err != nil {
 		return nil, err
 	}
+	stats["total"] = total
 
 	// Média de membros por equipe
+	var avgMembers float64
 	err = r.db.QueryRow(`
 		SELECT COALESCE(AVG(member_count), 0)
 		FROM (
@@ -286,10 +289,11 @@ func (r *TeamRepository) GetStats() (map[string]interface{}, error) {
 			FROM user_teams
 			GROUP BY team_id
 		) as team_members
-	`).Scan(&stats["avg_members"])
+	`).Scan(&avgMembers)
 	if err != nil {
 		return nil, err
 	}
+	stats["avg_members"] = avgMembers
 
 	// Equipe com mais membros
 	var maxTeamName string

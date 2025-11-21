@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -409,22 +408,28 @@ func (r *UserRepository) GetStats() (map[string]interface{}, error) {
 	stats := make(map[string]interface{})
 
 	// Total de usuários
-	err := r.db.QueryRow("SELECT COUNT(*) FROM users").Scan(&stats["total"])
+	var total int
+	err := r.db.QueryRow("SELECT COUNT(*) FROM users").Scan(&total)
 	if err != nil {
 		return nil, err
 	}
+	stats["total"] = total
 
 	// Usuários ativos
-	err = r.db.QueryRow("SELECT COUNT(*) FROM users WHERE is_active = true").Scan(&stats["active"])
+	var active int
+	err = r.db.QueryRow("SELECT COUNT(*) FROM users WHERE is_active = true").Scan(&active)
 	if err != nil {
 		return nil, err
 	}
+	stats["active"] = active
 
 	// Usuários SSO
-	err = r.db.QueryRow("SELECT COUNT(*) FROM users WHERE is_sso = true").Scan(&stats["sso"])
+	var sso int
+	err = r.db.QueryRow("SELECT COUNT(*) FROM users WHERE is_sso = true").Scan(&sso)
 	if err != nil {
 		return nil, err
 	}
+	stats["sso"] = sso
 
 	// Usuários por role
 	rows, err := r.db.Query(`
