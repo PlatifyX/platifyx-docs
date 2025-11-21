@@ -148,11 +148,13 @@ function ObservabilityPage() {
       const stats: OverviewStats = {}
 
       if (prometheusStatsRes.ok) {
-        stats.prometheus = await prometheusStatsRes.json()
+        const prometheusData = await prometheusStatsRes.json()
+        stats.prometheus = prometheusData.data
       }
 
       if (grafanaStatsRes.ok) {
-        stats.grafana = await grafanaStatsRes.json()
+        const grafanaData = await grafanaStatsRes.json()
+        stats.grafana = grafanaData.data
       }
 
       setOverviewStats(stats)
@@ -165,13 +167,13 @@ function ObservabilityPage() {
       // Fetch Grafana config and find main dashboard
       if (grafanaConfigRes.ok) {
         const configResult = await grafanaConfigRes.json()
-        setGrafanaUrl(configResult.url)
+        setGrafanaUrl(configResult.data?.url || '')
 
         // Fetch dashboards to find the main one
         const dashboardsRes = await fetch(buildApiUrl('grafana/dashboards'))
         if (dashboardsRes.ok) {
           const dashboardsResult = await dashboardsRes.json()
-          const dashboards = dashboardsResult.dashboards || []
+          const dashboards = dashboardsResult.data?.dashboards || []
 
           // Find first starred dashboard, or just use the first dashboard
           const mainDashboard = dashboards.find((d: GrafanaDashboard) => d.isStarred) || dashboards[0]

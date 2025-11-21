@@ -67,8 +67,8 @@ function SettingsPage() {
       const rbacStats = await rbacResponse.json()
 
       // Process SSO data
-      const google = ssoData?.find((s: any) => s.provider === 'google') || null
-      const microsoft = ssoData?.find((s: any) => s.provider === 'microsoft') || null
+      const google = ssoData.data?.find((s: any) => s.provider === 'google') || null
+      const microsoft = ssoData.data?.find((s: any) => s.provider === 'microsoft') || null
 
       setSettings({
         sso: {
@@ -76,8 +76,8 @@ function SettingsPage() {
           microsoft
         },
         rbac: {
-          enabled: rbacStats.totalUsers > 0,
-          customProfiles: rbacStats.totalRoles - 4 // Subtract system roles
+          enabled: (rbacStats.data?.totalUsers || 0) > 0,
+          customProfiles: (rbacStats.data?.totalRoles || 4) - 4 // Subtract system roles
         },
         mfa: {
           enabled: false,

@@ -59,14 +59,14 @@ function KubernetesPage() {
       const clusterRes = await fetch(buildApiUrl('kubernetes/cluster'))
       if (clusterRes.ok) {
         const data = await clusterRes.json()
-        setClusterInfo(data)
+        setClusterInfo(data.data)
       }
 
       if (activeTab === 'pods' || activeTab === 'overview') {
         const podsRes = await fetch(buildApiUrl('kubernetes/pods'))
         if (podsRes.ok) {
           const data = await podsRes.json()
-          setPods(data.pods || [])
+          setPods(data.data?.pods || [])
         }
       }
 
@@ -74,7 +74,7 @@ function KubernetesPage() {
         const deploymentsRes = await fetch(buildApiUrl('kubernetes/deployments'))
         if (deploymentsRes.ok) {
           const data = await deploymentsRes.json()
-          setDeployments(data.deployments || [])
+          setDeployments(data.data?.deployments || [])
         }
       }
 
@@ -82,7 +82,7 @@ function KubernetesPage() {
         const nodesRes = await fetch(buildApiUrl('kubernetes/nodes'))
         if (nodesRes.ok) {
           const data = await nodesRes.json()
-          setNodes(data.nodes || [])
+          setNodes(data.data?.nodes || [])
         }
       }
     } catch (err: any) {

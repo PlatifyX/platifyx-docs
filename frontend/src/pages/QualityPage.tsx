@@ -48,7 +48,7 @@ function QualityPage() {
       const response = await fetch(buildApiUrl(`quality/stats?${params.toString()}`))
       if (!response.ok) throw new Error('Failed to fetch stats')
       const data = await response.json()
-      setStats(data)
+      setStats(data.data)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load statistics')

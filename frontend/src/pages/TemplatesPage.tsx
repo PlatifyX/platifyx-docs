@@ -52,7 +52,7 @@ function TemplatesPage() {
     try {
       const response = await fetch(buildApiUrl('infrastructure-templates'))
       const data = await response.json()
-      setTemplates(data.templates || [])
+      setTemplates(data.data?.templates || [])
     } catch (error) {
       console.error('Error fetching templates:', error)
     } finally {

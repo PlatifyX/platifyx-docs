@@ -98,7 +98,7 @@ function ServicesPage() {
       }
 
       const data = await response.json()
-      const fetchedServices = data.services || []
+      const fetchedServices = data.data?.services || []
       setServices(fetchedServices)
 
       // Fetch metrics for all services
@@ -130,8 +130,8 @@ function ServicesPage() {
 
       const data = await response.json()
       console.log('Metrics response:', data)
-      console.log('Service metrics:', data.metrics)
-      setServiceMetrics(data.metrics || {})
+      console.log('Service metrics:', data.data?.metrics)
+      setServiceMetrics(data.data?.metrics || {})
     } catch (err: any) {
       console.error('Failed to fetch service metrics:', err)
       // Don't show error to user, just log it

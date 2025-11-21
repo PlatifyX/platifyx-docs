@@ -57,7 +57,7 @@ function GitHubPage() {
         const statsRes = await fetch(buildApiUrl('github/stats'))
         if (statsRes.ok) {
           const data = await statsRes.json()
-          setStats(data)
+          setStats(data.data)
         }
       }
 
@@ -65,7 +65,7 @@ function GitHubPage() {
         const reposRes = await fetch(buildApiUrl('github/repositories'))
         if (reposRes.ok) {
           const data = await reposRes.json()
-          setRepositories(data.repositories || [])
+          setRepositories(data.data?.repositories || [])
         }
       }
     } catch (err: any) {

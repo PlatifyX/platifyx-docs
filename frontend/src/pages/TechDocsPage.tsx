@@ -48,7 +48,7 @@ function TechDocsPage() {
       const response = await fetch(buildApiUrl('techdocs/tree'))
       if (!response.ok) throw new Error('Failed to fetch document tree')
       const data = await response.json()
-      setTree(data.tree || [])
+      setTree(data.data?.tree || [])
     } catch (err) {
       console.error('Error fetching tree:', err)
     } finally {
@@ -61,8 +61,8 @@ function TechDocsPage() {
       const response = await fetch(buildApiUrl(`techdocs/document?path=${encodeURIComponent(path)}`))
       if (!response.ok) throw new Error('Failed to fetch document')
       const data = await response.json()
-      setSelectedDoc(data)
-      setEditContent(data.content || '')
+      setSelectedDoc(data.data)
+      setEditContent(data.data?.content || '')
       setIsEditing(false)
     } catch (err) {
       console.error('Error fetching document:', err)
