@@ -13,6 +13,7 @@ import QualityPage from './pages/QualityPage'
 import FinOpsPageEnhanced from './pages/FinOpsPageEnhanced'
 import TechDocsPage from './pages/TechDocsPage'
 import ObservabilityPage from './pages/ObservabilityPage'
+import SettingsPage from './pages/SettingsPage'
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
           <Route path="/techdocs" element={<TechDocsPage />} />
           <Route path="/templates" element={<ServiceTemplatesPage />} />
           <Route path="/infrastructure-templates" element={<InfrastructureTemplatesPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </Layout>
     </Router>
