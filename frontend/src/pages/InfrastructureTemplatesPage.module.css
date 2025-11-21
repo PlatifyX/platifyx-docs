@@ -8,7 +8,7 @@
 }
 
 .header {
-  background: white;
+  background: #0d1321;
   border-radius: 16px;
   padding: 32px;
   margin-bottom: 24px;
@@ -72,7 +72,7 @@
 }
 
 .filters {
-  background: white;
+  background: #0d1321;
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
@@ -140,7 +140,7 @@
   border: 2px solid #f0ebd8;
   border-radius: 10px;
   background: white;
-  color: #f0ebd8;
+  color: #0d1321;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -200,7 +200,7 @@
 }
 
 .templateCard {
-  background: white;
+  background: #0d1321;
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
@@ -276,7 +276,7 @@
 .templateName {
   font-size: 20px;
   font-weight: 700;
-  color: #0d1321;
+  color: #ffffff;
   margin: 0 0 8px 0;
 }
 
