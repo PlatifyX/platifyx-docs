@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Plus, Edit2, Trash2, Lock, X, Loader2, CheckSquare, Square } from 'lucide-react';
+import { Shield, Plus, Edit2, Trash2, Lock, X, Loader2, CheckSquare, Square, Search } from 'lucide-react';
 import * as settingsApi from '../../services/settingsApi';
 
 interface Permission {
   id: string;
-  name: string;
-  display_name: string;
+  name?: string;
+  display_name?: string;
   description?: string;
   resource: string;
   action: string;
@@ -35,6 +35,7 @@ const RolesTab: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [formData, setFormData] = useState<RoleFormData>({
     name: '',
@@ -190,6 +191,16 @@ const RolesTab: React.FC = () => {
     return { count: permCount, total: totalPerms, percentage };
   };
 
+  const getPermissionDisplay = (perm: Permission): string => {
+    return perm.display_name || perm.name || `${perm.resource}.${perm.action}`;
+  };
+
+  const filteredRoles = roles.filter(role =>
+    role.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (role.description && role.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -216,6 +227,20 @@ const RolesTab: React.FC = () => {
         </div>
       )}
 
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Buscar roles por nome ou descrição..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-[#2A2A2A] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#1B998B]"
+          />
+        </div>
+      </div>
+
       {loading ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B998B]"></div>
@@ -227,7 +252,7 @@ const RolesTab: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4" style={{ color: '#FFFFFF' }}>Roles</h3>
             <div className="space-y-3">
-              {roles.map((role) => {
+              {filteredRoles.map((role) => {
                 const stats = getRoleStats(role);
                 return (
                   <div
@@ -285,9 +310,9 @@ const RolesTab: React.FC = () => {
                 );
               })}
 
-              {roles.length === 0 && (
+              {filteredRoles.length === 0 && (
                 <div className="text-center py-8 text-gray-400">
-                  Nenhum role encontrado
+                  {searchQuery ? 'Nenhum role encontrado com esse filtro' : 'Nenhum role encontrado'}
                 </div>
               )}
             </div>
@@ -303,16 +328,14 @@ const RolesTab: React.FC = () => {
                     <Lock className="w-4 h-4 mr-2" />
                     {resource.charAt(0).toUpperCase() + resource.slice(1)}
                   </h4>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {perms.map(perm => (
-                      <div key={perm.id} className="flex items-start space-x-2 text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#1B998B] mt-1.5 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-gray-300 font-medium">{perm.action}</div>
-                          {perm.description && (
-                            <div className="text-gray-500 text-xs truncate">{perm.description}</div>
-                          )}
-                        </div>
+                      <div
+                        key={perm.id}
+                        className="px-2 py-1 bg-[#1B998B]/20 text-[#1B998B] rounded text-xs font-medium"
+                        title={perm.description || ''}
+                      >
+                        {getPermissionDisplay(perm)}
                       </div>
                     ))}
                   </div>
@@ -452,7 +475,7 @@ const RolesTab: React.FC = () => {
                                   />
                                   <div className="flex-1 min-w-0">
                                     <div className="text-sm font-medium" style={{ color: '#FFFFFF' }}>
-                                      {perm.display_name}
+                                      {getPermissionDisplay(perm)}
                                     </div>
                                     {perm.description && (
                                       <div className="text-xs text-gray-400 truncate">

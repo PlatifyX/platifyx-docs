@@ -154,131 +154,72 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 -- Índices para melhor performance
+
+-- Usuários
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
-CREATE INDEX IF NOT EXISTS idx_users_sso_provider ON users(sso_provider);
+CREATE INDEX IF NOT EXISTS idx_users_sso_provider ON users(sso_provider) WHERE sso_provider IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login_at DESC NULLS LAST);
+
+-- Roles
+CREATE INDEX IF NOT EXISTS idx_roles_name ON roles(name);
+CREATE INDEX IF NOT EXISTS idx_roles_is_system ON roles(is_system);
+
+-- Permissões
+CREATE INDEX IF NOT EXISTS idx_permissions_resource ON permissions(resource);
+CREATE INDEX IF NOT EXISTS idx_permissions_action ON permissions(action);
+
+-- Teams
+CREATE INDEX IF NOT EXISTS idx_teams_name ON teams(name);
+
+-- Relacionamentos
+CREATE INDEX IF NOT EXISTS idx_role_permissions_role ON role_permissions(role_id);
+CREATE INDEX IF NOT EXISTS idx_role_permissions_permission ON role_permissions(permission_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_role ON user_roles(role_id);
+CREATE INDEX IF NOT EXISTS idx_user_teams_user ON user_teams(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_teams_team ON user_teams(team_id);
+CREATE INDEX IF NOT EXISTS idx_user_teams_role ON user_teams(role);
+
+-- SSO
+CREATE INDEX IF NOT EXISTS idx_sso_configs_provider ON sso_configs(provider);
+CREATE INDEX IF NOT EXISTS idx_sso_configs_enabled ON sso_configs(enabled) WHERE enabled = true;
+
+-- Auditoria
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_email ON audit_logs(user_email);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_resource_id ON audit_logs(resource_id) WHERE resource_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_audit_logs_status ON audit_logs(status);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_composite ON audit_logs(resource, action, created_at DESC);
+
+-- Sessões
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_active ON sessions(user_id, expires_at) WHERE expires_at > CURRENT_TIMESTAMP;
 
--- Inserir roles padrão do sistema
-INSERT INTO roles (name, display_name, description, is_system) VALUES
-    ('admin', 'Administrator', 'Full system access with all permissions', true),
-    ('developer', 'Developer', 'Access to development resources and tools', true),
-    ('viewer', 'Viewer', 'Read-only access to resources', true),
-    ('platform-engineer', 'Platform Engineer', 'Access to infrastructure and platform resources', true)
-ON CONFLICT (name) DO NOTHING;
+-- Adicionar check constraints para validações
+ALTER TABLE users ADD CONSTRAINT check_email_format
+    CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
 
--- Inserir permissões padrão
-INSERT INTO permissions (resource, action, description) VALUES
-    -- Usuários
-    ('users', 'read', 'View users'),
-    ('users', 'write', 'Create and update users'),
-    ('users', 'delete', 'Delete users'),
-    ('users', 'manage', 'Full user management including roles and permissions'),
+ALTER TABLE users ADD CONSTRAINT check_name_not_empty
+    CHECK (LENGTH(TRIM(name)) > 0);
 
-    -- Equipes
-    ('teams', 'read', 'View teams'),
-    ('teams', 'write', 'Create and update teams'),
-    ('teams', 'delete', 'Delete teams'),
-    ('teams', 'manage', 'Full team management'),
+ALTER TABLE roles ADD CONSTRAINT check_role_name_not_empty
+    CHECK (LENGTH(TRIM(name)) > 0);
 
-    -- Roles/Permissões
-    ('roles', 'read', 'View roles and permissions'),
-    ('roles', 'write', 'Create and update roles'),
-    ('roles', 'delete', 'Delete roles'),
-    ('roles', 'manage', 'Full role and permission management'),
+ALTER TABLE roles ADD CONSTRAINT check_role_display_name_not_empty
+    CHECK (LENGTH(TRIM(display_name)) > 0);
 
-    -- SSO
-    ('sso', 'read', 'View SSO configuration'),
-    ('sso', 'write', 'Configure SSO providers'),
-    ('sso', 'manage', 'Full SSO management'),
+ALTER TABLE teams ADD CONSTRAINT check_team_name_not_empty
+    CHECK (LENGTH(TRIM(name)) > 0);
 
-    -- Auditoria
-    ('audit', 'read', 'View audit logs'),
-    ('audit', 'export', 'Export audit logs'),
+ALTER TABLE teams ADD CONSTRAINT check_team_display_name_not_empty
+    CHECK (LENGTH(TRIM(display_name)) > 0);
 
-    -- Serviços
-    ('services', 'read', 'View services'),
-    ('services', 'write', 'Create and update services'),
-    ('services', 'delete', 'Delete services'),
-
-    -- Kubernetes
-    ('kubernetes', 'read', 'View Kubernetes resources'),
-    ('kubernetes', 'write', 'Modify Kubernetes resources'),
-    ('kubernetes', 'delete', 'Delete Kubernetes resources'),
-
-    -- Integrações
-    ('integrations', 'read', 'View integrations'),
-    ('integrations', 'write', 'Create and update integrations'),
-    ('integrations', 'delete', 'Delete integrations'),
-    ('integrations', 'manage', 'Full integration management'),
-
-    -- Métricas e Observabilidade
-    ('observability', 'read', 'View metrics and dashboards'),
-    ('observability', 'write', 'Configure monitoring and alerts'),
-
-    -- CI/CD
-    ('cicd', 'read', 'View CI/CD pipelines and builds'),
-    ('cicd', 'write', 'Trigger and modify pipelines'),
-
-    -- FinOps
-    ('finops', 'read', 'View cost and billing information'),
-    ('finops', 'write', 'Manage cost allocation and budgets')
-ON CONFLICT (resource, action) DO NOTHING;
-
--- Associar permissões aos roles padrão
-
--- Admin: todas as permissões
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r, permissions p
-WHERE r.name = 'admin'
-ON CONFLICT DO NOTHING;
-
--- Developer: permissões de leitura e escrita (exceto usuários, roles e SSO)
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r, permissions p
-WHERE r.name = 'developer'
-  AND p.resource IN ('services', 'kubernetes', 'integrations', 'observability', 'cicd', 'finops', 'teams')
-  AND p.action IN ('read', 'write')
-ON CONFLICT DO NOTHING;
-
--- Developer: leitura de audit
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r, permissions p
-WHERE r.name = 'developer'
-  AND p.resource = 'audit'
-  AND p.action = 'read'
-ON CONFLICT DO NOTHING;
-
--- Viewer: apenas leitura
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r, permissions p
-WHERE r.name = 'viewer'
-  AND p.action = 'read'
-ON CONFLICT DO NOTHING;
-
--- Platform Engineer: permissões de infraestrutura e plataforma
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r, permissions p
-WHERE r.name = 'platform-engineer'
-  AND p.resource IN ('services', 'kubernetes', 'integrations', 'observability', 'cicd', 'teams')
-ON CONFLICT DO NOTHING;
-
--- Platform Engineer: leitura de audit e finops
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r, permissions p
-WHERE r.name = 'platform-engineer'
-  AND p.resource IN ('audit', 'finops')
-  AND p.action = 'read'
-ON CONFLICT DO NOTHING;
+-- Nota: Roles e permissões padrão foram movidos para migration 010_seed_roles_permissions.sql
+-- para melhor organização e evitar duplicação de lógica

@@ -120,12 +120,47 @@ const UsersTab: React.FC = () => {
     setError(null);
   };
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string): string | null => {
+    if (!password) return null;
+    if (password.length < 8) {
+      return 'Senha deve ter no mínimo 8 caracteres';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Senha deve conter pelo menos uma letra maiúscula';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Senha deve conter pelo menos uma letra minúscula';
+    }
+    if (!/[0-9]/.test(password)) {
+      return 'Senha deve conter pelo menos um número';
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
     try {
+      // Validações
+      if (!formData.name.trim()) {
+        setError('Nome é obrigatório');
+        setSubmitting(false);
+        return;
+      }
+
+      if (!selectedUser && !validateEmail(formData.email)) {
+        setError('Email inválido');
+        setSubmitting(false);
+        return;
+      }
+
       if (selectedUser) {
         // Editar usuário
         const updateData: any = {
@@ -136,6 +171,12 @@ const UsersTab: React.FC = () => {
         };
 
         if (formData.password) {
+          const passwordError = validatePassword(formData.password);
+          if (passwordError) {
+            setError(passwordError);
+            setSubmitting(false);
+            return;
+          }
           updateData.password = formData.password;
         }
 
@@ -144,6 +185,13 @@ const UsersTab: React.FC = () => {
         // Criar usuário
         if (!formData.password) {
           setError('Senha é obrigatória para novos usuários');
+          setSubmitting(false);
+          return;
+        }
+
+        const passwordError = validatePassword(formData.password);
+        if (passwordError) {
+          setError(passwordError);
           setSubmitting(false);
           return;
         }
@@ -441,6 +489,11 @@ const UsersTab: React.FC = () => {
                       style={{ color: '#FFFFFF' }}
                       placeholder={selectedUser ? 'Deixe em branco para não alterar' : ''}
                     />
+                    {!selectedUser && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        Mínimo 8 caracteres, com letras maiúsculas, minúsculas e números
+                      </p>
+                    )}
                   </div>
 
                   {/* Status */}

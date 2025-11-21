@@ -1,66 +1,87 @@
 -- Seed de roles padrão e permissões
 -- Este arquivo popula o banco com roles e permissões iniciais
 
+-- Adicionar coluna display_name na tabela de permissões se não existir
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name = 'permissions' AND column_name = 'display_name') THEN
+        ALTER TABLE permissions ADD COLUMN display_name VARCHAR(255);
+    END IF;
+END $$;
+
+-- Adicionar coluna name na tabela de permissões se não existir (para compatibilidade)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name = 'permissions' AND column_name = 'name') THEN
+        ALTER TABLE permissions ADD COLUMN name VARCHAR(255);
+    END IF;
+END $$;
+
 -- Inserir permissões básicas (se não existirem)
-INSERT INTO permissions (resource, action, description, created_at)
+INSERT INTO permissions (resource, action, name, display_name, description, created_at)
 VALUES
     -- User permissions
-    ('users', 'view', 'View user list and details', NOW()),
-    ('users', 'create', 'Create new users', NOW()),
-    ('users', 'update', 'Update user information', NOW()),
-    ('users', 'delete', 'Delete users', NOW()),
-    ('users', 'manage_roles', 'Assign or remove roles from users', NOW()),
+    ('users', 'view', 'users.view', 'Visualizar Usuários', 'View user list and details', NOW()),
+    ('users', 'create', 'users.create', 'Criar Usuários', 'Create new users', NOW()),
+    ('users', 'update', 'users.update', 'Atualizar Usuários', 'Update user information', NOW()),
+    ('users', 'delete', 'users.delete', 'Deletar Usuários', 'Delete users', NOW()),
+    ('users', 'manage_roles', 'users.manage_roles', 'Gerenciar Roles de Usuários', 'Assign or remove roles from users', NOW()),
 
     -- Role permissions
-    ('roles', 'view', 'View role list and details', NOW()),
-    ('roles', 'create', 'Create new roles', NOW()),
-    ('roles', 'update', 'Update role information', NOW()),
-    ('roles', 'delete', 'Delete roles', NOW()),
-    ('roles', 'manage_permissions', 'Assign or remove permissions from roles', NOW()),
+    ('roles', 'view', 'roles.view', 'Visualizar Roles', 'View role list and details', NOW()),
+    ('roles', 'create', 'roles.create', 'Criar Roles', 'Create new roles', NOW()),
+    ('roles', 'update', 'roles.update', 'Atualizar Roles', 'Update role information', NOW()),
+    ('roles', 'delete', 'roles.delete', 'Deletar Roles', 'Delete roles', NOW()),
+    ('roles', 'manage_permissions', 'roles.manage_permissions', 'Gerenciar Permissões', 'Assign or remove permissions from roles', NOW()),
 
     -- Team permissions
-    ('teams', 'view', 'View team list and details', NOW()),
-    ('teams', 'create', 'Create new teams', NOW()),
-    ('teams', 'update', 'Update team information', NOW()),
-    ('teams', 'delete', 'Delete teams', NOW()),
-    ('teams', 'manage_members', 'Add or remove team members', NOW()),
+    ('teams', 'view', 'teams.view', 'Visualizar Equipes', 'View team list and details', NOW()),
+    ('teams', 'create', 'teams.create', 'Criar Equipes', 'Create new teams', NOW()),
+    ('teams', 'update', 'teams.update', 'Atualizar Equipes', 'Update team information', NOW()),
+    ('teams', 'delete', 'teams.delete', 'Deletar Equipes', 'Delete teams', NOW()),
+    ('teams', 'manage_members', 'teams.manage_members', 'Gerenciar Membros', 'Add or remove team members', NOW()),
 
     -- SSO permissions
-    ('sso', 'view', 'View SSO configuration', NOW()),
-    ('sso', 'manage', 'Create, update or delete SSO configurations', NOW()),
+    ('sso', 'view', 'sso.view', 'Visualizar SSO', 'View SSO configuration', NOW()),
+    ('sso', 'manage', 'sso.manage', 'Gerenciar SSO', 'Create, update or delete SSO configurations', NOW()),
 
     -- Audit permissions
-    ('audit', 'view', 'View audit logs and statistics', NOW()),
+    ('audit', 'view', 'audit.view', 'Visualizar Auditoria', 'View audit logs and statistics', NOW()),
 
     -- Project permissions
-    ('projects', 'view', 'View project list and details', NOW()),
-    ('projects', 'create', 'Create new projects', NOW()),
-    ('projects', 'update', 'Update project information', NOW()),
-    ('projects', 'delete', 'Delete projects', NOW()),
+    ('projects', 'view', 'projects.view', 'Visualizar Projetos', 'View project list and details', NOW()),
+    ('projects', 'create', 'projects.create', 'Criar Projetos', 'Create new projects', NOW()),
+    ('projects', 'update', 'projects.update', 'Atualizar Projetos', 'Update project information', NOW()),
+    ('projects', 'delete', 'projects.delete', 'Deletar Projetos', 'Delete projects', NOW()),
 
     -- Pipeline permissions
-    ('pipelines', 'view', 'View pipeline list and details', NOW()),
-    ('pipelines', 'create', 'Create new pipelines', NOW()),
-    ('pipelines', 'update', 'Update pipeline configuration', NOW()),
-    ('pipelines', 'delete', 'Delete pipelines', NOW()),
-    ('pipelines', 'execute', 'Run pipelines manually', NOW()),
+    ('pipelines', 'view', 'pipelines.view', 'Visualizar Pipelines', 'View pipeline list and details', NOW()),
+    ('pipelines', 'create', 'pipelines.create', 'Criar Pipelines', 'Create new pipelines', NOW()),
+    ('pipelines', 'update', 'pipelines.update', 'Atualizar Pipelines', 'Update pipeline configuration', NOW()),
+    ('pipelines', 'delete', 'pipelines.delete', 'Deletar Pipelines', 'Delete pipelines', NOW()),
+    ('pipelines', 'execute', 'pipelines.execute', 'Executar Pipelines', 'Run pipelines manually', NOW()),
 
     -- Environment permissions
-    ('environments', 'view', 'View environment list and details', NOW()),
-    ('environments', 'create', 'Create new environments', NOW()),
-    ('environments', 'update', 'Update environment configuration', NOW()),
-    ('environments', 'delete', 'Delete environments', NOW()),
+    ('environments', 'view', 'environments.view', 'Visualizar Ambientes', 'View environment list and details', NOW()),
+    ('environments', 'create', 'environments.create', 'Criar Ambientes', 'Create new environments', NOW()),
+    ('environments', 'update', 'environments.update', 'Atualizar Ambientes', 'Update environment configuration', NOW()),
+    ('environments', 'delete', 'environments.delete', 'Deletar Ambientes', 'Delete environments', NOW()),
 
     -- Deployment permissions
-    ('deployments', 'view', 'View deployment history', NOW()),
-    ('deployments', 'create', 'Trigger new deployments', NOW()),
-    ('deployments', 'approve', 'Approve deployment requests', NOW()),
-    ('deployments', 'rollback', 'Rollback deployments', NOW()),
+    ('deployments', 'view', 'deployments.view', 'Visualizar Deployments', 'View deployment history', NOW()),
+    ('deployments', 'create', 'deployments.create', 'Criar Deployments', 'Trigger new deployments', NOW()),
+    ('deployments', 'approve', 'deployments.approve', 'Aprovar Deployments', 'Approve deployment requests', NOW()),
+    ('deployments', 'rollback', 'deployments.rollback', 'Reverter Deployments', 'Rollback deployments', NOW()),
 
     -- Settings permissions
-    ('settings', 'view', 'View system settings', NOW()),
-    ('settings', 'manage', 'Update system settings', NOW())
-ON CONFLICT (resource, action) DO NOTHING;
+    ('settings', 'view', 'settings.view', 'Visualizar Configurações', 'View system settings', NOW()),
+    ('settings', 'manage', 'settings.manage', 'Gerenciar Configurações', 'Update system settings', NOW())
+ON CONFLICT (resource, action) DO UPDATE SET
+    name = EXCLUDED.name,
+    display_name = EXCLUDED.display_name,
+    description = EXCLUDED.description;
 
 -- Inserir roles padrão
 INSERT INTO roles (name, display_name, description, is_system, created_at, updated_at)

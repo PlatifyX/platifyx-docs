@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"log"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
@@ -57,6 +60,40 @@ func (h *SettingsHandler) getActor(c *gin.Context) (string, string) {
 	return actorID, actorEmail
 }
 
+// validateEmail valida se o email está em formato válido
+func (h *SettingsHandler) validateEmail(email string) bool {
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	return emailRegex.MatchString(email)
+}
+
+// validatePassword valida se a senha atende aos requisitos mínimos
+func (h *SettingsHandler) validatePassword(password string) error {
+	if len(password) < 8 {
+		return &domain.ValidationError{Field: "password", Message: "Senha deve ter no mínimo 8 caracteres"}
+	}
+
+	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+	hasNumber := regexp.MustCompile(`[0-9]`).MatchString(password)
+
+	if !hasUpper {
+		return &domain.ValidationError{Field: "password", Message: "Senha deve conter pelo menos uma letra maiúscula"}
+	}
+	if !hasLower {
+		return &domain.ValidationError{Field: "password", Message: "Senha deve conter pelo menos uma letra minúscula"}
+	}
+	if !hasNumber {
+		return &domain.ValidationError{Field: "password", Message: "Senha deve conter pelo menos um número"}
+	}
+
+	return nil
+}
+
+// sanitizeString remove espaços extras e valida string
+func (h *SettingsHandler) sanitizeString(s string) string {
+	return strings.TrimSpace(s)
+}
+
 // ============= USERS =============
 
 func (h *SettingsHandler) ListUsers(c *gin.Context) {
@@ -88,35 +125,92 @@ func (h *SettingsHandler) GetUser(c *gin.Context) {
 func (h *SettingsHandler) CreateUser(c *gin.Context) {
 	var req domain.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] CreateUser: Invalid JSON: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + err.Error()})
 		return
+	}
+
+	// Validações
+	req.Email = h.sanitizeString(req.Email)
+	req.Name = h.sanitizeString(req.Name)
+
+	if req.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email é obrigatório"})
+		return
+	}
+
+	if !h.validateEmail(req.Email) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email inválido"})
+		return
+	}
+
+	if req.Name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Nome é obrigatório"})
+		return
+	}
+
+	if req.Password != nil && *req.Password != "" {
+		if err := h.validatePassword(*req.Password); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	actorID, actorEmail := h.getActor(c)
+	log.Printf("[INFO] CreateUser: Actor=%s creating user=%s", actorEmail, req.Email)
+
 	user, err := h.userService.Create(req, actorID, actorEmail)
 	if err != nil {
+		log.Printf("[ERROR] CreateUser: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	log.Printf("[INFO] CreateUser: Successfully created user=%s (id=%s)", user.Email, user.ID)
 	c.JSON(http.StatusCreated, user)
 }
 
 func (h *SettingsHandler) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID do usuário é obrigatório"})
+		return
+	}
+
 	var req domain.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] UpdateUser: Invalid JSON: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + err.Error()})
 		return
+	}
+
+	// Validações
+	if req.Name != nil {
+		*req.Name = h.sanitizeString(*req.Name)
+		if *req.Name == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Nome não pode ser vazio"})
+			return
+		}
+	}
+
+	if req.Password != nil && *req.Password != "" {
+		if err := h.validatePassword(*req.Password); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	actorID, actorEmail := h.getActor(c)
+	log.Printf("[INFO] UpdateUser: Actor=%s updating user=%s", actorEmail, id)
+
 	user, err := h.userService.Update(id, req, actorID, actorEmail)
 	if err != nil {
+		log.Printf("[ERROR] UpdateUser: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	log.Printf("[INFO] UpdateUser: Successfully updated user=%s", id)
 	c.JSON(http.StatusOK, user)
 }
 
@@ -171,9 +265,30 @@ func (h *SettingsHandler) GetRole(c *gin.Context) {
 func (h *SettingsHandler) CreateRole(c *gin.Context) {
 	var req domain.CreateRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] CreateRole: Invalid JSON: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + err.Error()})
 		return
 	}
+
+	// Validações
+	req.Name = h.sanitizeString(req.Name)
+	req.DisplayName = h.sanitizeString(req.DisplayName)
+
+	if req.Name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Nome interno é obrigatório"})
+		return
+	}
+
+	if req.DisplayName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Nome de exibição é obrigatório"})
+		return
+	}
+
+	// Normalizar nome interno (snake_case)
+	req.Name = strings.ToLower(strings.ReplaceAll(req.Name, " ", "_"))
+
+	actorID, actorEmail := h.getActor(c)
+	log.Printf("[INFO] CreateRole: Actor=%s creating role=%s", actorEmail, req.Name)
 
 	role := &domain.Role{
 		Name:        req.Name,
@@ -183,15 +298,19 @@ func (h *SettingsHandler) CreateRole(c *gin.Context) {
 	}
 
 	if err := h.roleRepo.Create(role); err != nil {
+		log.Printf("[ERROR] CreateRole: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if len(req.PermissionIDs) > 0 {
-		h.roleRepo.AssignPermissions(role.ID, req.PermissionIDs)
+		if err := h.roleRepo.AssignPermissions(role.ID, req.PermissionIDs); err != nil {
+			log.Printf("[ERROR] CreateRole: Failed to assign permissions: %v", err)
+		}
 	}
 
 	role.Permissions, _ = h.roleRepo.GetRolePermissions(role.ID)
+	log.Printf("[INFO] CreateRole: Successfully created role=%s (id=%s)", role.Name, role.ID)
 	c.JSON(http.StatusCreated, role)
 }
 
@@ -231,11 +350,35 @@ func (h *SettingsHandler) UpdateRole(c *gin.Context) {
 
 func (h *SettingsHandler) DeleteRole(c *gin.Context) {
 	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID do role é obrigatório"})
+		return
+	}
+
+	// Verificar se é role de sistema
+	role, err := h.roleRepo.GetByID(id)
+	if err != nil {
+		log.Printf("[ERROR] DeleteRole: Role not found: %v", err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Role não encontrado"})
+		return
+	}
+
+	if role.IsSystem {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Roles de sistema não podem ser deletados"})
+		return
+	}
+
+	actorID, actorEmail := h.getActor(c)
+	log.Printf("[INFO] DeleteRole: Actor=%s deleting role=%s (id=%s)", actorEmail, role.Name, id)
+
 	if err := h.roleRepo.Delete(id); err != nil {
+		log.Printf("[ERROR] DeleteRole: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Role deleted successfully"})
+
+	log.Printf("[INFO] DeleteRole: Successfully deleted role=%s", id)
+	c.JSON(http.StatusOK, gin.H{"message": "Role deletado com sucesso"})
 }
 
 func (h *SettingsHandler) ListPermissions(c *gin.Context) {
