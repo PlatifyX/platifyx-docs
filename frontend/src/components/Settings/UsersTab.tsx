@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Edit2, Trash2, Shield, Mail, Calendar, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Shield, Mail, Calendar, CheckCircle, XCircle, X, Loader2 } from 'lucide-react';
+import * as settingsApi from '../../services/settingsApi';
 
 interface User {
   id: string;
@@ -27,52 +28,54 @@ interface Team {
   display_name: string;
 }
 
+interface UserFormData {
+  email: string;
+  name: string;
+  password?: string;
+  is_active: boolean;
+  role_ids: string[];
+  team_ids: string[];
+}
+
 const UsersTab: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState<UserFormData>({
+    email: '',
+    name: '',
+    password: '',
+    is_active: true,
+    role_ids: [],
+    team_ids: []
+  });
 
   useEffect(() => {
-    fetchUsers();
+    fetchData();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      // TODO: Implementar chamada à API
-      // const response = await fetch('/api/v1/settings/users');
-      // const data = await response.json();
-
-      // Mock data para desenvolvimento
-      setUsers([
-        {
-          id: '1',
-          email: 'admin@platifyx.com',
-          name: 'Administrador',
-          is_active: true,
-          is_sso: false,
-          roles: [{ id: '1', name: 'admin', display_name: 'Administrator' }],
-          teams: [{ id: '1', name: 'platform', display_name: 'Platform Team' }],
-          last_login_at: new Date().toISOString(),
-          created_at: '2024-01-01T00:00:00Z',
-        },
-        {
-          id: '2',
-          email: 'developer@platifyx.com',
-          name: 'Developer User',
-          is_active: true,
-          is_sso: true,
-          sso_provider: 'google',
-          roles: [{ id: '2', name: 'developer', display_name: 'Developer' }],
-          teams: [{ id: '2', name: 'backend', display_name: 'Backend Team' }],
-          last_login_at: new Date().toISOString(),
-          created_at: '2024-01-15T00:00:00Z',
-        },
+      const [usersResp, rolesResp, teamsResp] = await Promise.all([
+        settingsApi.getUsers(),
+        settingsApi.getRoles(),
+        settingsApi.getTeams()
       ]);
+
+      setUsers(usersResp.users || []);
+      setRoles(rolesResp.roles || []);
+      setTeams(teamsResp.teams || []);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching data:', error);
+      setError('Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
@@ -83,16 +86,117 @@ const UsersTab: React.FC = () => {
     user.email.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleOpenCreateModal = () => {
+    setSelectedUser(null);
+    setFormData({
+      email: '',
+      name: '',
+      password: '',
+      is_active: true,
+      role_ids: [],
+      team_ids: []
+    });
+    setError(null);
+    setShowModal(true);
+  };
+
+  const handleOpenEditModal = (user: User) => {
+    setSelectedUser(user);
+    setFormData({
+      email: user.email,
+      name: user.name,
+      password: '',
+      is_active: user.is_active,
+      role_ids: user.roles?.map(r => r.id) || [],
+      team_ids: user.teams?.map(t => t.id) || []
+    });
+    setError(null);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedUser(null);
+    setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      if (selectedUser) {
+        // Editar usuário
+        const updateData: any = {
+          name: formData.name,
+          is_active: formData.is_active,
+          role_ids: formData.role_ids,
+          team_ids: formData.team_ids
+        };
+
+        if (formData.password) {
+          updateData.password = formData.password;
+        }
+
+        await settingsApi.updateUser(selectedUser.id, updateData);
+      } else {
+        // Criar usuário
+        if (!formData.password) {
+          setError('Senha é obrigatória para novos usuários');
+          setSubmitting(false);
+          return;
+        }
+
+        await settingsApi.createUser({
+          email: formData.email,
+          name: formData.name,
+          password: formData.password,
+          is_active: formData.is_active,
+          role_ids: formData.role_ids,
+          team_ids: formData.team_ids
+        });
+      }
+
+      // Recarregar lista de usuários
+      await fetchData();
+      handleCloseModal();
+    } catch (error: any) {
+      console.error('Error saving user:', error);
+      setError(error.message || 'Erro ao salvar usuário');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleDeleteUser = async (userId: string) => {
     if (!confirm('Tem certeza que deseja deletar este usuário?')) return;
 
     try {
-      // TODO: Implementar chamada à API
-      // await fetch(`/api/v1/settings/users/${userId}`, { method: 'DELETE' });
+      await settingsApi.deleteUser(userId);
       setUsers(users.filter(u => u.id !== userId));
     } catch (error) {
       console.error('Error deleting user:', error);
+      alert('Erro ao deletar usuário');
     }
+  };
+
+  const toggleRole = (roleId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      role_ids: prev.role_ids.includes(roleId)
+        ? prev.role_ids.filter(id => id !== roleId)
+        : [...prev.role_ids, roleId]
+    }));
+  };
+
+  const toggleTeam = (teamId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      team_ids: prev.team_ids.includes(teamId)
+        ? prev.team_ids.filter(id => id !== teamId)
+        : [...prev.team_ids, teamId]
+    }));
   };
 
   return (
@@ -100,19 +204,26 @@ const UsersTab: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold mb-1">Gerenciamento de Usuários</h2>
+          <h2 className="text-2xl font-bold mb-1" style={{ color: '#FFFFFF' }}>Gerenciamento de Usuários</h2>
           <p className="text-gray-400">
             Total: {users.length} usuários • {users.filter(u => u.is_active).length} ativos
           </p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={handleOpenCreateModal}
           className="flex items-center space-x-2 px-4 py-2 bg-[#1B998B] text-white rounded-lg hover:bg-[#17836F] transition-colors"
         >
           <Plus className="w-5 h-5" />
           <span>Novo Usuário</span>
         </button>
       </div>
+
+      {/* Error Message */}
+      {error && !showModal && (
+        <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-400">
+          {error}
+        </div>
+      )}
 
       {/* Search Bar */}
       <div className="mb-6">
@@ -157,7 +268,7 @@ const UsersTab: React.FC = () => {
                         {user.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="font-medium">{user.name}</div>
+                        <div className="font-medium" style={{ color: '#FFFFFF' }}>{user.name}</div>
                         <div className="text-sm text-gray-400 flex items-center">
                           <Mail className="w-3 h-3 mr-1" />
                           {user.email}
@@ -191,21 +302,29 @@ const UsersTab: React.FC = () => {
                   </td>
                   <td className="py-4">
                     <div className="flex flex-wrap gap-1">
-                      {user.roles?.map(role => (
-                        <span key={role.id} className="px-2 py-1 bg-[#1B998B]/20 text-[#1B998B] rounded text-xs flex items-center">
-                          <Shield className="w-3 h-3 mr-1" />
-                          {role.display_name}
-                        </span>
-                      )) || '-'}
+                      {user.roles && user.roles.length > 0 ? (
+                        user.roles.map(role => (
+                          <span key={role.id} className="px-2 py-1 bg-[#1B998B]/20 text-[#1B998B] rounded text-xs flex items-center">
+                            <Shield className="w-3 h-3 mr-1" />
+                            {role.display_name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-500">-</span>
+                      )}
                     </div>
                   </td>
                   <td className="py-4">
                     <div className="flex flex-wrap gap-1">
-                      {user.teams?.map(team => (
-                        <span key={team.id} className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs">
-                          {team.display_name}
-                        </span>
-                      )) || '-'}
+                      {user.teams && user.teams.length > 0 ? (
+                        user.teams.map(team => (
+                          <span key={team.id} className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs">
+                            {team.display_name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-500">-</span>
+                      )}
                     </div>
                   </td>
                   <td className="py-4 text-sm text-gray-400">
@@ -221,7 +340,7 @@ const UsersTab: React.FC = () => {
                   <td className="py-4">
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => setSelectedUser(user)}
+                        onClick={() => handleOpenEditModal(user)}
                         className="p-1 hover:bg-[#3A3A3A] rounded transition-colors"
                         title="Editar"
                       >
@@ -249,31 +368,155 @@ const UsersTab: React.FC = () => {
         </div>
       )}
 
-      {/* Create/Edit Modal (TODO: Implementar) */}
-      {(showCreateModal || selectedUser) && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6 max-w-2xl w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">
-              {selectedUser ? 'Editar Usuário' : 'Novo Usuário'}
-            </h3>
-            <p className="text-gray-400 mb-4">
-              Formulário de criação/edição de usuário (em desenvolvimento)
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setSelectedUser(null);
-                }}
-                className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                className="px-4 py-2 bg-[#1B998B] text-white rounded-lg hover:bg-[#17836F] transition-colors"
-              >
-                Salvar
-              </button>
+      {/* Create/Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold" style={{ color: '#FFFFFF' }}>
+                  {selectedUser ? 'Editar Usuário' : 'Novo Usuário'}
+                </h3>
+                <button
+                  onClick={handleCloseModal}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-400">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-4">
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      disabled={!!selectedUser}
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-3 py-2 bg-[#2A2A2A] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B] disabled:opacity-50"
+                      style={{ color: '#FFFFFF' }}
+                    />
+                    {selectedUser && (
+                      <p className="text-xs text-gray-400 mt-1">Email não pode ser alterado</p>
+                    )}
+                  </div>
+
+                  {/* Name */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                      Nome *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-3 py-2 bg-[#2A2A2A] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B]"
+                      style={{ color: '#FFFFFF' }}
+                    />
+                  </div>
+
+                  {/* Password */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                      Senha {!selectedUser && '*'}
+                    </label>
+                    <input
+                      type="password"
+                      required={!selectedUser}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="w-full px-3 py-2 bg-[#2A2A2A] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B]"
+                      style={{ color: '#FFFFFF' }}
+                      placeholder={selectedUser ? 'Deixe em branco para não alterar' : ''}
+                    />
+                  </div>
+
+                  {/* Status */}
+                  <div>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.is_active}
+                        onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                        className="w-4 h-4 rounded border-gray-700 bg-[#2A2A2A] text-[#1B998B] focus:ring-[#1B998B]"
+                      />
+                      <span style={{ color: '#FFFFFF' }}>Usuário ativo</span>
+                    </label>
+                  </div>
+
+                  {/* Roles */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                      Roles
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {roles.map(role => (
+                        <label key={role.id} className="flex items-center space-x-2 p-2 bg-[#2A2A2A] rounded cursor-pointer hover:bg-[#3A3A3A]">
+                          <input
+                            type="checkbox"
+                            checked={formData.role_ids.includes(role.id)}
+                            onChange={() => toggleRole(role.id)}
+                            className="w-4 h-4 rounded border-gray-700 text-[#1B998B] focus:ring-[#1B998B]"
+                          />
+                          <span style={{ color: '#FFFFFF' }}>{role.display_name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Teams */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                      Equipes
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {teams.map(team => (
+                        <label key={team.id} className="flex items-center space-x-2 p-2 bg-[#2A2A2A] rounded cursor-pointer hover:bg-[#3A3A3A]">
+                          <input
+                            type="checkbox"
+                            checked={formData.team_ids.includes(team.id)}
+                            onChange={() => toggleTeam(team.id)}
+                            className="w-4 h-4 rounded border-gray-700 text-[#1B998B] focus:ring-[#1B998B]"
+                          />
+                          <span style={{ color: '#FFFFFF' }}>{team.display_name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-700">
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    disabled={submitting}
+                    className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-4 py-2 bg-[#1B998B] text-white rounded-lg hover:bg-[#17836F] transition-colors disabled:opacity-50 flex items-center space-x-2"
+                  >
+                    {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                    <span>{submitting ? 'Salvando...' : 'Salvar'}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
