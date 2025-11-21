@@ -180,7 +180,11 @@ func (h *SSOHandler) getOAuth2Config(config *domain.SSOConfig) *oauth2.Config {
 	case "google":
 		endpoint = google.Endpoint
 	case "microsoft":
-		endpoint = microsoft.AzureADEndpoint(config.TenantID)
+		tenantID := "common"
+		if config.TenantID != nil && *config.TenantID != "" {
+			tenantID = *config.TenantID
+		}
+		endpoint = microsoft.AzureADEndpoint(tenantID)
 	default:
 		return nil
 	}
