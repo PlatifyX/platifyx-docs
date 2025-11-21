@@ -7,6 +7,7 @@ import SettingCard from '../components/Settings/SettingCard'
 import PageContainer from '../components/Layout/PageContainer'
 import PageHeader from '../components/Layout/PageHeader'
 import Section from '../components/Layout/Section'
+import { buildApiUrl } from '../config/api'
 import styles from './SettingsPage.module.css'
 
 interface SSOConfig {
@@ -58,11 +59,11 @@ function SettingsPage() {
   const fetchSettings = async () => {
     try {
       // Fetch SSO settings
-      const ssoResponse = await fetch('http://localhost:8060/api/v1/settings/sso')
+      const ssoResponse = await fetch(buildApiUrl('settings/sso'))
       const ssoData = await ssoResponse.json()
 
       // Fetch RBAC stats
-      const rbacResponse = await fetch('http://localhost:8060/api/v1/rbac/users/stats')
+      const rbacResponse = await fetch(buildApiUrl('rbac/users/stats'))
       const rbacStats = await rbacResponse.json()
 
       // Process SSO data
@@ -98,7 +99,7 @@ function SettingsPage() {
 
   const handleSaveGoogleSSO = async (data: any) => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/settings/sso', {
+      const response = await fetch(buildApiUrl('settings/sso'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -125,7 +126,7 @@ function SettingsPage() {
 
   const handleSaveMicrosoftSSO = async (data: any) => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/settings/sso', {
+      const response = await fetch(buildApiUrl('settings/sso'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -158,7 +159,7 @@ function SettingsPage() {
         return
       }
 
-      const response = await fetch(`http://localhost:8060/api/v1/settings/sso/${provider}/enabled`, {
+      const response = await fetch(buildApiUrl(`settings/sso/${provider}/enabled`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -187,7 +188,7 @@ function SettingsPage() {
     if (!confirmed) return
 
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/settings/sso/${provider}`, {
+      const response = await fetch(buildApiUrl(`settings/sso/${provider}`), {
         method: 'DELETE'
       })
 
