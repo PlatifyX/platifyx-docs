@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Activity, BarChart3, AlertTriangle, Database, RefreshCw, AlertCircle, ExternalLink, Target, Layers, FileText } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import Section from '../components/Layout/Section'
+import Card from '../components/UI/Card'
+import StatCard from '../components/UI/StatCard'
+import EmptyState from '../components/UI/EmptyState'
+import DataTable, { Column } from '../components/Table/DataTable'
 import styles from './ObservabilityPage.module.css'
 
 // Grafana Interfaces
@@ -185,163 +192,188 @@ function ObservabilityPage() {
     fetchData()
   }, [])
 
+  // DataTable columns for Prometheus alerts
+  const alertColumns: Column<PrometheusAlert>[] = [
+    {
+      key: 'alertname',
+      header: 'Nome da Alerta',
+      render: (alert) => alert.labels.alertname || '-',
+      align: 'left'
+    },
+    {
+      key: 'squad',
+      header: 'Squad',
+      render: (alert) => alert.labels.squad || '-',
+      align: 'left'
+    },
+    {
+      key: 'summary',
+      header: 'Resumo',
+      render: (alert) => alert.annotations.summary || '-',
+      align: 'left'
+    },
+    {
+      key: 'description',
+      header: 'Descrição',
+      render: (alert) => alert.annotations.description || '-',
+      align: 'left'
+    }
+  ]
+
+  // DataTable columns for Loki apps
+  const lokiAppColumns: Column<LokiApp>[] = [
+    {
+      key: 'name',
+      header: 'Aplicação',
+      render: (app) => (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <FileText size={16} />
+          {app.name}
+        </span>
+      ),
+      align: 'left'
+    },
+    {
+      key: 'squad',
+      header: 'Squad',
+      render: (app) => app.squad || '-',
+      align: 'left'
+    },
+    {
+      key: 'application',
+      header: 'Serviço',
+      render: (app) => app.application || '-',
+      align: 'left'
+    },
+    {
+      key: 'environment',
+      header: 'Ambiente',
+      render: (app) => app.environment ? (
+        <span className={`${styles.envBadge} ${styles[`env${app.environment}`]}`}>
+          {app.environment}
+        </span>
+      ) : '-',
+      align: 'left'
+    }
+  ]
+
   const renderOverview = () => (
-    <div className={styles.overview}>
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Prometheus</h2>
+    <>
+      <Section title="Prometheus" icon="📊" spacing="lg">
         <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <AlertCircle size={24} className={styles.statIcon} />
-            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Alertas Ativas</span>
-              <span className={styles.statValue}>{overviewStats.prometheus?.firingAlerts || 0}</span>
-            </div>
-          </div>
+          <StatCard
+            icon={AlertCircle}
+            label="Alertas Ativas"
+            value={overviewStats.prometheus?.firingAlerts || 0}
+            color="red"
+          />
         </div>
 
-        {/* Tabela de Alertas */}
-        <div className={styles.subsection}>
-          <h3 className={styles.subsectionTitle}>Alertas Ativas</h3>
-          <div className={styles.tableContainer}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Nome da Alerta</th>
-                  <th>Squad</th>
-                  <th>Resumo</th>
-                  <th>Descrição</th>
-                </tr>
-              </thead>
-              <tbody>
-                {prometheusAlerts.map((alert, idx) => (
-                  <tr key={idx}>
-                    <td className={styles.alertName}>{alert.labels.alertname || '-'}</td>
-                    <td className={styles.squad}>{alert.labels.squad || '-'}</td>
-                    <td className={styles.summary}>{alert.annotations.summary || '-'}</td>
-                    <td className={styles.description}>{alert.annotations.description || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+        <Card title="Alertas Ativas" padding="lg" style={{ marginTop: '1.5rem' }}>
+          {prometheusAlerts.length > 0 ? (
+            <DataTable
+              columns={alertColumns}
+              data={prometheusAlerts}
+              emptyMessage="Nenhum alerta ativo"
+            />
+          ) : (
+            <EmptyState
+              icon={AlertCircle}
+              title="Nenhum alerta ativo"
+              description="Todas as métricas estão dentro dos parâmetros normais"
+            />
+          )}
+        </Card>
+      </Section>
 
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Grafana</h2>
-        {grafanaUrl && dashboardUid ? (
-          <div className={styles.dashboardLinkContainer}>
-            <div className={styles.dashboardCard}>
-              <div className={styles.dashboardIcon}>
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <line x1="9" y1="9" x2="15" y2="9" />
-                  <line x1="9" y1="15" x2="15" y2="15" />
-                </svg>
+      <Section title="Grafana" icon="📈" spacing="lg">
+        <Card padding="lg">
+          {grafanaUrl && dashboardUid ? (
+            <div className={styles.dashboardLinkContainer}>
+              <div className={styles.dashboardCard}>
+                <div className={styles.dashboardIcon}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <line x1="9" y1="9" x2="15" y2="9" />
+                    <line x1="9" y1="15" x2="15" y2="15" />
+                  </svg>
+                </div>
+                <div className={styles.dashboardInfo}>
+                  <h3 className={styles.dashboardName}>Domínio</h3>
+                  <p className={styles.dashboardDescription}>Clique para abrir o dashboard principal no Grafana</p>
+                </div>
+                <a
+                  href={`${grafanaUrl}/d/${dashboardUid}?orgId=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.dashboardButton}
+                >
+                  Abrir Dashboard
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
               </div>
-              <div className={styles.dashboardInfo}>
-                <h3 className={styles.dashboardName}>Domínio</h3>
-                <p className={styles.dashboardDescription}>Clique para abrir o dashboard principal no Grafana</p>
-              </div>
-              <a
-                href={`${grafanaUrl}/d/${dashboardUid}?orgId=1`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.dashboardButton}
-              >
-                Abrir Dashboard
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                  <polyline points="15 3 21 3 21 9" />
-                  <line x1="10" y1="14" x2="21" y2="3" />
-                </svg>
-              </a>
             </div>
-          </div>
-        ) : (
-          <div className={styles.emptyState}>
-            <p>Nenhum dashboard configurado</p>
-          </div>
-        )}
-      </div>
+          ) : (
+            <EmptyState
+              icon={BarChart3}
+              title="Nenhum dashboard configurado"
+              description="Configure o Grafana para visualizar dashboards"
+            />
+          )}
+        </Card>
+      </Section>
 
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Loki - Logs</h2>
-        {loadingLokiApps ? (
-          <div className={styles.loading}>Carregando aplicações...</div>
-        ) : lokiApps.length > 0 ? (
-          <div className={styles.subsection}>
-            <h3 className={styles.subsectionTitle}>Aplicações com Logs ({lokiApps.length})</h3>
-            <div className={styles.tableContainer}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Aplicação</th>
-                    <th>Squad</th>
-                    <th>Serviço</th>
-                    <th>Ambiente</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lokiApps.map((app, idx) => (
-                    <tr key={idx}>
-                      <td className={styles.appName}>
-                        <FileText size={16} style={{ marginRight: '8px' }} />
-                        {app.name}
-                      </td>
-                      <td>{app.squad || '-'}</td>
-                      <td>{app.application || '-'}</td>
-                      <td>
-                        {app.environment ? (
-                          <span className={`${styles.envBadge} ${styles[`env${app.environment}`]}`}>
-                            {app.environment}
-                          </span>
-                        ) : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          <div className={styles.emptyState}>
-            <p>Nenhuma aplicação com logs encontrada</p>
-          </div>
-        )}
-      </div>
-    </div>
+      <Section title="Loki - Logs" icon="📝" spacing="lg">
+        <Card title={`Aplicações com Logs (${lokiApps.length})`} padding="lg">
+          {loadingLokiApps ? (
+            <div className={styles.loading}>Carregando aplicações...</div>
+          ) : lokiApps.length > 0 ? (
+            <DataTable
+              columns={lokiAppColumns}
+              data={lokiApps}
+              emptyMessage="Nenhuma aplicação com logs encontrada"
+            />
+          ) : (
+            <EmptyState
+              icon={FileText}
+              title="Nenhuma aplicação com logs encontrada"
+              description="Configure o Loki para coletar logs"
+            />
+          )}
+        </Card>
+      </Section>
+    </>
   )
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Layers size={32} className={styles.headerIcon} />
-          <div>
-            <h1 className={styles.title}>Observabilidade</h1>
-            <p className={styles.subtitle}>Monitore métricas, dashboards e alertas do Prometheus e Grafana</p>
-          </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={Layers}
+        title="Observabilidade"
+        subtitle="Monitore métricas, dashboards e alertas do Prometheus e Grafana"
+        actions={
+          <button className={styles.refreshButton} onClick={fetchData} disabled={loading}>
+            <RefreshCw size={20} />
+            <span>Atualizar</span>
+          </button>
+        }
+      />
+
+      {error && (
+        <div className={styles.error}>
+          <AlertCircle size={20} />
+          <span>{error}</span>
         </div>
-        <button className={styles.refreshButton} onClick={fetchData} disabled={loading}>
-          <RefreshCw size={20} />
-          <span>Atualizar</span>
-        </button>
-      </div>
+      )}
 
-      <div className={styles.content}>
-        {error && (
-          <div className={styles.error}>
-            <AlertCircle size={20} />
-            <span>{error}</span>
-          </div>
-        )}
+      {loading && !error && <div className={styles.loading}>Carregando...</div>}
 
-        {loading && !error && <div className={styles.loading}>Carregando...</div>}
-
-        {!loading && !error && renderOverview()}
-      </div>
-    </div>
+      {!loading && !error && renderOverview()}
+    </PageContainer>
   )
 }
 

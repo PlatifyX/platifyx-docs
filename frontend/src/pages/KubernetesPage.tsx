@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Server, Box, Layers, Network, AlertCircle, RefreshCw } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import Section from '../components/Layout/Section'
+import StatCard from '../components/UI/StatCard'
+import DataTable, { Column } from '../components/Table/DataTable'
 import styles from './KubernetesPage.module.css'
 
 interface Pod {
@@ -91,145 +96,77 @@ function KubernetesPage() {
     fetchData()
   }, [activeTab])
 
+  // DataTable columns for Pods
+  const podColumns: Column<Pod>[] = [
+    { key: 'name', header: 'Nome', render: (pod) => pod.name, align: 'left' },
+    { key: 'namespace', header: 'Namespace', render: (pod) => pod.namespace, align: 'left' },
+    { key: 'status', header: 'Status', render: (pod) => <span className={styles.status}>{pod.status}</span>, align: 'left' },
+    { key: 'ready', header: 'Ready', render: (pod) => pod.ready, align: 'center' },
+    { key: 'restarts', header: 'Restarts', render: (pod) => pod.restarts, align: 'center' },
+    { key: 'age', header: 'Age', render: (pod) => pod.age, align: 'left' }
+  ]
+
+  // DataTable columns for Deployments
+  const deploymentColumns: Column<Deployment>[] = [
+    { key: 'name', header: 'Nome', render: (deploy) => deploy.name, align: 'left' },
+    { key: 'namespace', header: 'Namespace', render: (deploy) => deploy.namespace, align: 'left' },
+    { key: 'replicas', header: 'Replicas', render: (deploy) => deploy.replicas, align: 'center' },
+    { key: 'available', header: 'Available', render: (deploy) => deploy.available, align: 'center' },
+    { key: 'updated', header: 'Updated', render: (deploy) => deploy.updated, align: 'center' },
+    { key: 'age', header: 'Age', render: (deploy) => deploy.age, align: 'left' }
+  ]
+
+  // DataTable columns for Nodes
+  const nodeColumns: Column<Node>[] = [
+    { key: 'name', header: 'Nome', render: (node) => node.name, align: 'left' },
+    { key: 'status', header: 'Status', render: (node) => <span className={styles.status}>{node.status}</span>, align: 'left' },
+    { key: 'roles', header: 'Roles', render: (node) => node.roles.join(', '), align: 'left' },
+    { key: 'version', header: 'Version', render: (node) => node.version, align: 'left' },
+    { key: 'age', header: 'Age', render: (node) => node.age, align: 'left' }
+  ]
+
   const renderOverview = () => (
-    <div className={styles.overview}>
+    <Section spacing="lg">
       <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <Server size={24} className={styles.statIcon} />
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Nodes</span>
-            <span className={styles.statValue}>{clusterInfo?.nodes || 0}</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <Box size={24} className={styles.statIcon} />
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Pods</span>
-            <span className={styles.statValue}>{clusterInfo?.totalPods || 0}</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <Layers size={24} className={styles.statIcon} />
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Deployments</span>
-            <span className={styles.statValue}>{deployments.length}</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <Network size={24} className={styles.statIcon} />
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Version</span>
-            <span className={styles.statValue}>{clusterInfo?.version || 'N/A'}</span>
-          </div>
-        </div>
+        <StatCard icon={Server} label="Nodes" value={clusterInfo?.nodes || 0} color="blue" />
+        <StatCard icon={Box} label="Pods" value={clusterInfo?.totalPods || 0} color="green" />
+        <StatCard icon={Layers} label="Deployments" value={deployments.length} color="purple" />
+        <StatCard icon={Network} label="Version" value={clusterInfo?.version || 'N/A'} color="yellow" />
       </div>
-    </div>
+    </Section>
   )
 
   const renderPods = () => (
-    <div className={styles.tableContainer}>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Namespace</th>
-            <th>Status</th>
-            <th>Ready</th>
-            <th>Restarts</th>
-            <th>Age</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pods.map((pod, idx) => (
-            <tr key={idx}>
-              <td>{pod.name}</td>
-              <td>{pod.namespace}</td>
-              <td>
-                <span className={styles.status}>{pod.status}</span>
-              </td>
-              <td>{pod.ready}</td>
-              <td>{pod.restarts}</td>
-              <td>{pod.age}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Section spacing="lg">
+      <DataTable columns={podColumns} data={pods} emptyMessage="Nenhum pod encontrado" />
+    </Section>
   )
 
   const renderDeployments = () => (
-    <div className={styles.tableContainer}>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Namespace</th>
-            <th>Replicas</th>
-            <th>Available</th>
-            <th>Updated</th>
-            <th>Age</th>
-          </tr>
-        </thead>
-        <tbody>
-          {deployments.map((deploy, idx) => (
-            <tr key={idx}>
-              <td>{deploy.name}</td>
-              <td>{deploy.namespace}</td>
-              <td>{deploy.replicas}</td>
-              <td>{deploy.available}</td>
-              <td>{deploy.updated}</td>
-              <td>{deploy.age}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Section spacing="lg">
+      <DataTable columns={deploymentColumns} data={deployments} emptyMessage="Nenhum deployment encontrado" />
+    </Section>
   )
 
   const renderNodes = () => (
-    <div className={styles.tableContainer}>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Status</th>
-            <th>Roles</th>
-            <th>Version</th>
-            <th>Age</th>
-          </tr>
-        </thead>
-        <tbody>
-          {nodes.map((node, idx) => (
-            <tr key={idx}>
-              <td>{node.name}</td>
-              <td>
-                <span className={styles.status}>{node.status}</span>
-              </td>
-              <td>{node.roles.join(', ')}</td>
-              <td>{node.version}</td>
-              <td>{node.age}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Section spacing="lg">
+      <DataTable columns={nodeColumns} data={nodes} emptyMessage="Nenhum node encontrado" />
+    </Section>
   )
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Server size={32} className={styles.headerIcon} />
-          <div>
-            <h1 className={styles.title}>Kubernetes</h1>
-            <p className={styles.subtitle}>Gerencie seus clusters e recursos</p>
-          </div>
-        </div>
-        <button className={styles.refreshButton} onClick={fetchData} disabled={loading}>
-          <RefreshCw size={20} />
-          <span>Atualizar</span>
-        </button>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={Server}
+        title="Kubernetes"
+        subtitle="Gerencie seus clusters e recursos"
+        actions={
+          <button className={styles.refreshButton} onClick={fetchData} disabled={loading}>
+            <RefreshCw size={20} />
+            <span>Atualizar</span>
+          </button>
+        }
+      />
 
       <div className={styles.tabs}>
         <button
@@ -258,28 +195,26 @@ function KubernetesPage() {
         </button>
       </div>
 
-      <div className={styles.content}>
-        {error && (
-          <div className={styles.error}>
-            <AlertCircle size={20} />
-            <span>{error}</span>
-          </div>
-        )}
+      {error && (
+        <div className={styles.error}>
+          <AlertCircle size={20} />
+          <span>{error}</span>
+        </div>
+      )}
 
-        {loading && !error && (
-          <div className={styles.loading}>Carregando...</div>
-        )}
+      {loading && !error && (
+        <div className={styles.loading}>Carregando...</div>
+      )}
 
-        {!loading && !error && (
-          <>
-            {activeTab === 'overview' && renderOverview()}
-            {activeTab === 'pods' && renderPods()}
-            {activeTab === 'deployments' && renderDeployments()}
-            {activeTab === 'nodes' && renderNodes()}
-          </>
-        )}
-      </div>
-    </div>
+      {!loading && !error && (
+        <>
+          {activeTab === 'overview' && renderOverview()}
+          {activeTab === 'pods' && renderPods()}
+          {activeTab === 'deployments' && renderDeployments()}
+          {activeTab === 'nodes' && renderNodes()}
+        </>
+      )}
+    </PageContainer>
   )
 }
 

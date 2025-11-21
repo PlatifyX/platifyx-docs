@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Plus, Code, Rocket } from 'lucide-react'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import Section from '../components/Layout/Section'
 import styles from './IntegrationsPage.module.css'
 import { buildApiUrl } from '../config/api'
 
@@ -70,22 +73,25 @@ function ServiceTemplatesPage() {
     }
   }
 
-  if (loading) return <div className={styles.container}><div className={styles.loading}>Carregando...</div></div>
+  if (loading) {
+    return (
+      <PageContainer>
+        <div className={styles.loading}>Carregando...</div>
+      </PageContainer>
+    )
+  }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Code size={32} />
-          <div>
-            <h1 className={styles.title}>Templates de Serviços</h1>
-            <p className={styles.subtitle}>Crie novos serviços a partir de templates</p>
-          </div>
-        </div>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={Code}
+        title="Templates de Serviços"
+        subtitle="Crie novos serviços a partir de templates"
+      />
 
-      <div className={styles.grid}>
-        {templates.map((template) => (
+      <Section spacing="lg">
+        <div className={styles.grid}>
+          {templates.map((template) => (
           <div key={template.id} className={styles.card}>
             <div style={{ fontSize: '2rem' }}>{template.icon}</div>
             <h3>{template.name}</h3>
@@ -118,8 +124,9 @@ function ServiceTemplatesPage() {
               Usar Template
             </button>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </Section>
 
       {showCreateModal && selectedTemplate && (
         <div className={styles.modalOverlay} onClick={() => setShowCreateModal(false)}>
@@ -175,7 +182,7 @@ function ServiceTemplatesPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   )
 }
 

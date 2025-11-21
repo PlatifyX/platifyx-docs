@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, BarChart3, GitMerge, Shield, Bug, TrendingUp, AlertTriangle } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import Section from '../components/Layout/Section'
+import EmptyState from '../components/UI/EmptyState'
 import styles from './ServicesPage.module.css'
 
 interface Service {
@@ -186,32 +190,28 @@ function ServicesPage() {
   })
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Box size={32} className={styles.headerIcon} />
-          <div>
-            <h1 className={styles.title}>Catálogo de Serviços</h1>
-            <p className={styles.subtitle}>
-              {services.length} serviços descobertos automaticamente do Kubernetes
-            </p>
-          </div>
-        </div>
-        <div className={styles.headerActions}>
-          <button
-            className={styles.syncButton}
-            onClick={syncServices}
-            disabled={syncing}
-          >
-            <RefreshCw size={20} className={syncing ? styles.spinning : ''} />
-            <span>{syncing ? 'Sincronizando...' : 'Sincronizar'}</span>
-          </button>
-          <button className={styles.refreshButton} onClick={fetchServices} disabled={loading}>
-            <RefreshCw size={20} />
-            <span>Atualizar</span>
-          </button>
-        </div>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={Box}
+        title="Catálogo de Serviços"
+        subtitle={`${services.length} serviços descobertos automaticamente do Kubernetes`}
+        actions={
+          <>
+            <button
+              className={styles.syncButton}
+              onClick={syncServices}
+              disabled={syncing}
+            >
+              <RefreshCw size={20} className={syncing ? styles.spinning : ''} />
+              <span>{syncing ? 'Sincronizando...' : 'Sincronizar'}</span>
+            </button>
+            <button className={styles.refreshButton} onClick={fetchServices} disabled={loading}>
+              <RefreshCw size={20} />
+              <span>Atualizar</span>
+            </button>
+          </>
+        }
+      />
 
       <div className={styles.filters}>
         <input
@@ -233,7 +233,7 @@ function ServicesPage() {
         </select>
       </div>
 
-      <div className={styles.content}>
+      <Section spacing="lg">
         {error && (
           <div className={styles.error}>
             <Activity size={20} />
@@ -244,15 +244,15 @@ function ServicesPage() {
         {loading && !error && <div className={styles.loading}>Carregando serviços...</div>}
 
         {!loading && !error && filteredServices.length === 0 && (
-          <div className={styles.empty}>
-            <Box size={64} className={styles.emptyIcon} />
-            <h2>Nenhum serviço encontrado</h2>
-            <p>
-              {filter || squadFilter !== 'all'
+          <EmptyState
+            icon={Box}
+            title="Nenhum serviço encontrado"
+            description={
+              filter || squadFilter !== 'all'
                 ? 'Tente ajustar os filtros de busca'
-                : 'Clique em "Sincronizar" para descobrir serviços do Kubernetes'}
-            </p>
-          </div>
+                : 'Clique em "Sincronizar" para descobrir serviços do Kubernetes'
+            }
+          />
         )}
 
         {!loading && !error && filteredServices.length > 0 && (
@@ -433,8 +433,8 @@ function ServicesPage() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </Section>
+    </PageContainer>
   )
 }
 

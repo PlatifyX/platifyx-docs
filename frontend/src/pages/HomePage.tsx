@@ -1,56 +1,63 @@
-import { ArrowRight, Zap, Shield, TrendingUp } from 'lucide-react'
+import { ArrowRight, Zap, Shield, TrendingUp, Home as HomeIcon } from 'lucide-react'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import Section from '../components/Layout/Section'
+import Card from '../components/UI/Card'
 import styles from './HomePage.module.css'
 
 function HomePage() {
   return (
-    <div className={styles.container}>
-      <section className={styles.hero}>
-        <h1 className={styles.title}>
-          Bem-vindo ao <span className={styles.highlight}>PlatifyX</span>
-        </h1>
-        <p className={styles.subtitle}>
-          Developer Portal & Platform Engineering Hub
-        </p>
-        <p className={styles.description}>
-          Centralize DevOps, Kubernetes, Observabilidade, Qualidade e Governança em um único lugar.
-          Self-service, padronização e autonomia para times de engenharia.
-        </p>
-      </section>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={HomeIcon}
+        title="Bem-vindo ao PlatifyX"
+        subtitle="Developer Portal & Platform Engineering Hub"
+      />
 
-      <section className={styles.features}>
-        <div className={styles.featureCard}>
-          <div className={styles.featureIcon}>
-            <Zap size={32} />
-          </div>
-          <h3 className={styles.featureTitle}>Self-Service</h3>
-          <p className={styles.featureDescription}>
-            Crie serviços, pipelines e infraestrutura com templates padronizados em minutos
+      <Section spacing="lg">
+        <Card padding="lg" style={{ textAlign: 'center', background: 'linear-gradient(135deg, var(--deep-sea-blue-slate) 0%, var(--deep-sea-space-blue) 100%)' }}>
+          <p className={styles.description}>
+            Centralize DevOps, Kubernetes, Observabilidade, Qualidade e Governança em um único lugar.
+            Self-service, padronização e autonomia para times de engenharia.
           </p>
-        </div>
+        </Card>
+      </Section>
 
-        <div className={styles.featureCard}>
-          <div className={styles.featureIcon}>
-            <Shield size={32} />
-          </div>
-          <h3 className={styles.featureTitle}>Governança</h3>
-          <p className={styles.featureDescription}>
-            Segurança, compliance e políticas automatizadas desde o início
-          </p>
-        </div>
+      <Section title="Recursos" icon="✨" spacing="lg">
+        <div className={styles.features}>
+          <Card hover padding="lg">
+            <div className={styles.featureIcon}>
+              <Zap size={32} />
+            </div>
+            <h3 className={styles.featureTitle}>Self-Service</h3>
+            <p className={styles.featureDescription}>
+              Crie serviços, pipelines e infraestrutura com templates padronizados em minutos
+            </p>
+          </Card>
 
-        <div className={styles.featureCard}>
-          <div className={styles.featureIcon}>
-            <TrendingUp size={32} />
-          </div>
-          <h3 className={styles.featureTitle}>Observabilidade</h3>
-          <p className={styles.featureDescription}>
-            Logs, métricas e traces centralizados com Grafana Stack completo
-          </p>
-        </div>
-      </section>
+          <Card hover padding="lg">
+            <div className={styles.featureIcon}>
+              <Shield size={32} />
+            </div>
+            <h3 className={styles.featureTitle}>Governança</h3>
+            <p className={styles.featureDescription}>
+              Segurança, compliance e políticas automatizadas desde o início
+            </p>
+          </Card>
 
-      <section className={styles.quickActions}>
-        <h2 className={styles.sectionTitle}>Ações Rápidas</h2>
+          <Card hover padding="lg">
+            <div className={styles.featureIcon}>
+              <TrendingUp size={32} />
+            </div>
+            <h3 className={styles.featureTitle}>Observabilidade</h3>
+            <p className={styles.featureDescription}>
+              Logs, métricas e traces centralizados com Grafana Stack completo
+            </p>
+          </Card>
+        </div>
+      </Section>
+
+      <Section title="Ações Rápidas" icon="🚀" spacing="lg">
         <div className={styles.actions}>
           <button className={styles.actionButton}>
             Criar Novo Serviço
@@ -65,8 +72,8 @@ function HomePage() {
             <ArrowRight size={18} />
           </button>
         </div>
-      </section>
-    </div>
+      </Section>
+    </PageContainer>
   )
 }
 

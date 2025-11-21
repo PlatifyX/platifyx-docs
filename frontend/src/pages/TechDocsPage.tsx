@@ -5,6 +5,9 @@ import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
 import AIAssistant from '../components/TechDocs/AIAssistant'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import EmptyState from '../components/UI/EmptyState'
 import styles from './TechDocsPage.module.css'
 import { buildApiUrl } from '../config/api'
 
@@ -196,37 +199,35 @@ function TechDocsPage() {
 
   if (loading) {
     return (
-      <div className={styles.container}>
+      <PageContainer>
         <div className={styles.loading}>Carregando documentação...</div>
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <FileText size={32} className={styles.headerIcon} />
-          <div>
-            <h1 className={styles.title}>TechDocs</h1>
-            <p className={styles.subtitle}>Documentação técnica centralizada</p>
-          </div>
-        </div>
-        <div className={styles.headerActions}>
-          <button className={styles.aiButton} onClick={() => setShowAIAssistant(!showAIAssistant)}>
-            <Sparkles size={20} />
-            <span>Assistente IA</span>
-          </button>
-          <button className={styles.addButton} onClick={() => setShowNewFolderModal(true)}>
-            <FolderPlus size={20} />
-            <span>Nova Pasta</span>
-          </button>
-          <button className={styles.addButton} onClick={() => setShowNewDocModal(true)}>
-            <Plus size={20} />
-            <span>Novo Documento</span>
-          </button>
-        </div>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={FileText}
+        title="TechDocs"
+        subtitle="Documentação técnica centralizada"
+        actions={
+          <>
+            <button className={styles.aiButton} onClick={() => setShowAIAssistant(!showAIAssistant)}>
+              <Sparkles size={20} />
+              <span>Assistente IA</span>
+            </button>
+            <button className={styles.addButton} onClick={() => setShowNewFolderModal(true)}>
+              <FolderPlus size={20} />
+              <span>Nova Pasta</span>
+            </button>
+            <button className={styles.addButton} onClick={() => setShowNewDocModal(true)}>
+              <Plus size={20} />
+              <span>Novo Documento</span>
+            </button>
+          </>
+        }
+      />
 
       <div className={styles.content}>
         <div className={styles.sidebar}>
@@ -338,10 +339,11 @@ function TechDocsPage() {
               </div>
             </>
           ) : (
-            <div className={styles.placeholder}>
-              <FileText size={64} className={styles.placeholderIcon} />
-              <p className={styles.placeholderText}>Selecione um documento para visualizar</p>
-            </div>
+            <EmptyState
+              icon={FileText}
+              title="Selecione um documento para visualizar"
+              description="Escolha um documento da lista ao lado ou crie um novo"
+            />
           )}
         </div>
       </div>
@@ -399,7 +401,7 @@ function TechDocsPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   )
 }
 

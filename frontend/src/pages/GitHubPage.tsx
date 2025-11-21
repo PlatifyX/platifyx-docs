@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Github, GitBranch, GitPullRequest, AlertCircle, RefreshCw, ExternalLink, Star, GitFork, Users } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import Section from '../components/Layout/Section'
+import StatCard from '../components/UI/StatCard'
 import styles from './GitHubPage.module.css'
 
 interface Repository {
@@ -86,36 +90,12 @@ function GitHubPage() {
   }
 
   const renderOverview = () => (
-    <div className={styles.overview}>
+    <Section spacing="lg">
       <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <Github size={24} className={styles.statIcon} />
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Repositórios</span>
-            <span className={styles.statValue}>{stats?.totalRepositories || 0}</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <Star size={24} className={styles.statIcon} />
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Stars</span>
-            <span className={styles.statValue}>{stats?.totalStars || 0}</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <GitFork size={24} className={styles.statIcon} />
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Forks</span>
-            <span className={styles.statValue}>{stats?.totalForks || 0}</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <AlertCircle size={24} className={styles.statIcon} />
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Issues Abertas</span>
-            <span className={styles.statValue}>{stats?.totalOpenIssues || 0}</span>
-          </div>
-        </div>
+        <StatCard icon={Github} label="Repositórios" value={stats?.totalRepositories || 0} color="blue" />
+        <StatCard icon={Star} label="Stars" value={stats?.totalStars || 0} color="yellow" />
+        <StatCard icon={GitFork} label="Forks" value={stats?.totalForks || 0} color="green" />
+        <StatCard icon={AlertCircle} label="Issues Abertas" value={stats?.totalOpenIssues || 0} color="red" />
       </div>
 
       <div className={styles.statsRow}>
@@ -138,12 +118,13 @@ function GitHubPage() {
           </div>
         </div>
       </div>
-    </div>
+    </Section>
   )
 
   const renderRepositories = () => (
-    <div className={styles.repoGrid}>
-      {repositories.map((repo) => (
+    <Section spacing="lg">
+      <div className={styles.repoGrid}>
+        {repositories.map((repo) => (
         <div key={repo.id} className={styles.repoCard}>
           <div className={styles.repoHeader}>
             <div className={styles.repoOwner}>
@@ -196,8 +177,9 @@ function GitHubPage() {
             </a>
           </div>
         </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </Section>
   )
 
   const getLanguageColor = (language: string): string => {
@@ -225,20 +207,18 @@ function GitHubPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Github size={32} className={styles.headerIcon} />
-          <div>
-            <h1 className={styles.title}>GitHub</h1>
-            <p className={styles.subtitle}>Gerencie repositórios, pull requests e workflows</p>
-          </div>
-        </div>
-        <button className={styles.refreshButton} onClick={fetchData} disabled={loading}>
-          <RefreshCw size={20} />
-          <span>Atualizar</span>
-        </button>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={Github}
+        title="GitHub"
+        subtitle="Gerencie repositórios, pull requests e workflows"
+        actions={
+          <button className={styles.refreshButton} onClick={fetchData} disabled={loading}>
+            <RefreshCw size={20} />
+            <span>Atualizar</span>
+          </button>
+        }
+      />
 
       <div className={styles.tabs}>
         <button
@@ -255,24 +235,22 @@ function GitHubPage() {
         </button>
       </div>
 
-      <div className={styles.content}>
-        {error && (
-          <div className={styles.error}>
-            <AlertCircle size={20} />
-            <span>{error}</span>
-          </div>
-        )}
+      {error && (
+        <div className={styles.error}>
+          <AlertCircle size={20} />
+          <span>{error}</span>
+        </div>
+      )}
 
-        {loading && !error && <div className={styles.loading}>Carregando...</div>}
+      {loading && !error && <div className={styles.loading}>Carregando...</div>}
 
-        {!loading && !error && (
-          <>
-            {activeTab === 'overview' && renderOverview()}
-            {activeTab === 'repositories' && renderRepositories()}
-          </>
-        )}
-      </div>
-    </div>
+      {!loading && !error && (
+        <>
+          {activeTab === 'overview' && renderOverview()}
+          {activeTab === 'repositories' && renderRepositories()}
+        </>
+      )}
+    </PageContainer>
   )
 }
 

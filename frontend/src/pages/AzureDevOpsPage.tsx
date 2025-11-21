@@ -5,6 +5,9 @@ import PipelinesTab from '../components/AzureDevOps/PipelinesTab'
 import BuildsTab from '../components/AzureDevOps/BuildsTab'
 import ReleasesTab from '../components/AzureDevOps/ReleasesTab'
 import CIFilters, { FilterValues } from '../components/AzureDevOps/CIFilters'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import Section from '../components/Layout/Section'
 import styles from './AzureDevOpsPage.module.css'
 import { buildApiUrl } from '../config/api'
 
@@ -66,16 +69,12 @@ function AzureDevOpsPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <GitBranch size={32} className={styles.headerIcon} />
-          <div>
-            <h1 className={styles.title}>CI</h1>
-            <p className={styles.subtitle}>Pipelines, Builds e Releases</p>
-          </div>
-        </div>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={GitBranch}
+        title="CI"
+        subtitle="Pipelines, Builds e Releases"
+      />
 
       <div className={styles.integrationSelector}>
         <div className={styles.selectorLabel}>
@@ -130,12 +129,12 @@ function AzureDevOpsPage() {
         </button>
       </div>
 
-      <div className={styles.tabContent}>
+      <Section spacing="lg">
         {activeTab === 'pipelines' && <PipelinesTab filters={filters} />}
         {activeTab === 'builds' && <BuildsTab filters={filters} />}
         {activeTab === 'releases' && <ReleasesTab filters={filters} />}
-      </div>
-    </div>
+      </Section>
+    </PageContainer>
   )
 }
 
