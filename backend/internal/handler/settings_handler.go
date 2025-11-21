@@ -287,7 +287,7 @@ func (h *SettingsHandler) CreateRole(c *gin.Context) {
 	// Normalizar nome interno (snake_case)
 	req.Name = strings.ToLower(strings.ReplaceAll(req.Name, " ", "_"))
 
-	actorID, actorEmail := h.getActor(c)
+	_, actorEmail := h.getActor(c)
 	log.Printf("[INFO] CreateRole: Actor=%s creating role=%s", actorEmail, req.Name)
 
 	role := &domain.Role{
@@ -368,7 +368,7 @@ func (h *SettingsHandler) DeleteRole(c *gin.Context) {
 		return
 	}
 
-	actorID, actorEmail := h.getActor(c)
+	_, actorEmail := h.getActor(c)
 	log.Printf("[INFO] DeleteRole: Actor=%s deleting role=%s (id=%s)", actorEmail, role.Name, id)
 
 	if err := h.roleRepo.Delete(id); err != nil {

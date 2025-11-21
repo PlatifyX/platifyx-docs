@@ -42,6 +42,7 @@ type CreateUserRequest struct {
 type UpdateUserRequest struct {
 	Name      *string  `json:"name,omitempty"`
 	AvatarURL *string  `json:"avatar_url,omitempty"`
+	Password  *string  `json:"password,omitempty"` // Senha opcional para atualização
 	IsActive  *bool    `json:"is_active,omitempty"`
 	RoleIDs   []string `json:"role_ids,omitempty"`
 	TeamIDs   []string `json:"team_ids,omitempty"`
