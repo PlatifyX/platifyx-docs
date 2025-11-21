@@ -946,6 +946,25 @@
   color: #dc2626;
 }
 
+/* Refresh Button */
+.refreshButton {
+  background: var(--deep-sea-blue-slate);
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem;
+  cursor: pointer;
+  color: var(--deep-sea-eggshell);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.refreshButton:hover {
+  background: var(--deep-sea-dusty-denim);
+  transform: rotate(90deg);
+}
+
 /* Details Button */
 .detailsButton {
   background: var(--deep-sea-blue-slate);

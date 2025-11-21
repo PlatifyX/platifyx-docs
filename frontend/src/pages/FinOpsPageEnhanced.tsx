@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, TrendingDown, Cloud, AlertTriangle, Calendar, Filter, Lightbulb, Eye } from 'lucide-react'
+import { DollarSign, TrendingUp, TrendingDown, Cloud, Calendar, Lightbulb, Eye, RefreshCw } from 'lucide-react'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart
@@ -8,6 +8,13 @@ import styles from './FinOpsPage.module.css'
 import { buildApiUrl } from '../config/api'
 import Loader from '../components/Loader/Loader'
 import RecommendationDetailsModal from '../components/FinOps/RecommendationDetailsModal'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import Section from '../components/Layout/Section'
+import Card from '../components/UI/Card'
+import StatCard from '../components/UI/StatCard'
+import EmptyState from '../components/UI/EmptyState'
+import DataTable, { Column } from '../components/Table/DataTable'
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
@@ -121,9 +128,9 @@ function FinOpsPageEnhanced() {
 
   if (loading) {
     return (
-      <div className={styles.container}>
+      <PageContainer>
         <Loader size="large" message="Carregando dados FinOps..." />
-      </div>
+      </PageContainer>
     )
   }
 
@@ -143,17 +150,74 @@ function FinOpsPageEnhanced() {
     }
   }
 
+  // DataTable columns for recommendations
+  const recommendationColumns: Column<CostOptimizationRecommendation>[] = [
+    {
+      key: 'savings',
+      header: 'Economia mensal estimada',
+      render: (rec) => (
+        <span style={{ color: 'var(--color-success)', fontWeight: 600, fontSize: '1.05rem' }}>
+          {formatCurrency(rec.estimatedMonthlySavings)}
+        </span>
+      ),
+      align: 'left',
+      width: '180px'
+    },
+    {
+      key: 'resourceType',
+      header: 'Tipo de recurso',
+      render: (rec) => rec.resourceType,
+      align: 'left'
+    },
+    {
+      key: 'resourceId',
+      header: 'ID do recurso',
+      render: (rec) => (
+        <span style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+          {rec.resourceId}
+        </span>
+      ),
+      align: 'left'
+    },
+    {
+      key: 'action',
+      header: 'Ação mais recomendada',
+      render: (rec) => rec.recommendedAction,
+      align: 'left'
+    },
+    {
+      key: 'details',
+      header: 'Detalhes',
+      render: (rec) => (
+        <button
+          className={styles.detailsButton}
+          onClick={() => setSelectedRecommendation(rec)}
+          title="Ver detalhes completos"
+        >
+          <Eye size={18} />
+        </button>
+      ),
+      align: 'center',
+      width: '80px'
+    }
+  ]
+
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Cloud size={32} className={styles.headerIcon} />
-          <div>
-            <h1 className={styles.title}>FinOps - AWS Cost Analytics</h1>
-            <p className={styles.subtitle}>Análise completa de custos AWS</p>
-          </div>
-        </div>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={Cloud}
+        title="FinOps - AWS Cost Analytics"
+        subtitle="Análise completa de custos AWS"
+        actions={
+          <button
+            onClick={fetchAllData}
+            className={styles.refreshButton}
+            title="Atualizar dados"
+          >
+            <RefreshCw size={20} />
+          </button>
+        }
+      />
 
       {/* Date Filter */}
       <div className={styles.filterSection}>
@@ -173,60 +237,38 @@ function FinOpsPageEnhanced() {
         </select>
       </div>
 
-      {/* 🔵 1. VISÃO GERAL (HIGH LEVEL) */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>📊 Visão Geral</h2>
-
-        {/* KPI Cards */}
+      {/* 📊 VISÃO GERAL */}
+      <Section title="Visão Geral" icon="📊" spacing="lg">
+        {/* KPI Cards using StatCard component */}
         <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}>
-              <DollarSign size={24} />
-            </div>
-            <div className={styles.statContent}>
-              <p className={styles.statLabel}>
-                Custo Total ({monthsToShow === 1 ? 'Mês Atual' : `${monthsToShow} meses`})
-              </p>
-              <p className={styles.statValue}>{formatCurrency(totalCost)}</p>
-            </div>
-          </div>
-
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}>
-              <DollarSign size={24} />
-            </div>
-            <div className={styles.statContent}>
-              <p className={styles.statLabel}>Custo Mensal Médio</p>
-              <p className={styles.statValue}>{formatCurrency(avgMonthlyCost)}</p>
-            </div>
-          </div>
-
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}>
-              <DollarSign size={24} />
-            </div>
-            <div className={styles.statContent}>
-              <p className={styles.statLabel}>Custo Diário Estimado</p>
-              <p className={styles.statValue}>{formatCurrency(dailyCost)}</p>
-            </div>
-          </div>
-
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}>
-              {trend >= 0 ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
-            </div>
-            <div className={styles.statContent}>
-              <p className={styles.statLabel}>Tendência (Mês a Mês)</p>
-              <p className={`${styles.statValue} ${trend >= 0 ? styles.trendUp : styles.trendDown}`}>
-                {trend >= 0 ? '+' : ''}{trend.toFixed(1)}%
-              </p>
-            </div>
-          </div>
+          <StatCard
+            icon={DollarSign}
+            label={`Custo Total (${monthsToShow === 1 ? 'Mês Atual' : `${monthsToShow} meses`})`}
+            value={formatCurrency(totalCost)}
+            color="blue"
+          />
+          <StatCard
+            icon={DollarSign}
+            label="Custo Mensal Médio"
+            value={formatCurrency(avgMonthlyCost)}
+            color="purple"
+          />
+          <StatCard
+            icon={DollarSign}
+            label="Custo Diário Estimado"
+            value={formatCurrency(dailyCost)}
+            color="yellow"
+          />
+          <StatCard
+            icon={trend >= 0 ? TrendingUp : TrendingDown}
+            label="Tendência (Mês a Mês)"
+            value={`${trend >= 0 ? '+' : ''}${trend.toFixed(1)}%`}
+            color={trend >= 0 ? 'red' : 'green'}
+          />
         </div>
 
         {/* 📈 Gráfico 1 — Custo Total (linha mês a mês) */}
-        <div className={styles.chartCard}>
-          <h3 className={styles.chartTitle}>📈 Custo Total Mensal (Tendência)</h3>
+        <Card title="📈 Custo Total Mensal (Tendência)" padding="lg" style={{ marginTop: '2rem' }}>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={filteredMonthly}>
               <defs>
@@ -248,161 +290,154 @@ function FinOpsPageEnhanced() {
                 formatter={(value: any) => formatCurrency(value)}
                 labelFormatter={formatMonth}
               />
-              <Area
-                type="monotone"
-                dataKey="cost"
-                stroke="#8884d8"
-                fillOpacity={1}
-                fill="url(#colorCost)"
-                name="Custo"
-              />
+              <Area type="monotone" dataKey="cost" stroke="#8884d8" fillOpacity={1} fill="url(#colorCost)" />
             </AreaChart>
           </ResponsiveContainer>
-        </div>
+        </Card>
 
-        {/* 📊 Gráfico 2 — Custo por Serviço (barras) */}
-        <div className={styles.chartCard}>
-          <h3 className={styles.chartTitle}>📊 Top 10 Serviços por Custo</h3>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={serviceCosts} layout="vertical">
+        {/* 📊 Gráfico 2 — Custo por Serviço (barra) */}
+        <Card title="📊 Top 10 Serviços por Custo" padding="lg" style={{ marginTop: '1.5rem' }}>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={serviceCosts}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" tickFormatter={(value) => `$${value.toLocaleString()}`} />
-              <YAxis dataKey="service" type="category" width={200} />
+              <XAxis dataKey="service" angle={-45} textAnchor="end" height={120} />
+              <YAxis tickFormatter={(value) => `$${value.toLocaleString()}`} />
               <Tooltip formatter={(value: any) => formatCurrency(value)} />
-              <Bar dataKey="cost" fill="#00C49F" name="Custo" />
+              <Bar dataKey="cost" fill="#82ca9d" />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </Card>
 
-        {/* 📌 Gráfico 4 — Forecast de Custos */}
-        {forecast && forecast.length > 0 && (
-          <div className={styles.chartCard}>
-            <h3 className={styles.chartTitle}>📌 Previsão de Custos</h3>
-            <div className={styles.forecastBox}>
-              <AlertTriangle size={48} className={styles.forecastIcon} />
-              <div>
-                <p className={styles.forecastLabel}>Previsão para o Final do Mês</p>
-                <p className={styles.forecastValue}>{formatCurrency(forecast[0]?.cost || 0)}</p>
-                <p className={styles.forecastHint}>Baseado no consumo atual</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
+        {/* 📊 Gráfico 3 — Distribuição de Custo (pizza) */}
+        <Card title="🍕 Distribuição de Custos por Serviço" padding="lg" style={{ marginTop: '1.5rem' }}>
+          <ResponsiveContainer width="100%" height={400}>
+            <PieChart>
+              <Pie
+                data={serviceCosts}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={(entry) => `${entry.service}: ${formatCurrency(entry.cost)}`}
+                outerRadius={120}
+                fill="#8884d8"
+                dataKey="cost"
+              >
+                {serviceCosts.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value: any) => formatCurrency(value)} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </Card>
+      </Section>
 
-      {/* 💳 SAVINGS PLANS */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>💳 Savings Plans</h2>
+      {/* 🔮 PREVISÃO */}
+      <Section title="Previsão de Custos (Próximos 3 Meses)" icon="🔮" spacing="lg">
+        <Card padding="lg">
+          {forecast.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={forecast}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="month"
+                  tickFormatter={formatMonth}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis tickFormatter={(value) => `$${value.toLocaleString()}`} />
+                <Tooltip
+                  formatter={(value: any) => formatCurrency(value)}
+                  labelFormatter={formatMonth}
+                />
+                <Legend />
+                <Line type="monotone" dataKey="mean" stroke="#8884d8" name="Previsão Média" strokeWidth={2} />
+                <Line type="monotone" dataKey="upperBound" stroke="#82ca9d" name="Limite Superior" strokeDasharray="5 5" />
+                <Line type="monotone" dataKey="lowerBound" stroke="#ffc658" name="Limite Inferior" strokeDasharray="5 5" />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyState
+              icon={TrendingUp}
+              title="Dados de previsão não disponíveis"
+              description="Configure o AWS Cost Explorer para visualizar previsões"
+            />
+          )}
+        </Card>
+      </Section>
 
-        <div className={styles.chartCard}>
-          <h3 className={styles.chartTitle}>💳 Savings Plans</h3>
-          {spUtilization ? (
+      {/* 💰 SAVINGS PLANS */}
+      <Section title="Utilização de Savings Plans" icon="💰" spacing="lg">
+        <Card padding="lg">
+          {spUtilization && spUtilization.utilizationPercentage ? (
             <div>
-              <div className={styles.utilizationBox}>
-                <div className={styles.utilizationPercent}>
-                  <span className={styles.percentValue}>
-                    {spUtilization.utilizationPercent?.toFixed(1) || 0}%
-                  </span>
-                  <span className={styles.percentLabel}>Utilização</span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                <div>
+                  <p style={{ color: 'var(--deep-sea-dusty-denim)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Taxa de Utilização</p>
+                  <p style={{ color: 'var(--deep-sea-eggshell)', fontSize: '2rem', fontWeight: 700 }}>
+                    {spUtilization.utilizationPercentage}%
+                  </p>
                 </div>
-                <div className={styles.progressBar}>
-                  <div
-                    className={styles.progressFill}
-                    style={{ width: `${spUtilization.utilizationPercent || 0}%` }}
-                  />
+                <div>
+                  <p style={{ color: 'var(--deep-sea-dusty-denim)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Economia Total</p>
+                  <p style={{ color: 'var(--color-success)', fontSize: '2rem', fontWeight: 700 }}>
+                    {formatCurrency(spUtilization.totalSavings)}
+                  </p>
                 </div>
-              </div>
-              <div className={styles.statsRow}>
-                <div className={styles.statItem}>
-                  <span className={styles.statItemLabel}>Comprometido</span>
-                  <span className={styles.statItemValue}>
-                    {formatCurrency(spUtilization.totalCommitment || 0)}
-                  </span>
-                </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statItemLabel}>Utilizado</span>
-                  <span className={styles.statItemValue}>
-                    {formatCurrency(spUtilization.usedCommitment || 0)}
-                  </span>
-                </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statItemLabel}>Não Utilizado</span>
-                  <span className={`${styles.statItemValue} ${styles.warning}`}>
-                    {formatCurrency(spUtilization.unusedCommitment || 0)}
-                  </span>
+                <div>
+                  <p style={{ color: 'var(--deep-sea-dusty-denim)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Valor Não Utilizado</p>
+                  <p style={{ color: 'var(--color-warning)', fontSize: '2rem', fontWeight: 700 }}>
+                    {formatCurrency(spUtilization.unusedCommitment)}
+                  </p>
                 </div>
               </div>
             </div>
           ) : (
-            <p className={styles.noData}>Nenhum Savings Plan encontrado</p>
+            <EmptyState
+              icon={DollarSign}
+              title="Nenhum Savings Plan encontrado"
+              description="Configure Savings Plans na AWS para otimizar seus custos"
+            />
           )}
-        </div>
-      </section>
+        </Card>
+      </Section>
 
       {/* 💡 RECOMENDAÇÕES DE OTIMIZAÇÃO */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>💡 Recursos com Economia Estimada</h2>
-
-        <div className={styles.chartCard}>
-          <div className={styles.recommendationsHeader}>
-            <h3>Recomendações de Otimização de Custos</h3>
-            <p style={{ color: 'var(--color-success)', fontWeight: 600, fontSize: '1.1rem', marginTop: '0.5rem' }}>
+      <Section title="Recursos com Economia Estimada" icon="💡" spacing="lg">
+        <Card padding="lg">
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ color: 'var(--deep-sea-eggshell)', fontSize: '1.125rem', marginBottom: '0.5rem' }}>
+              Recomendações de Otimização de Custos
+            </h3>
+            <p style={{ color: 'var(--color-success)', fontWeight: 600, fontSize: '1.1rem' }}>
               Total de economia potencial: {formatCurrency(recommendations.reduce((sum, r) => sum + r.estimatedMonthlySavings, 0))}/mês
             </p>
           </div>
 
           {recommendations.length === 0 ? (
-            <div className={styles.noData}>
-              <Lightbulb size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-              <p>Nenhuma recomendação disponível no momento.</p>
-              <p style={{ fontSize: '0.875rem', opacity: 0.7, marginTop: '0.5rem' }}>
-                Configure suas credenciais AWS com permissões do Compute Optimizer para ver recomendações.
-              </p>
-            </div>
+            <EmptyState
+              icon={Lightbulb}
+              title="Nenhuma recomendação disponível no momento"
+              description="Configure suas credenciais AWS com permissões do Compute Optimizer para ver recomendações"
+            />
           ) : (
-            <div className={styles.tableContainer}>
-              <table className={styles.recommendationsTable}>
-                <thead>
-                  <tr>
-                    <th>Economia mensal estimada</th>
-                    <th>Tipo de recurso</th>
-                    <th>ID do recurso</th>
-                    <th>Ação mais recomendada</th>
-                    <th style={{ width: '80px', textAlign: 'center' }}>Detalhes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recommendations.map((rec, index) => (
-                    <tr key={index} className={styles.clickableRow}>
-                      <td className={styles.savingsCell}>{formatCurrency(rec.estimatedMonthlySavings)}</td>
-                      <td>{rec.resourceType}</td>
-                      <td className={styles.resourceIdCell}>{rec.resourceId}</td>
-                      <td className={styles.actionCell}>{rec.recommendedAction}</td>
-                      <td style={{ textAlign: 'center' }}>
-                        <button
-                          className={styles.detailsButton}
-                          onClick={() => setSelectedRecommendation(rec)}
-                          title="Ver detalhes completos"
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={recommendationColumns}
+              data={recommendations}
+              emptyMessage="Nenhuma recomendação encontrada"
+            />
           )}
-        </div>
-      </section>
+        </Card>
+      </Section>
 
       {/* Modal de Detalhes */}
       <RecommendationDetailsModal
         recommendation={selectedRecommendation}
         onClose={() => setSelectedRecommendation(null)}
       />
-
-    </div>
+    </PageContainer>
   )
 }
 

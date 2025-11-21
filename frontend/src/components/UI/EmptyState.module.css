@@ -1,0 +1,45 @@
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.icon {
+  color: var(--deep-sea-dusty-denim);
+  opacity: 0.3;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--deep-sea-eggshell);
+  margin: 0 0 0.5rem 0;
+}
+
+.description {
+  font-size: 0.875rem;
+  color: var(--deep-sea-dusty-denim);
+  margin: 0 0 2rem 0;
+  max-width: 400px;
+}
+
+.action {
+  background: linear-gradient(135deg, var(--deep-sea-blue-slate) 0%, var(--deep-sea-space-blue) 100%);
+  color: var(--deep-sea-eggshell);
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(62, 92, 118, 0.3);
+}

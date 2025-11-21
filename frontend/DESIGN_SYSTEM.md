@@ -32,7 +32,230 @@ Nossa paleta de cores é inspirada no oceano profundo, criando uma atmosfera pro
 
 ## 🔄 Componentes Reutilizáveis
 
-### Loader
+### 📦 Layout Components
+
+#### PageContainer
+
+Wrapper principal para todas as páginas, fornecendo padding e max-width consistentes.
+
+**Localização**: `/src/components/Layout/PageContainer.tsx`
+
+**Uso**:
+```tsx
+import PageContainer from '../components/Layout/PageContainer'
+
+<PageContainer maxWidth="lg">
+  {/* Conteúdo da página */}
+</PageContainer>
+```
+
+**Propriedades**:
+- `children`: ReactNode (conteúdo)
+- `maxWidth`: 'sm' | 'md' | 'lg' | 'xl' | 'full' (padrão: 'lg')
+  - sm: 640px
+  - md: 768px
+  - lg: 1024px
+  - xl: 1280px
+  - full: 100%
+
+---
+
+#### PageHeader
+
+Header padronizado para páginas com ícone, título, subtítulo e ações.
+
+**Localização**: `/src/components/Layout/PageHeader.tsx`
+
+**Uso**:
+```tsx
+import PageHeader from '../components/Layout/PageHeader'
+import { Cloud } from 'lucide-react'
+
+<PageHeader
+  icon={Cloud}
+  title="FinOps"
+  subtitle="Otimização de custos na nuvem"
+  actions={<button>Atualizar</button>}
+/>
+```
+
+**Propriedades**:
+- `title`: string (obrigatório)
+- `icon`: LucideIcon (opcional)
+- `subtitle`: string (opcional)
+- `actions`: ReactNode (opcional - botões ou ações no canto direito)
+
+---
+
+#### Section
+
+Container para seções de conteúdo com título opcional.
+
+**Localização**: `/src/components/Layout/Section.tsx`
+
+**Uso**:
+```tsx
+import Section from '../components/Layout/Section'
+
+<Section title="Estatísticas" icon="📊" spacing="lg">
+  {/* Conteúdo da seção */}
+</Section>
+```
+
+**Propriedades**:
+- `children`: ReactNode (obrigatório)
+- `title`: string (opcional)
+- `icon`: string (opcional - emoji ou texto)
+- `spacing`: 'sm' | 'md' | 'lg' (padrão: 'md')
+
+---
+
+### 🎨 UI Components
+
+#### Card
+
+Card reutilizável com bordas, padding e hover opcional.
+
+**Localização**: `/src/components/UI/Card.tsx`
+
+**Uso**:
+```tsx
+import Card from '../components/UI/Card'
+
+<Card title="Dados do Sistema" padding="lg" hover>
+  {/* Conteúdo do card */}
+</Card>
+```
+
+**Propriedades**:
+- `children`: ReactNode (obrigatório)
+- `title`: string (opcional - adiciona título com borda inferior)
+- `padding`: 'sm' | 'md' | 'lg' (padrão: 'md')
+- `hover`: boolean (padrão: false - adiciona efeito hover)
+
+---
+
+#### StatCard
+
+Card de estatística com ícone, valor e trend opcional.
+
+**Localização**: `/src/components/UI/StatCard.tsx`
+
+**Uso**:
+```tsx
+import StatCard from '../components/UI/StatCard'
+import { DollarSign } from 'lucide-react'
+
+<StatCard
+  icon={DollarSign}
+  label="Economia Total"
+  value="R$ 12.450"
+  trend={{ value: 15.3, isPositive: true }}
+  color="green"
+/>
+```
+
+**Propriedades**:
+- `icon`: LucideIcon (obrigatório)
+- `label`: string (obrigatório)
+- `value`: string | number (obrigatório)
+- `trend`: { value: number, isPositive: boolean } (opcional)
+- `color`: 'blue' | 'green' | 'yellow' | 'red' | 'purple' (padrão: 'blue')
+
+---
+
+#### EmptyState
+
+Estado vazio com ícone, mensagem e ação opcional.
+
+**Localização**: `/src/components/UI/EmptyState.tsx`
+
+**Uso**:
+```tsx
+import EmptyState from '../components/UI/EmptyState'
+import { Package } from 'lucide-react'
+
+<EmptyState
+  icon={Package}
+  title="Nenhum recurso encontrado"
+  description="Não há recursos com economia estimada no momento"
+  action={{
+    label: "Atualizar",
+    onClick: () => refetch()
+  }}
+/>
+```
+
+**Propriedades**:
+- `icon`: LucideIcon (obrigatório)
+- `title`: string (obrigatório)
+- `description`: string (opcional)
+- `action`: { label: string, onClick: () => void } (opcional)
+
+---
+
+### 📊 Table Components
+
+#### DataTable
+
+Tabela reutilizável com tipagem genérica, loading e empty states.
+
+**Localização**: `/src/components/Table/DataTable.tsx`
+
+**Uso**:
+```tsx
+import DataTable, { Column } from '../components/Table/DataTable'
+
+interface Resource {
+  id: string
+  name: string
+  cost: number
+}
+
+const columns: Column<Resource>[] = [
+  {
+    key: 'name',
+    header: 'Nome',
+    render: (item) => item.name,
+    align: 'left'
+  },
+  {
+    key: 'cost',
+    header: 'Custo',
+    render: (item) => `R$ ${item.cost}`,
+    align: 'right',
+    width: '120px'
+  }
+]
+
+<DataTable
+  columns={columns}
+  data={resources}
+  loading={isLoading}
+  emptyMessage="Nenhum recurso disponível"
+/>
+```
+
+**Propriedades**:
+- `columns`: Column<T>[] (obrigatório - definições das colunas)
+- `data`: T[] (obrigatório - array de dados)
+- `loading`: boolean (opcional - mostra loader)
+- `emptyMessage`: string (opcional - mensagem quando vazio)
+
+**Column Interface**:
+```tsx
+interface Column<T> {
+  key: string                    // Identificador único
+  header: string                 // Texto do cabeçalho
+  render: (item: T) => ReactNode // Função de renderização
+  align?: 'left' | 'center' | 'right'  // Alinhamento
+  width?: string                 // Largura da coluna (ex: '120px')
+}
+```
+
+---
+
+### 🔄 Loader
 
 Componente de carregamento animado com rotação suave.
 
