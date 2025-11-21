@@ -1,6 +1,8 @@
 package base
 
 import (
+	"time"
+
 	"github.com/PlatifyX/platifyx-core/internal/service"
 	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
@@ -35,7 +37,7 @@ func (h *BaseHandler) GetLogger() *logger.Logger {
 // WithCache executa uma função com suporte a cache
 // Se o cache estiver disponível e tiver um valor, retorna do cache
 // Caso contrário, executa a função fn e armazena o resultado no cache
-func (h *BaseHandler) WithCache(c *gin.Context, cacheKey string, ttl service.CacheDuration, fn func() (interface{}, error)) {
+func (h *BaseHandler) WithCache(c *gin.Context, cacheKey string, ttl time.Duration, fn func() (interface{}, error)) {
 	// Try cache first
 	if h.cache != nil {
 		var cachedData interface{}
