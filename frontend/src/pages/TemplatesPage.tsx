@@ -5,7 +5,7 @@ import PageContainer from '../components/Layout/PageContainer'
 import PageHeader from '../components/Layout/PageHeader'
 import Section from '../components/Layout/Section'
 import EmptyState from '../components/UI/EmptyState'
-import styles from './InfrastructureTemplatesPage.module.css'
+import styles from './TemplatesPage.module.css'
 import { buildApiUrl } from '../config/api'
 
 interface Template {
@@ -35,7 +35,7 @@ const templateCategories: { [key: string]: string } = {
   'deployment': 'infra',
 }
 
-function InfrastructureTemplatesPage() {
+function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
@@ -127,7 +127,7 @@ function InfrastructureTemplatesPage() {
     <PageContainer maxWidth="xl">
       <PageHeader
         icon={Package}
-        title="Infrastructure Templates"
+        title="Templates"
         subtitle="Crie novos serviços seguindo os padrões da plataforma em minutos"
       />
 
@@ -247,4 +247,4 @@ function InfrastructureTemplatesPage() {
   )
 }
 
-export default InfrastructureTemplatesPage
+export default TemplatesPage
