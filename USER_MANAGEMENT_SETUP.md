@@ -43,6 +43,30 @@ Sistema completo de gerenciamento de usuários com autenticação, autorização
   - Filtros avançados
   - Estatísticas
 
+## ⚠️ Importante: Resetar Banco de Dados
+
+Se você já executou uma versão anterior da migration e está recebendo o erro:
+```
+failed to execute migration migrations/009_create_user_management.sql: pq: foreign key constraint "user_teams_user_id_fkey" cannot be implemented
+```
+
+Execute o script de reset para limpar as tabelas antigas:
+
+```bash
+cd backend
+./reset-user-management.sh
+```
+
+Ou manualmente:
+
+```bash
+# 1. Limpar tabelas antigas
+psql -U platifyx -d platifyx -f migrations/009_rollback.sql
+
+# 2. Recriar tabelas com a versão corrigida
+psql -U platifyx -d platifyx -f migrations/009_create_user_management.sql
+```
+
 ## Configuração
 
 ### 1. Variáveis de Ambiente
