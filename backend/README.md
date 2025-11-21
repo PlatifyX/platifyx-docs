@@ -21,7 +21,8 @@ backend/
 │   ├── logger/           # Logger estruturado
 │   ├── cache/            # Cache (Redis)
 │   └── */                # Clients externos (AWS, GitHub, etc)
-└── migrations/           # Migrações de banco
+├── migrations/           # Migrações de banco PostgreSQL ⭐
+└── scripts/              # Scripts auxiliares (migrations, etc)
 ```
 
 ## 📚 Documentação Completa
@@ -29,6 +30,10 @@ backend/
 **[📖 BACKEND_PATTERNS.md](./BACKEND_PATTERNS.md)** - LEIA ANTES DE CODAR!
 
 Este documento contém TODOS os padrões obrigatórios para o backend.
+
+**[📊 migrations/MIGRATIONS.md](./migrations/MIGRATIONS.md)** - Guia de Migrações PostgreSQL
+
+Guia completo sobre como criar, gerenciar e aplicar migrações de banco de dados.
 
 ## 🎯 Redução de Código Duplicado
 
@@ -104,6 +109,32 @@ func (h *MyHandler) GetStats(c *gin.Context) {
 }
 ```
 
+## 🗄️ Migrações de Banco de Dados
+
+### Executar Migrações
+
+Migrações rodam automaticamente ao iniciar a aplicação:
+
+```bash
+go run cmd/api/main.go
+```
+
+### Criar Nova Migração
+
+```bash
+./scripts/new-migration.sh "create users table"
+```
+
+### Ver Status das Migrações
+
+```bash
+./scripts/migration-status.sh
+```
+
+**Consulte [migrations/MIGRATIONS.md](./migrations/MIGRATIONS.md) para guia completo!**
+
+---
+
 ## ✅ Checklist
 
 Antes de fazer PR:
@@ -115,5 +146,6 @@ Antes de fazer PR:
 - [ ] Service retorna erros estruturados
 - [ ] Logging com contexto
 - [ ] Testes adicionados
+- [ ] Migrações criadas/testadas (se aplicável)
 
 **Consulte [BACKEND_PATTERNS.md](./BACKEND_PATTERNS.md) para detalhes completos!**
