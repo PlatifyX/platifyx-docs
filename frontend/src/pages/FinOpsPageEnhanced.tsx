@@ -79,10 +79,15 @@ function FinOpsPageEnhanced() {
       const spData = await spRes.json()
       const recommendationsData = await recommendationsRes.json()
 
+      console.log('=== FinOps Debug ===')
       console.log('Monthly Data:', monthlyData)
+      console.log('Monthly Data.data:', monthlyData.data)
+      console.log('Monthly Data length:', Array.isArray(monthlyData.data) ? monthlyData.data.length : 'not array')
       console.log('Service Data:', serviceData)
+      console.log('Service Data.data:', serviceData.data)
       console.log('SP Data:', spData)
       console.log('Recommendations Data:', recommendationsData)
+      console.log('===================')
 
       setMonthlyCosts(monthlyData.data || [])
       setServiceCosts((serviceData.data || []).sort((a: ServiceCost, b: ServiceCost) => b.cost - a.cost).slice(0, 10))
@@ -133,6 +138,9 @@ function FinOpsPageEnhanced() {
       </PageContainer>
     )
   }
+
+  // Check if there's no data
+  const hasNoData = monthlyCosts.length === 0 && serviceCosts.length === 0
 
   // Calculate metrics from monthly data
   const filteredMonthly = monthlyCosts.slice(-monthsToShow)
@@ -237,8 +245,20 @@ function FinOpsPageEnhanced() {
         </select>
       </div>
 
+      {/* Show empty state if no data */}
+      {hasNoData && (
+        <EmptyState
+          icon={Cloud}
+          title="Nenhuma integração AWS configurada"
+          message="Configure uma integração AWS na página de Integrações para visualizar dados de custos."
+          actionLabel="Ir para Integrações"
+          onAction={() => window.location.href = '/integrations'}
+        />
+      )}
+
       {/* 📊 VISÃO GERAL */}
-      <Section title="Visão Geral" icon="📊" spacing="lg">
+      {!hasNoData && (
+        <Section title="Visão Geral" icon="📊" spacing="lg">
         {/* KPI Cards using StatCard component */}
         <div className={styles.statsGrid}>
           <StatCard
@@ -332,8 +352,10 @@ function FinOpsPageEnhanced() {
           </ResponsiveContainer>
         </Card>
       </Section>
+      )}
 
       {/* 🔮 PREVISÃO */}
+      {!hasNoData && (
       <Section title="Previsão de Custos (Próximos 3 Meses)" icon="🔮" spacing="lg">
         <Card padding="lg">
           {forecast.length > 0 ? (
@@ -367,8 +389,10 @@ function FinOpsPageEnhanced() {
           )}
         </Card>
       </Section>
+      )}
 
       {/* 💰 SAVINGS PLANS */}
+      {!hasNoData && (
       <Section title="Utilização de Savings Plans" icon="💰" spacing="lg">
         <Card padding="lg">
           {spUtilization && spUtilization.utilizationPercentage ? (
@@ -403,8 +427,10 @@ function FinOpsPageEnhanced() {
           )}
         </Card>
       </Section>
+      )}
 
       {/* 💡 RECOMENDAÇÕES DE OTIMIZAÇÃO */}
+      {!hasNoData && (
       <Section title="Recursos com Economia Estimada" icon="💡" spacing="lg">
         <Card padding="lg">
           <div style={{ marginBottom: '1.5rem' }}>
@@ -431,6 +457,7 @@ function FinOpsPageEnhanced() {
           )}
         </Card>
       </Section>
+      )}
 
       {/* Modal de Detalhes */}
       <RecommendationDetailsModal
