@@ -1,121 +1,83 @@
 package handler
 
 import (
-	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type SonarQubeHandler struct {
+	*base.BaseHandler
 	integrationService *service.IntegrationService
-	cache              *service.CacheService
-	log                *logger.Logger
 }
 
-func NewSonarQubeHandler(integrationService *service.IntegrationService, cache *service.CacheService, log *logger.Logger) *SonarQubeHandler {
+func NewSonarQubeHandler(
+	integrationService *service.IntegrationService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *SonarQubeHandler {
 	return &SonarQubeHandler{
+		BaseHandler:        base.NewBaseHandler(cache, log),
 		integrationService: integrationService,
-		cache:              cache,
-		log:                log,
 	}
-}
-
-func (h *SonarQubeHandler) getService() (*service.SonarQubeService, error) {
-	config, err := h.integrationService.GetSonarQubeConfig()
-	if err != nil {
-		return nil, err
-	}
-	if config == nil {
-		return nil, nil
-	}
-	return service.NewSonarQubeService(*config, h.log), nil
 }
 
 func (h *SonarQubeHandler) ListProjects(c *gin.Context) {
-	// Get filter parameters
 	filterIntegration := c.Query("integration")
-
-	// Build cache key
 	cacheKey := service.BuildKey("sonarqube:projects", filterIntegration)
 
-	// Try cache first
-	if h.cache != nil {
-		var cachedData map[string]interface{}
-		if err := h.cache.GetJSON(cacheKey, &cachedData); err == nil {
-			h.log.Debugw("Cache HIT", "key", cacheKey)
-			c.JSON(http.StatusOK, cachedData)
-			return
-		}
-	}
-
-	// Cache MISS
-	configs, err := h.integrationService.GetAllSonarQubeConfigs()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get SonarQube configurations",
-		})
-		return
-	}
-	if len(configs) == 0 {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "No SonarQube integrations configured",
-		})
-		return
-	}
-
-	h.log.Infow("Fetching projects from all integrations", "integrationCount", len(configs))
-
-	var allProjects []domain.SonarProject
-	for integrationName, config := range configs {
-		// Skip if integration filter is set and doesn't match
-		if filterIntegration != "" && integrationName != filterIntegration {
-			continue
-		}
-
-		h.log.Infow("Fetching projects from integration", "integration", integrationName, "url", config.URL)
-		svc := service.NewSonarQubeService(*config, h.log)
-		projects, err := svc.GetProjects()
+	h.WithCache(c, cacheKey, service.CacheDuration15Minutes, func() (interface{}, error) {
+		configs, err := h.integrationService.GetAllSonarQubeConfigs()
 		if err != nil {
-			h.log.Errorw("Failed to fetch projects from integration", "integration", integrationName, "error", err)
-			continue
+			return nil, httperr.InternalErrorWrap("Failed to get SonarQube configurations", err)
+		}
+		if len(configs) == 0 {
+			return nil, httperr.ServiceUnavailable("No SonarQube integrations configured")
 		}
 
-		h.log.Infow("Fetched projects from integration", "integration", integrationName, "count", len(projects))
+		h.GetLogger().Infow("Fetching projects from all integrations", "integrationCount", len(configs))
 
-		// Mark each project with the integration name
-		for i := range projects {
-			projects[i].Integration = integrationName
+		var allProjects []domain.SonarProject
+		for integrationName, config := range configs {
+			if filterIntegration != "" && integrationName != filterIntegration {
+				continue
+			}
+
+			h.GetLogger().Infow("Fetching projects from integration", "integration", integrationName, "url", config.URL)
+			svc := service.NewSonarQubeService(*config, h.GetLogger())
+			projects, err := svc.GetProjects()
+			if err != nil {
+				h.GetLogger().Errorw("Failed to fetch projects from integration", "integration", integrationName, "error", err)
+				continue
+			}
+
+			h.GetLogger().Infow("Fetched projects from integration", "integration", integrationName, "count", len(projects))
+
+			for i := range projects {
+				projects[i].Integration = integrationName
+			}
+
+			allProjects = append(allProjects, projects...)
 		}
 
-		allProjects = append(allProjects, projects...)
-	}
+		h.GetLogger().Infow("Total projects fetched from all integrations", "total", len(allProjects))
 
-	h.log.Infow("Total projects fetched from all integrations", "total", len(allProjects))
+		sort.Slice(allProjects, func(i, j int) bool {
+			return allProjects[i].Name < allProjects[j].Name
+		})
 
-	// Sort projects by name alphabetically
-	sort.Slice(allProjects, func(i, j int) bool {
-		return allProjects[i].Name < allProjects[j].Name
+		return map[string]interface{}{
+			"projects": allProjects,
+			"total":    len(allProjects),
+		}, nil
 	})
-
-	result := gin.H{
-		"projects": allProjects,
-		"total":    len(allProjects),
-	}
-
-	// Store in cache (15 minutes TTL)
-	if h.cache != nil {
-		if err := h.cache.Set(cacheKey, result, service.CacheDuration15Minutes); err != nil {
-			h.log.Warnw("Failed to cache SonarQube projects", "error", err)
-		}
-	}
-
-	c.JSON(http.StatusOK, result)
 }
 
 func (h *SonarQubeHandler) GetProjectDetails(c *gin.Context) {
@@ -124,31 +86,25 @@ func (h *SonarQubeHandler) GetProjectDetails(c *gin.Context) {
 
 	configs, err := h.integrationService.GetAllSonarQubeConfigs()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get SonarQube configurations",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get SonarQube configurations", err))
 		return
 	}
 
 	config, ok := configs[integrationName]
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Integration not found",
-		})
+		h.NotFound(c, "Integration not found")
 		return
 	}
 
-	svc := service.NewSonarQubeService(*config, h.log)
+	svc := service.NewSonarQubeService(*config, h.GetLogger())
 	details, err := svc.GetProjectMeasures(projectKey)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch project details",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to fetch project details", err))
 		return
 	}
 
 	details.Integration = integrationName
-	c.JSON(http.StatusOK, details)
+	h.Success(c, details)
 }
 
 func (h *SonarQubeHandler) ListIssues(c *gin.Context) {
@@ -158,7 +114,6 @@ func (h *SonarQubeHandler) ListIssues(c *gin.Context) {
 		limit = 100
 	}
 
-	// Get filter parameters
 	filterIntegration := c.Query("integration")
 	filterProject := c.Query("project")
 	filterSeverity := c.Query("severity")
@@ -166,19 +121,15 @@ func (h *SonarQubeHandler) ListIssues(c *gin.Context) {
 
 	configs, err := h.integrationService.GetAllSonarQubeConfigs()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get SonarQube configurations",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get SonarQube configurations", err))
 		return
 	}
 	if len(configs) == 0 {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "No SonarQube integrations configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("No SonarQube integrations configured"))
 		return
 	}
 
-	h.log.Infow("Fetching issues from all integrations", "integrationCount", len(configs))
+	h.GetLogger().Infow("Fetching issues from all integrations", "integrationCount", len(configs))
 
 	var severities []string
 	if filterSeverity != "" {
@@ -192,22 +143,20 @@ func (h *SonarQubeHandler) ListIssues(c *gin.Context) {
 
 	var allIssues []domain.SonarIssue
 	for integrationName, config := range configs {
-		// Skip if integration filter is set and doesn't match
 		if filterIntegration != "" && integrationName != filterIntegration {
 			continue
 		}
 
-		h.log.Infow("Fetching issues from integration", "integration", integrationName)
-		svc := service.NewSonarQubeService(*config, h.log)
+		h.GetLogger().Infow("Fetching issues from integration", "integration", integrationName)
+		svc := service.NewSonarQubeService(*config, h.GetLogger())
 		issues, err := svc.GetIssues(filterProject, severities, types, limit)
 		if err != nil {
-			h.log.Errorw("Failed to fetch issues from integration", "integration", integrationName, "error", err)
+			h.GetLogger().Errorw("Failed to fetch issues from integration", "integration", integrationName, "error", err)
 			continue
 		}
 
-		h.log.Infow("Fetched issues from integration", "integration", integrationName, "count", len(issues))
+		h.GetLogger().Infow("Fetched issues from integration", "integration", integrationName, "count", len(issues))
 
-		// Mark each issue with the integration name
 		for i := range issues {
 			issues[i].Integration = integrationName
 		}
@@ -215,37 +164,30 @@ func (h *SonarQubeHandler) ListIssues(c *gin.Context) {
 		allIssues = append(allIssues, issues...)
 	}
 
-	// Sort issues by creation date (most recent first)
 	sort.Slice(allIssues, func(i, j int) bool {
 		return allIssues[i].CreationDate.After(allIssues[j].CreationDate)
 	})
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"issues": allIssues,
 		"total":  len(allIssues),
 	})
 }
 
 func (h *SonarQubeHandler) GetStats(c *gin.Context) {
-	// Get filter parameters
 	filterIntegration := c.Query("integration")
 	filterProject := c.Query("project")
 
 	configs, err := h.integrationService.GetAllSonarQubeConfigs()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get SonarQube configurations",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get SonarQube configurations", err))
 		return
 	}
 	if len(configs) == 0 {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "No SonarQube integrations configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("No SonarQube integrations configured"))
 		return
 	}
 
-	// Fetch projects and their measures
 	var allProjects []domain.SonarProject
 	var allDetails []*domain.SonarProjectDetails
 
@@ -254,7 +196,7 @@ func (h *SonarQubeHandler) GetStats(c *gin.Context) {
 			continue
 		}
 
-		svc := service.NewSonarQubeService(*config, h.log)
+		svc := service.NewSonarQubeService(*config, h.GetLogger())
 		projects, err := svc.GetProjects()
 		if err != nil {
 			continue
@@ -263,14 +205,12 @@ func (h *SonarQubeHandler) GetStats(c *gin.Context) {
 		for i := range projects {
 			projects[i].Integration = integrationName
 
-			// Filter by project if specified
 			if filterProject != "" && projects[i].Key != filterProject {
 				continue
 			}
 
 			allProjects = append(allProjects, projects[i])
 
-			// Get detailed measures for each project
 			details, err := svc.GetProjectMeasures(projects[i].Key)
 			if err == nil {
 				details.Integration = integrationName
@@ -345,5 +285,5 @@ func (h *SonarQubeHandler) GetStats(c *gin.Context) {
 		"qualityGatePassRate":   qualityGatePassRate,
 	}
 
-	c.JSON(http.StatusOK, stats)
+	h.Success(c, stats)
 }

@@ -1,33 +1,40 @@
 package handler
 
 import (
-	"net/http"
-
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type MetricsHandler struct {
-	service *service.MetricsService
-	log     *logger.Logger
+	*base.BaseHandler
+	metricsService *service.MetricsService
 }
 
-func NewMetricsHandler(svc *service.MetricsService, log *logger.Logger) *MetricsHandler {
+func NewMetricsHandler(
+	svc *service.MetricsService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *MetricsHandler {
 	return &MetricsHandler{
-		service: svc,
-		log:     log,
+		BaseHandler:    base.NewBaseHandler(cache, log),
+		metricsService: svc,
 	}
 }
 
 func (h *MetricsHandler) GetDashboard(c *gin.Context) {
-	metrics := h.service.GetDashboardMetrics()
+	cacheKey := service.BuildKey("metrics", "dashboard")
 
-	c.JSON(http.StatusOK, metrics)
+	h.WithCache(c, cacheKey, service.CacheDuration1Minute, func() (interface{}, error) {
+		return h.metricsService.GetDashboardMetrics(), nil
+	})
 }
 
 func (h *MetricsHandler) GetDORA(c *gin.Context) {
-	dora := h.service.GetDORAMetrics()
+	cacheKey := service.BuildKey("metrics", "dora")
 
-	c.JSON(http.StatusOK, dora)
+	h.WithCache(c, cacheKey, service.CacheDuration5Minutes, func() (interface{}, error) {
+		return h.metricsService.GetDORAMetrics(), nil
+	})
 }

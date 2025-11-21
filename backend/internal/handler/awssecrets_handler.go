@@ -1,112 +1,106 @@
 package handler
 
 import (
-	"net/http"
-
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type AWSSecretsHandler struct {
+	*base.BaseHandler
 	service *service.IntegrationService
-	log     *logger.Logger
 }
 
-func NewAWSSecretsHandler(svc *service.IntegrationService, log *logger.Logger) *AWSSecretsHandler {
+func NewAWSSecretsHandler(
+	svc *service.IntegrationService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *AWSSecretsHandler {
 	return &AWSSecretsHandler{
-		service: svc,
-		log:     log,
+		BaseHandler: base.NewBaseHandler(cache, log),
+		service:     svc,
 	}
 }
 
 func (h *AWSSecretsHandler) GetStats(c *gin.Context) {
 	awsSecretsService, err := h.service.GetAWSSecretsService()
 	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
+		return
+	}
+	if awsSecretsService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
 		return
 	}
 
 	stats, err := awsSecretsService.GetStats(c.Request.Context())
 	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets stats", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets stats", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, stats)
+	h.Success(c, stats)
 }
 
 func (h *AWSSecretsHandler) ListSecrets(c *gin.Context) {
 	awsSecretsService, err := h.service.GetAWSSecretsService()
 	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
+		return
+	}
+	if awsSecretsService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
 		return
 	}
 
 	secrets, err := awsSecretsService.ListSecrets(c.Request.Context())
 	if err != nil {
-		h.log.Errorw("Failed to list AWS secrets", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to list AWS secrets", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	// Type assert to get the length
+	secretsList, ok := secrets.([]interface{})
+	total := 0
+	if ok {
+		total = len(secretsList)
+	}
+
+	h.Success(c, map[string]interface{}{
 		"secrets": secrets,
-		"total":   len(secrets),
+		"total":   total,
 	})
 }
 
 func (h *AWSSecretsHandler) GetSecret(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
-	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
-		})
+	secretName := c.Param("name")
+	if secretName == "" {
+		h.BadRequest(c, "Secret name is required")
 		return
 	}
 
-	secretName := c.Param("name")
-	if secretName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Secret name is required",
-		})
+	awsSecretsService, err := h.service.GetAWSSecretsService()
+	if err != nil {
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
+		return
+	}
+	if awsSecretsService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
 		return
 	}
 
 	secret, err := awsSecretsService.GetSecret(c.Request.Context(), secretName)
 	if err != nil {
-		h.log.Errorw("Failed to get AWS secret", "error", err, "name", secretName)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS secret", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, secret)
+	h.Success(c, secret)
 }
 
 func (h *AWSSecretsHandler) CreateSecret(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
-	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
-		})
-		return
-	}
-
 	var req struct {
 		Name         string            `json:"name"`
 		Description  string            `json:"description"`
@@ -115,47 +109,39 @@ func (h *AWSSecretsHandler) CreateSecret(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request body",
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
 	if req.Name == "" || req.SecretString == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "name and secretString are required",
-		})
+		h.BadRequest(c, "name and secretString are required")
+		return
+	}
+
+	awsSecretsService, err := h.service.GetAWSSecretsService()
+	if err != nil {
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
+		return
+	}
+	if awsSecretsService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
 		return
 	}
 
 	if err := awsSecretsService.CreateSecret(c.Request.Context(), req.Name, req.Description, req.SecretString, req.Tags); err != nil {
-		h.log.Errorw("Failed to create AWS secret", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to create AWS secret", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]string{
 		"message": "Secret created successfully",
 	})
 }
 
 func (h *AWSSecretsHandler) UpdateSecret(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
-	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
-		})
-		return
-	}
-
 	secretName := c.Param("name")
 	if secretName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Secret name is required",
-		})
+		h.BadRequest(c, "Secret name is required")
 		return
 	}
 
@@ -164,91 +150,86 @@ func (h *AWSSecretsHandler) UpdateSecret(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request body",
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
 	if req.SecretString == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "secretString is required",
-		})
+		h.BadRequest(c, "secretString is required")
+		return
+	}
+
+	awsSecretsService, err := h.service.GetAWSSecretsService()
+	if err != nil {
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
+		return
+	}
+	if awsSecretsService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
 		return
 	}
 
 	if err := awsSecretsService.UpdateSecret(c.Request.Context(), secretName, req.SecretString); err != nil {
-		h.log.Errorw("Failed to update AWS secret", "error", err, "name", secretName)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to update AWS secret", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]string{
 		"message": "Secret updated successfully",
 	})
 }
 
 func (h *AWSSecretsHandler) DeleteSecret(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
-	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
-		})
+	secretName := c.Param("name")
+	if secretName == "" {
+		h.BadRequest(c, "Secret name is required")
 		return
 	}
 
-	secretName := c.Param("name")
-	if secretName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Secret name is required",
-		})
+	awsSecretsService, err := h.service.GetAWSSecretsService()
+	if err != nil {
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
+		return
+	}
+	if awsSecretsService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
 		return
 	}
 
 	forceDelete := c.DefaultQuery("force", "false") == "true"
 
 	if err := awsSecretsService.DeleteSecret(c.Request.Context(), secretName, forceDelete); err != nil {
-		h.log.Errorw("Failed to delete AWS secret", "error", err, "name", secretName)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to delete AWS secret", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]string{
 		"message": "Secret deleted successfully",
 	})
 }
 
 func (h *AWSSecretsHandler) DescribeSecret(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
-	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
-		})
+	secretName := c.Param("name")
+	if secretName == "" {
+		h.BadRequest(c, "Secret name is required")
 		return
 	}
 
-	secretName := c.Param("name")
-	if secretName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Secret name is required",
-		})
+	awsSecretsService, err := h.service.GetAWSSecretsService()
+	if err != nil {
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
+		return
+	}
+	if awsSecretsService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
 		return
 	}
 
 	secret, err := awsSecretsService.DescribeSecret(c.Request.Context(), secretName)
 	if err != nil {
-		h.log.Errorw("Failed to describe AWS secret", "error", err, "name", secretName)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to describe AWS secret", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, secret)
+	h.Success(c, secret)
 }

@@ -1,25 +1,28 @@
 package handler
 
 import (
-	"net/http"
 	"strconv"
 
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type GrafanaHandler struct {
+	*base.BaseHandler
 	integrationService *service.IntegrationService
-	cache              *service.CacheService
-	log                *logger.Logger
 }
 
-func NewGrafanaHandler(integrationSvc *service.IntegrationService, cache *service.CacheService, log *logger.Logger) *GrafanaHandler {
+func NewGrafanaHandler(
+	integrationSvc *service.IntegrationService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *GrafanaHandler {
 	return &GrafanaHandler{
+		BaseHandler:        base.NewBaseHandler(cache, log),
 		integrationService: integrationSvc,
-		cache:              cache,
-		log:                log,
 	}
 }
 
@@ -31,57 +34,42 @@ func (h *GrafanaHandler) getService() (*service.GrafanaService, error) {
 	if config == nil {
 		return nil, nil
 	}
-	return service.NewGrafanaService(*config, h.log), nil
+	return service.NewGrafanaService(*config, h.GetLogger()), nil
 }
 
 func (h *GrafanaHandler) GetStats(c *gin.Context) {
 	svc, err := h.getService()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana service", err))
 		return
 	}
-
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
 
 	stats := svc.GetStats()
-	c.JSON(http.StatusOK, stats)
+	h.Success(c, stats)
 }
 
 func (h *GrafanaHandler) GetHealth(c *gin.Context) {
 	svc, err := h.getService()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana service", err))
 		return
 	}
-
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
 
 	health, err := svc.GetHealth()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana health", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana health", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, health)
+	h.Success(c, health)
 }
 
 func (h *GrafanaHandler) SearchDashboards(c *gin.Context) {
@@ -91,102 +79,58 @@ func (h *GrafanaHandler) SearchDashboards(c *gin.Context) {
 	// Build cache key based on search params
 	cacheKey := service.BuildKey("grafana:dashboards", query)
 
-	// Try cache first
-	if h.cache != nil {
-		var cachedData map[string]interface{}
-		if err := h.cache.GetJSON(cacheKey, &cachedData); err == nil {
-			h.log.Debugw("Cache HIT", "key", cacheKey)
-			c.JSON(http.StatusOK, cachedData)
-			return
+	// Use WithCache helper for consistent caching
+	h.WithCache(c, cacheKey, service.CacheDuration5Minutes, func() (interface{}, error) {
+		svc, err := h.getService()
+		if err != nil {
+			return nil, httperr.InternalErrorWrap("Failed to get Grafana service", err)
 		}
-	}
-
-	// Cache MISS
-	svc, err := h.getService()
-	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
-		return
-	}
-
-	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
-		return
-	}
-
-	dashboards, err := svc.SearchDashboards(query, tags)
-	if err != nil {
-		h.log.Errorw("Failed to search dashboards", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	result := gin.H{
-		"dashboards": dashboards,
-		"total":      len(dashboards),
-	}
-
-	// Store in cache (5 minutes TTL)
-	if h.cache != nil {
-		if err := h.cache.Set(cacheKey, result, service.CacheDuration5Minutes); err != nil {
-			h.log.Warnw("Failed to cache Grafana dashboards", "error", err)
+		if svc == nil {
+			return nil, httperr.ServiceUnavailable("Grafana integration not configured")
 		}
-	}
 
-	c.JSON(http.StatusOK, result)
+		dashboards, err := svc.SearchDashboards(query, tags)
+		if err != nil {
+			return nil, httperr.InternalErrorWrap("Failed to search dashboards", err)
+		}
+
+		return map[string]interface{}{
+			"dashboards": dashboards,
+			"total":      len(dashboards),
+		}, nil
+	})
 }
 
 func (h *GrafanaHandler) GetDashboardByUID(c *gin.Context) {
+	uid := c.Param("uid")
+
 	svc, err := h.getService()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana service", err))
 		return
 	}
-
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
-
-	uid := c.Param("uid")
 
 	dashboard, err := svc.GetDashboardByUID(uid)
 	if err != nil {
-		h.log.Errorw("Failed to get dashboard", "error", err, "uid", uid)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get dashboard", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, dashboard)
+	h.Success(c, dashboard)
 }
 
 func (h *GrafanaHandler) GetAlerts(c *gin.Context) {
 	svc, err := h.getService()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana service", err))
 		return
 	}
-
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
 
@@ -210,14 +154,11 @@ func (h *GrafanaHandler) GetAlerts(c *gin.Context) {
 	}
 
 	if fetchErr != nil {
-		h.log.Errorw("Failed to get alerts", "error", fetchErr)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": fetchErr.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get alerts", fetchErr))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"alerts": alerts,
 		"total":  len(alerts),
 	})
@@ -226,100 +167,71 @@ func (h *GrafanaHandler) GetAlerts(c *gin.Context) {
 func (h *GrafanaHandler) GetDataSources(c *gin.Context) {
 	svc, err := h.getService()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana service", err))
 		return
 	}
-
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
 
 	datasources, err := svc.GetDataSources()
 	if err != nil {
-		h.log.Errorw("Failed to get data sources", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get data sources", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"datasources": datasources,
 		"total":       len(datasources),
 	})
 }
 
 func (h *GrafanaHandler) GetDataSourceByID(c *gin.Context) {
-	svc, err := h.getService()
-	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
-		return
-	}
-
-	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
-		return
-	}
-
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid data source ID",
-		})
+		h.BadRequest(c, "Invalid data source ID")
+		return
+	}
+
+	svc, err := h.getService()
+	if err != nil {
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana service", err))
+		return
+	}
+	if svc == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
 
 	datasource, err := svc.GetDataSourceByID(id)
 	if err != nil {
-		h.log.Errorw("Failed to get data source", "error", err, "id", id)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get data source", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, datasource)
+	h.Success(c, datasource)
 }
 
 func (h *GrafanaHandler) GetOrganizations(c *gin.Context) {
 	svc, err := h.getService()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana service", err))
 		return
 	}
-
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
 
 	orgs, err := svc.GetOrganizations()
 	if err != nil {
-		h.log.Errorw("Failed to get organizations", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get organizations", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"organizations": orgs,
 		"total":         len(orgs),
 	})
@@ -328,59 +240,41 @@ func (h *GrafanaHandler) GetOrganizations(c *gin.Context) {
 func (h *GrafanaHandler) GetCurrentOrganization(c *gin.Context) {
 	svc, err := h.getService()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana service", err))
 		return
 	}
-
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
 
 	org, err := svc.GetCurrentOrganization()
 	if err != nil {
-		h.log.Errorw("Failed to get current organization", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get current organization", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, org)
+	h.Success(c, org)
 }
 
 func (h *GrafanaHandler) GetUsers(c *gin.Context) {
 	svc, err := h.getService()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana service", err))
 		return
 	}
-
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
 
 	users, err := svc.GetUsers()
 	if err != nil {
-		h.log.Errorw("Failed to get users", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get users", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"users": users,
 		"total": len(users),
 	})
@@ -389,80 +283,56 @@ func (h *GrafanaHandler) GetUsers(c *gin.Context) {
 func (h *GrafanaHandler) GetFolders(c *gin.Context) {
 	svc, err := h.getService()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana service", err))
 		return
 	}
-
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
 
 	folders, err := svc.GetFolders()
 	if err != nil {
-		h.log.Errorw("Failed to get folders", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get folders", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"folders": folders,
 		"total":   len(folders),
 	})
 }
 
 func (h *GrafanaHandler) GetFolderByUID(c *gin.Context) {
+	uid := c.Param("uid")
+
 	svc, err := h.getService()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana service", err))
 		return
 	}
-
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
-
-	uid := c.Param("uid")
 
 	folder, err := svc.GetFolderByUID(uid)
 	if err != nil {
-		h.log.Errorw("Failed to get folder", "error", err, "uid", uid)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get folder", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, folder)
+	h.Success(c, folder)
 }
 
 func (h *GrafanaHandler) GetAnnotations(c *gin.Context) {
 	svc, err := h.getService()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to initialize Grafana service",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana service", err))
 		return
 	}
-
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
 
@@ -473,14 +343,11 @@ func (h *GrafanaHandler) GetAnnotations(c *gin.Context) {
 
 	annotations, err := svc.GetAnnotations(dashboardID, from, to, tags)
 	if err != nil {
-		h.log.Errorw("Failed to get annotations", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get annotations", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"annotations": annotations,
 		"total":       len(annotations),
 	})
@@ -489,22 +356,16 @@ func (h *GrafanaHandler) GetAnnotations(c *gin.Context) {
 func (h *GrafanaHandler) GetConfig(c *gin.Context) {
 	config, err := h.integrationService.GetGrafanaConfig()
 	if err != nil {
-		h.log.Errorw("Failed to get Grafana config", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Grafana configuration",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Grafana config", err))
 		return
 	}
-
 	if config == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Grafana integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Grafana integration not configured"))
 		return
 	}
 
 	// Return only the URL, not the API key for security
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]string{
 		"url": config.URL,
 	})
 }

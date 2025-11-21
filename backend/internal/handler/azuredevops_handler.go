@@ -1,26 +1,31 @@
 package handler
 
 import (
-	"net/http"
 	"sort"
 	"strconv"
 	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type AzureDevOpsHandler struct {
+	*base.BaseHandler
 	integrationService *service.IntegrationService
-	log                *logger.Logger
 }
 
-func NewAzureDevOpsHandler(integrationService *service.IntegrationService, log *logger.Logger) *AzureDevOpsHandler {
+func NewAzureDevOpsHandler(
+	integrationService *service.IntegrationService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *AzureDevOpsHandler {
 	return &AzureDevOpsHandler{
+		BaseHandler:        base.NewBaseHandler(cache, log),
 		integrationService: integrationService,
-		log:                log,
 	}
 }
 
@@ -32,7 +37,7 @@ func (h *AzureDevOpsHandler) getService() (*service.AzureDevOpsService, error) {
 	if config == nil {
 		return nil, nil
 	}
-	return service.NewAzureDevOpsService(*config, h.log), nil
+	return service.NewAzureDevOpsService(*config, h.GetLogger()), nil
 }
 
 func (h *AzureDevOpsHandler) ListPipelines(c *gin.Context) {
@@ -42,19 +47,15 @@ func (h *AzureDevOpsHandler) ListPipelines(c *gin.Context) {
 
 	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Azure DevOps configurations",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Azure DevOps configurations", err))
 		return
 	}
 	if len(configs) == 0 {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "No Azure DevOps integrations configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("No Azure DevOps integrations configured"))
 		return
 	}
 
-	h.log.Infow("Fetching pipelines from all integrations", "integrationCount", len(configs))
+	h.GetLogger().Infow("Fetching pipelines from all integrations", "integrationCount", len(configs))
 
 	var allPipelines []domain.Pipeline
 	for integrationName, config := range configs {
@@ -63,15 +64,15 @@ func (h *AzureDevOpsHandler) ListPipelines(c *gin.Context) {
 			continue
 		}
 
-		h.log.Infow("Fetching pipelines from integration", "integration", integrationName, "organization", config.Organization)
-		svc := service.NewAzureDevOpsService(*config, h.log)
+		h.GetLogger().Infow("Fetching pipelines from integration", "integration", integrationName, "organization", config.Organization)
+		svc := service.NewAzureDevOpsService(*config, h.GetLogger())
 		pipelines, err := svc.GetPipelines()
 		if err != nil {
-			h.log.Errorw("Failed to fetch pipelines from integration", "integration", integrationName, "error", err)
+			h.GetLogger().Errorw("Failed to fetch pipelines from integration", "integration", integrationName, "error", err)
 			continue
 		}
 
-		h.log.Infow("Fetched pipelines from integration", "integration", integrationName, "count", len(pipelines))
+		h.GetLogger().Infow("Fetched pipelines from integration", "integration", integrationName, "count", len(pipelines))
 
 		// Mark each pipeline with the integration name
 		for i := range pipelines {
@@ -92,14 +93,14 @@ func (h *AzureDevOpsHandler) ListPipelines(c *gin.Context) {
 		filteredPipelines = append(filteredPipelines, pipeline)
 	}
 
-	h.log.Infow("Total pipelines after filtering", "total", len(filteredPipelines))
+	h.GetLogger().Infow("Total pipelines after filtering", "total", len(filteredPipelines))
 
 	// Sort pipelines by name alphabetically
 	sort.Slice(filteredPipelines, func(i, j int) bool {
 		return filteredPipelines[i].Name < filteredPipelines[j].Name
 	})
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"pipelines": filteredPipelines,
 		"total":     len(filteredPipelines),
 	})
@@ -109,35 +110,27 @@ func (h *AzureDevOpsHandler) ListPipelineRuns(c *gin.Context) {
 	pipelineIDStr := c.Param("id")
 	pipelineID, err := strconv.Atoi(pipelineIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid pipeline ID",
-		})
+		h.BadRequest(c, "Invalid pipeline ID")
 		return
 	}
 
 	svc, err := h.getService()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Azure DevOps configuration",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Azure DevOps configuration", err))
 		return
 	}
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Azure DevOps integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Azure DevOps integration not configured"))
 		return
 	}
 
 	runs, err := svc.GetPipelineRuns(pipelineID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch pipeline runs",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to fetch pipeline runs", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"pipelineId": pipelineID,
 		"runs":       runs,
 		"total":      len(runs),
@@ -159,19 +152,15 @@ func (h *AzureDevOpsHandler) ListBuilds(c *gin.Context) {
 
 	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Azure DevOps configurations",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Azure DevOps configurations", err))
 		return
 	}
 	if len(configs) == 0 {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "No Azure DevOps integrations configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("No Azure DevOps integrations configured"))
 		return
 	}
 
-	h.log.Infow("Fetching builds from all integrations", "integrationCount", len(configs))
+	h.GetLogger().Infow("Fetching builds from all integrations", "integrationCount", len(configs))
 
 	var allBuilds []domain.Build
 	for integrationName, config := range configs {
@@ -180,15 +169,15 @@ func (h *AzureDevOpsHandler) ListBuilds(c *gin.Context) {
 			continue
 		}
 
-		h.log.Infow("Fetching builds from integration", "integration", integrationName, "organization", config.Organization)
-		svc := service.NewAzureDevOpsService(*config, h.log)
+		h.GetLogger().Infow("Fetching builds from integration", "integration", integrationName, "organization", config.Organization)
+		svc := service.NewAzureDevOpsService(*config, h.GetLogger())
 		builds, err := svc.GetBuilds(limit)
 		if err != nil {
-			h.log.Errorw("Failed to fetch builds from integration", "integration", integrationName, "error", err)
+			h.GetLogger().Errorw("Failed to fetch builds from integration", "integration", integrationName, "error", err)
 			continue
 		}
 
-		h.log.Infow("Fetched builds from integration", "integration", integrationName, "count", len(builds))
+		h.GetLogger().Infow("Fetched builds from integration", "integration", integrationName, "count", len(builds))
 
 		// Mark each build with the integration name
 		for i := range builds {
@@ -232,14 +221,14 @@ func (h *AzureDevOpsHandler) ListBuilds(c *gin.Context) {
 		filteredBuilds = append(filteredBuilds, build)
 	}
 
-	h.log.Infow("Total builds after filtering", "total", len(filteredBuilds))
+	h.GetLogger().Infow("Total builds after filtering", "total", len(filteredBuilds))
 
 	// Sort builds by finish time (most recent first)
 	sort.Slice(filteredBuilds, func(i, j int) bool {
 		return filteredBuilds[i].FinishTime.After(filteredBuilds[j].FinishTime)
 	})
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"builds": filteredBuilds,
 		"total":  len(filteredBuilds),
 	})
@@ -249,70 +238,54 @@ func (h *AzureDevOpsHandler) GetBuild(c *gin.Context) {
 	buildIDStr := c.Param("id")
 	buildID, err := strconv.Atoi(buildIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid build ID",
-		})
+		h.BadRequest(c, "Invalid build ID")
 		return
 	}
 
 	svc, err := h.getService()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Azure DevOps configuration",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Azure DevOps configuration", err))
 		return
 	}
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Azure DevOps integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Azure DevOps integration not configured"))
 		return
 	}
 
 	build, err := svc.GetBuildByID(buildID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch build",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to fetch build", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, build)
+	h.Success(c, build)
 }
 
 func (h *AzureDevOpsHandler) GetBuildLogs(c *gin.Context) {
 	buildIDStr := c.Param("id")
 	buildID, err := strconv.Atoi(buildIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid build ID",
-		})
+		h.BadRequest(c, "Invalid build ID")
 		return
 	}
 
 	svc, err := h.getService()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Azure DevOps configuration",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Azure DevOps configuration", err))
 		return
 	}
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Azure DevOps integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Azure DevOps integration not configured"))
 		return
 	}
 
 	logs, err := svc.GetBuildLogs(buildID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch build logs",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to fetch build logs", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"logs": logs,
 	})
 }
@@ -332,19 +305,15 @@ func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 
 	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Azure DevOps configurations",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Azure DevOps configurations", err))
 		return
 	}
 	if len(configs) == 0 {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "No Azure DevOps integrations configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("No Azure DevOps integrations configured"))
 		return
 	}
 
-	h.log.Infow("Fetching releases from all integrations", "integrationCount", len(configs))
+	h.GetLogger().Infow("Fetching releases from all integrations", "integrationCount", len(configs))
 
 	var allReleases []domain.Release
 	for integrationName, config := range configs {
@@ -353,15 +322,15 @@ func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 			continue
 		}
 
-		h.log.Infow("Fetching releases from integration", "integration", integrationName, "organization", config.Organization)
-		svc := service.NewAzureDevOpsService(*config, h.log)
+		h.GetLogger().Infow("Fetching releases from integration", "integration", integrationName, "organization", config.Organization)
+		svc := service.NewAzureDevOpsService(*config, h.GetLogger())
 		releases, err := svc.GetReleases(limit)
 		if err != nil {
-			h.log.Errorw("Failed to fetch releases from integration", "integration", integrationName, "error", err)
+			h.GetLogger().Errorw("Failed to fetch releases from integration", "integration", integrationName, "error", err)
 			continue
 		}
 
-		h.log.Infow("Fetched releases from integration", "integration", integrationName, "count", len(releases))
+		h.GetLogger().Infow("Fetched releases from integration", "integration", integrationName, "count", len(releases))
 
 		// Mark each release with the integration name
 		for i := range releases {
@@ -405,14 +374,14 @@ func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 		filteredReleases = append(filteredReleases, release)
 	}
 
-	h.log.Infow("Total releases after filtering", "total", len(filteredReleases))
+	h.GetLogger().Infow("Total releases after filtering", "total", len(filteredReleases))
 
 	// Sort releases by created date (most recent first)
 	sort.Slice(filteredReleases, func(i, j int) bool {
 		return filteredReleases[i].CreatedOn.After(filteredReleases[j].CreatedOn)
 	})
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"releases": filteredReleases,
 		"total":    len(filteredReleases),
 	})
@@ -422,35 +391,27 @@ func (h *AzureDevOpsHandler) GetRelease(c *gin.Context) {
 	releaseIDStr := c.Param("id")
 	releaseID, err := strconv.Atoi(releaseIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid release ID",
-		})
+		h.BadRequest(c, "Invalid release ID")
 		return
 	}
 
 	svc, err := h.getService()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Azure DevOps configuration",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Azure DevOps configuration", err))
 		return
 	}
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Azure DevOps integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Azure DevOps integration not configured"))
 		return
 	}
 
 	release, err := svc.GetReleaseByID(releaseID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch release",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to fetch release", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, release)
+	h.Success(c, release)
 }
 
 func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
@@ -462,15 +423,11 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 
 	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Azure DevOps configurations",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Azure DevOps configurations", err))
 		return
 	}
 	if len(configs) == 0 {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "No Azure DevOps integrations configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("No Azure DevOps integrations configured"))
 		return
 	}
 
@@ -481,7 +438,7 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 			continue
 		}
 
-		svc := service.NewAzureDevOpsService(*config, h.log)
+		svc := service.NewAzureDevOpsService(*config, h.GetLogger())
 		pipelines, err := svc.GetPipelines()
 		if err != nil {
 			continue
@@ -510,7 +467,7 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 			continue
 		}
 
-		svc := service.NewAzureDevOpsService(*config, h.log)
+		svc := service.NewAzureDevOpsService(*config, h.GetLogger())
 		builds, err := svc.GetBuilds(200)
 		if err != nil {
 			continue
@@ -530,7 +487,7 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 			continue
 		}
 
-		svc := service.NewAzureDevOpsService(*config, h.log)
+		svc := service.NewAzureDevOpsService(*config, h.GetLogger())
 		releases, err := svc.GetReleases(100)
 		if err != nil {
 			continue
@@ -672,7 +629,7 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 		deployFailureRate = float64(failedCount) / float64(len(filteredBuilds)) * 100
 	}
 
-	stats := map[string]interface{}{
+	h.Success(c, map[string]interface{}{
 		"totalPipelines":     len(filteredPipelines),
 		"totalBuilds":        len(filteredBuilds),
 		"successCount":       successCount,
@@ -682,9 +639,7 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 		"avgPipelineTime":    avgPipelineTime,
 		"deployFrequency":    deployFrequency,
 		"deployFailureRate":  deployFailureRate,
-	}
-
-	c.JSON(http.StatusOK, stats)
+	})
 }
 
 func (h *AzureDevOpsHandler) QueueBuild(c *gin.Context) {
@@ -696,38 +651,30 @@ func (h *AzureDevOpsHandler) QueueBuild(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request body",
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
 	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Azure DevOps configurations",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Azure DevOps configurations", err))
 		return
 	}
 
 	config, ok := configs[req.IntegrationName]
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Integration not found",
-		})
+		h.NotFound(c, "Integration not found")
 		return
 	}
 
-	svc := service.NewAzureDevOpsService(*config, h.log)
+	svc := service.NewAzureDevOpsService(*config, h.GetLogger())
 	build, err := svc.QueueBuild(req.Project, req.DefinitionID, req.SourceBranch)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to queue build",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to queue build", err))
 		return
 	}
 
-	c.JSON(http.StatusCreated, build)
+	h.Created(c, build)
 }
 
 func (h *AzureDevOpsHandler) ApproveRelease(c *gin.Context) {
@@ -739,38 +686,30 @@ func (h *AzureDevOpsHandler) ApproveRelease(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request body",
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
 	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Azure DevOps configurations",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Azure DevOps configurations", err))
 		return
 	}
 
 	config, ok := configs[req.IntegrationName]
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Integration not found",
-		})
+		h.NotFound(c, "Integration not found")
 		return
 	}
 
-	svc := service.NewAzureDevOpsService(*config, h.log)
+	svc := service.NewAzureDevOpsService(*config, h.GetLogger())
 	err = svc.ApproveRelease(req.Project, req.ApprovalID, req.Comments)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to approve release",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to approve release", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]string{
 		"message": "Release approved successfully",
 	})
 }
@@ -784,38 +723,30 @@ func (h *AzureDevOpsHandler) RejectRelease(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request body",
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
 	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Azure DevOps configurations",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Azure DevOps configurations", err))
 		return
 	}
 
 	config, ok := configs[req.IntegrationName]
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Integration not found",
-		})
+		h.NotFound(c, "Integration not found")
 		return
 	}
 
-	svc := service.NewAzureDevOpsService(*config, h.log)
+	svc := service.NewAzureDevOpsService(*config, h.GetLogger())
 	err = svc.RejectRelease(req.Project, req.ApprovalID, req.Comments)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to reject release",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to reject release", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]string{
 		"message": "Release rejected successfully",
 	})
 }

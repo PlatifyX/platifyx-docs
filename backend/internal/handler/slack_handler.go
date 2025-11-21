@@ -1,23 +1,27 @@
 package handler
 
 import (
-	"net/http"
-
 	"github.com/PlatifyX/platifyx-core/internal/domain"
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type SlackHandler struct {
-	service *service.IntegrationService
-	log     *logger.Logger
+	*base.BaseHandler
+	integrationService *service.IntegrationService
 }
 
-func NewSlackHandler(svc *service.IntegrationService, log *logger.Logger) *SlackHandler {
+func NewSlackHandler(
+	svc *service.IntegrationService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *SlackHandler {
 	return &SlackHandler{
-		service: svc,
-		log:     log,
+		BaseHandler:        base.NewBaseHandler(cache, log),
+		integrationService: svc,
 	}
 }
 
@@ -25,30 +29,22 @@ func (h *SlackHandler) SendMessage(c *gin.Context) {
 	var input domain.SlackMessage
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	slackService, err := h.service.GetSlackService()
+	slackService, err := h.integrationService.GetSlackService()
 	if err != nil {
-		h.log.Errorw("Failed to get Slack service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Slack integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Slack integration not configured"))
 		return
 	}
 
 	if err := slackService.SendMessage(input); err != nil {
-		h.log.Errorw("Failed to send Slack message", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to send Slack message", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"message": "Message sent successfully",
 	})
 }
@@ -59,30 +55,22 @@ func (h *SlackHandler) SendSimpleMessage(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	slackService, err := h.service.GetSlackService()
+	slackService, err := h.integrationService.GetSlackService()
 	if err != nil {
-		h.log.Errorw("Failed to get Slack service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Slack integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Slack integration not configured"))
 		return
 	}
 
 	if err := slackService.SendSimpleMessage(input.Text); err != nil {
-		h.log.Errorw("Failed to send simple Slack message", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to send simple Slack message", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"message": "Message sent successfully",
 	})
 }
@@ -95,18 +83,13 @@ func (h *SlackHandler) SendAlert(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	slackService, err := h.service.GetSlackService()
+	slackService, err := h.integrationService.GetSlackService()
 	if err != nil {
-		h.log.Errorw("Failed to get Slack service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Slack integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Slack integration not configured"))
 		return
 	}
 
@@ -116,14 +99,11 @@ func (h *SlackHandler) SendAlert(c *gin.Context) {
 	}
 
 	if err := slackService.SendAlert(input.Title, input.Text, color); err != nil {
-		h.log.Errorw("Failed to send Slack alert", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to send Slack alert", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"message": "Alert sent successfully",
 	})
 }
