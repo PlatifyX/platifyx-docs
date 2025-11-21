@@ -38,22 +38,6 @@ CREATE TABLE IF NOT EXISTS permissions (
     CONSTRAINT unique_permission UNIQUE (resource, action)
 );
 
--- Tabela de Relacionamento Role-Permission
-CREATE TABLE IF NOT EXISTS role_permissions (
-    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    permission_id UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (role_id, permission_id)
-);
-
--- Tabela de Relacionamento User-Role
-CREATE TABLE IF NOT EXISTS user_roles (
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, role_id)
-);
-
 -- Tabela de Equipes
 CREATE TABLE IF NOT EXISTS teams (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -65,14 +49,67 @@ CREATE TABLE IF NOT EXISTS teams (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabela de Relacionamento Role-Permission
+CREATE TABLE IF NOT EXISTS role_permissions (
+    role_id UUID NOT NULL,
+    permission_id UUID NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (role_id, permission_id)
+);
+
+-- Tabela de Relacionamento User-Role
+CREATE TABLE IF NOT EXISTS user_roles (
+    user_id UUID NOT NULL,
+    role_id UUID NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, role_id)
+);
+
 -- Tabela de Relacionamento User-Team
 CREATE TABLE IF NOT EXISTS user_teams (
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    team_id UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL,
+    team_id UUID NOT NULL,
     role VARCHAR(50) DEFAULT 'member', -- 'owner', 'admin', 'member'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, team_id)
 );
+
+-- Adicionar Foreign Keys (após todas as tabelas serem criadas)
+DO $$
+BEGIN
+    -- role_permissions foreign keys
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'role_permissions_role_id_fkey') THEN
+        ALTER TABLE role_permissions ADD CONSTRAINT role_permissions_role_id_fkey
+            FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'role_permissions_permission_id_fkey') THEN
+        ALTER TABLE role_permissions ADD CONSTRAINT role_permissions_permission_id_fkey
+            FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE;
+    END IF;
+
+    -- user_roles foreign keys
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_roles_user_id_fkey') THEN
+        ALTER TABLE user_roles ADD CONSTRAINT user_roles_user_id_fkey
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_roles_role_id_fkey') THEN
+        ALTER TABLE user_roles ADD CONSTRAINT user_roles_role_id_fkey
+            FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE;
+    END IF;
+
+    -- user_teams foreign keys
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_teams_user_id_fkey') THEN
+        ALTER TABLE user_teams ADD CONSTRAINT user_teams_user_id_fkey
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_teams_team_id_fkey') THEN
+        ALTER TABLE user_teams ADD CONSTRAINT user_teams_team_id_fkey
+            FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
 -- Tabela de Configuração de SSO
 CREATE TABLE IF NOT EXISTS sso_configs (
