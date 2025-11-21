@@ -124,31 +124,52 @@ function ServiceTemplatesPage() {
       {showCreateModal && selectedTemplate && (
         <div className={styles.modalOverlay} onClick={() => setShowCreateModal(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
-            <h2>Criar Serviço: {selectedTemplate.name}</h2>
+            <h2 style={{ color: '#1E1E1E' }}>Criar Serviço: {selectedTemplate.name}</h2>
             <div style={{ marginTop: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Nome do Serviço *</label>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#1E1E1E' }}>Nome do Serviço *</label>
               <input
                 type="text"
                 value={serviceName}
                 onChange={(e) => setServiceName(e.target.value)}
                 placeholder="my-awesome-service"
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  color: '#1E1E1E',
+                  backgroundColor: 'white'
+                }}
               />
             </div>
             <div style={{ marginTop: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Descrição</label>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#1E1E1E' }}>Descrição</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descrição do serviço..."
                 rows={3}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  color: '#1E1E1E',
+                  backgroundColor: 'white'
+                }}
               />
             </div>
             <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setShowCreateModal(false)}
-                style={{ padding: '8px 16px', border: '1px solid #ddd', borderRadius: '4px', background: 'white', cursor: 'pointer' }}
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  background: 'white',
+                  cursor: 'pointer',
+                  color: '#1E1E1E'
+                }}
               >
                 Cancelar
               </button>
