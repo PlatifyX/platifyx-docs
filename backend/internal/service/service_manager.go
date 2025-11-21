@@ -24,12 +24,29 @@ type ServiceManager struct {
 	AIService              *AIService
 	DiagramService         *DiagramService
 	TemplateService        *TemplateService
+	UserService            *UserService
+	AuthService            *AuthService
+	// User Management Repositories (exposed for handlers)
+	UserRepository    *repository.UserRepository
+	RoleRepository    *repository.RoleRepository
+	TeamRepository    *repository.TeamRepository
+	SSORepository     *repository.SSORepository
+	AuditRepository   *repository.AuditRepository
+	SessionRepository *repository.SessionRepository
 }
 
 func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *ServiceManager {
 	// Initialize repository layer
 	integrationRepo := repository.NewIntegrationRepository(db)
 	serviceRepo := repository.NewServiceRepository(db)
+
+	// Initialize user management repositories
+	userRepo := repository.NewUserRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	teamRepo := repository.NewTeamRepository(db)
+	ssoRepo := repository.NewSSORepository(db)
+	auditRepo := repository.NewAuditRepository(db)
+	sessionRepo := repository.NewSessionRepository(db)
 
 	// Initialize integration service
 	integrationService := NewIntegrationService(integrationRepo, log)
@@ -145,6 +162,10 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	// Initialize Infrastructure Template service (for Backstage-style templates)
 	templateService := NewTemplateService(log, awsSecretsService)
 
+	// Initialize User Management services
+	userService := NewUserService(userRepo, auditRepo)
+	authService := NewAuthService(userRepo, sessionRepo, auditRepo, cfg.JWTSecret)
+
 	return &ServiceManager{
 		CacheService:           cacheService,
 		MetricsService:         NewMetricsService(),
@@ -159,5 +180,13 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		AIService:              aiService,
 		DiagramService:         diagramService,
 		TemplateService:        templateService,
+		UserService:            userService,
+		AuthService:            authService,
+		UserRepository:         userRepo,
+		RoleRepository:         roleRepo,
+		TeamRepository:         teamRepo,
+		SSORepository:          ssoRepo,
+		AuditRepository:        auditRepo,
+		SessionRepository:      sessionRepo,
 	}
 }
