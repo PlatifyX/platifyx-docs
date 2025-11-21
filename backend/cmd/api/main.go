@@ -162,6 +162,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			finops.GET("/aws/by-tag", handlers.FinOpsHandler.GetAWSCostsByTag)
 			finops.GET("/aws/reservation-utilization", handlers.FinOpsHandler.GetAWSReservationUtilization)
 			finops.GET("/aws/savings-plans-utilization", handlers.FinOpsHandler.GetAWSSavingsPlansUtilization)
+			finops.GET("/recommendations", handlers.FinOpsHandler.GetCostOptimizationRecommendations)
 		}
 
 		observability := v1.Group("/observability")

@@ -84,3 +84,27 @@ type FinOpsStats struct {
 	TopCostResources  []CloudResource    `json:"topCostResources"`
 	Currency          string             `json:"currency"`
 }
+
+// Cost Optimization Recommendation represents a recommendation for cost savings
+type CostOptimizationRecommendation struct {
+	Provider                  string            `json:"provider"`
+	Integration               string            `json:"integration"`
+	ResourceID                string            `json:"resourceId"`
+	ResourceType              string            `json:"resourceType"`
+	RecommendedAction         string            `json:"recommendedAction"`
+	CurrentConfiguration      string            `json:"currentConfiguration"`
+	RecommendedConfiguration  string            `json:"recommendedConfiguration"`
+	EstimatedMonthlySavings   float64           `json:"estimatedMonthlySavings"`
+	EstimatedSavingsPercent   float64           `json:"estimatedSavingsPercent"`
+	CurrentMonthlyCost        float64           `json:"currentMonthlyCost"`
+	ImplementationEffort      string            `json:"implementationEffort"` // Very Low, Low, Medium, High, Very High
+	RequiresRestart           bool              `json:"requiresRestart"`
+	RollbackPossible          bool              `json:"rollbackPossible"`
+	AccountName               string            `json:"accountName"`
+	AccountID                 string            `json:"accountId"`
+	Region                    string            `json:"region"`
+	Tags                      map[string]string `json:"tags,omitempty"`
+	Currency                  string            `json:"currency"`
+	RecommendationReason      string            `json:"recommendationReason,omitempty"`
+	LastRefreshTime           time.Time         `json:"lastRefreshTime"`
+}
