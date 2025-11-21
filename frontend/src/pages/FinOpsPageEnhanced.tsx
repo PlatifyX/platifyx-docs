@@ -81,19 +81,36 @@ function FinOpsPageEnhanced() {
 
       console.log('=== FinOps Debug ===')
       console.log('Monthly Data:', monthlyData)
-      console.log('Monthly Data.data:', monthlyData.data)
-      console.log('Monthly Data length:', Array.isArray(monthlyData.data) ? monthlyData.data.length : 'not array')
       console.log('Service Data:', serviceData)
-      console.log('Service Data.data:', serviceData.data)
+      console.log('Forecast Data:', forecastData)
       console.log('SP Data:', spData)
       console.log('Recommendations Data:', recommendationsData)
+
+      // Extract data - handle both formats (direct array or wrapped in .data)
+      const extractData = (response: any) => {
+        if (!response) return []
+        if (Array.isArray(response)) return response
+        if (response.data !== undefined) {
+          return Array.isArray(response.data) ? response.data : []
+        }
+        return []
+      }
+
+      const monthlyArray = extractData(monthlyData)
+      const serviceArray = extractData(serviceData)
+      const forecastArray = extractData(forecastData)
+      const recsArray = extractData(recommendationsData)
+
+      console.log('Extracted monthly:', monthlyArray.length, 'items', monthlyArray)
+      console.log('Extracted service:', serviceArray.length, 'items')
+      console.log('Extracted forecast:', forecastArray.length, 'items')
       console.log('===================')
 
-      setMonthlyCosts(monthlyData.data || [])
-      setServiceCosts((serviceData.data || []).sort((a: ServiceCost, b: ServiceCost) => b.cost - a.cost).slice(0, 10))
-      setForecast(forecastData.data || [])
-      setSpUtilization(spData.data || null)
-      setRecommendations(recommendationsData.data || [])
+      setMonthlyCosts(monthlyArray)
+      setServiceCosts(serviceArray.sort((a: ServiceCost, b: ServiceCost) => b.cost - a.cost).slice(0, 10))
+      setForecast(forecastArray)
+      setSpUtilization(spData?.data || spData || null)
+      setRecommendations(recsArray)
     } catch (error) {
       console.error('Error fetching FinOps data:', error)
     } finally {
