@@ -29,11 +29,33 @@ interface CloudResource {
   tags?: { [key: string]: string }
 }
 
-type TabType = 'overview' | 'resources' | 'costs'
+interface CostOptimizationRecommendation {
+  provider: string
+  integration: string
+  resourceId: string
+  resourceType: string
+  recommendedAction: string
+  currentConfiguration: string
+  recommendedConfiguration: string
+  estimatedMonthlySavings: number
+  estimatedSavingsPercent: number
+  currentMonthlyCost: number
+  implementationEffort: string
+  requiresRestart: boolean
+  rollbackPossible: boolean
+  accountName: string
+  accountId: string
+  region: string
+  tags?: { [key: string]: string }
+  currency: string
+}
+
+type TabType = 'overview' | 'resources' | 'recommendations'
 
 function FinOpsPage() {
   const [stats, setStats] = useState<FinOpsStats | null>(null)
   const [resources, setResources] = useState<CloudResource[]>([])
+  const [recommendations, setRecommendations] = useState<CostOptimizationRecommendation[]>([])
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [providerFilter, setProviderFilter] = useState('')
   const [loading, setLoading] = useState(true)
@@ -41,6 +63,7 @@ function FinOpsPage() {
   useEffect(() => {
     fetchStats()
     fetchResources()
+    fetchRecommendations()
   }, [providerFilter])
 
   const fetchStats = async () => {
@@ -86,6 +109,27 @@ function FinOpsPage() {
       setResources(data || [])
     } catch (error) {
       console.error('Error fetching resources:', error)
+    }
+  }
+
+  const fetchRecommendations = async () => {
+    try {
+      const queryParams = new URLSearchParams()
+      if (providerFilter) queryParams.append('provider', providerFilter)
+
+      console.log('Fetching recommendations from:', buildApiUrl(`finops/recommendations?${queryParams}`))
+      const response = await fetch(buildApiUrl(`finops/recommendations?${queryParams}`))
+
+      if (!response.ok) {
+        console.error('Recommendations response not OK:', response.status, response.statusText)
+        return
+      }
+
+      const data = await response.json()
+      console.log('Recommendations data:', data)
+      setRecommendations(data || [])
+    } catch (error) {
+      console.error('Error fetching recommendations:', error)
     }
   }
 
@@ -214,6 +258,12 @@ function FinOpsPage() {
         >
           Recursos ({resources.length})
         </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'recommendations' ? styles.activeTab : ''}`}
+          onClick={() => setActiveTab('recommendations')}
+        >
+          Recomendações ({recommendations.length})
+        </button>
       </div>
 
       <div className={styles.content}>
@@ -288,6 +338,84 @@ function FinOpsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {activeTab === 'recommendations' && (
+          <div className={styles.recommendationsSection}>
+            <div className={styles.recommendationsHeader}>
+              <h3>Recursos com Economia Estimada</h3>
+              <p>Total de economia potencial: {formatCurrency(recommendations.reduce((sum, r) => sum + r.estimatedMonthlySavings, 0))}/mês</p>
+            </div>
+            {recommendations.length === 0 ? (
+              <div className={styles.noRecommendations}>
+                <p>Nenhuma recomendação disponível no momento.</p>
+              </div>
+            ) : (
+              <div className={styles.tableContainer}>
+                <table className={styles.recommendationsTable}>
+                  <thead>
+                    <tr>
+                      <th>Economia mensal estimada</th>
+                      <th>Tipo de recurso</th>
+                      <th>ID do recurso</th>
+                      <th>Ação mais recomendada</th>
+                      <th>Resumo do recurso atual</th>
+                      <th>Resumo do recurso recomendado</th>
+                      <th>Porcentagem estimada de economia</th>
+                      <th>Custo mensal estimado</th>
+                      <th>Esforço de implementação</th>
+                      <th>É necessário reiniciar o recurso</th>
+                      <th>A reversão é possível?</th>
+                      <th>Nome e ID da conta</th>
+                      <th>Região</th>
+                      <th>Tags</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recommendations.map((rec, index) => (
+                      <tr key={index}>
+                        <td className={styles.savingsCell}>{formatCurrency(rec.estimatedMonthlySavings)}</td>
+                        <td>{rec.resourceType}</td>
+                        <td className={styles.resourceIdCell}>{rec.resourceId}</td>
+                        <td className={styles.actionCell}>{rec.recommendedAction}</td>
+                        <td>{rec.currentConfiguration}</td>
+                        <td>{rec.recommendedConfiguration}</td>
+                        <td className={styles.percentCell}>{rec.estimatedSavingsPercent.toFixed(0)}%</td>
+                        <td>{formatCurrency(rec.currentMonthlyCost)}</td>
+                        <td>
+                          <span className={`${styles.effortBadge} ${styles[`effort${rec.implementationEffort.replace(/\s/g, '')}`]}`}>
+                            {rec.implementationEffort}
+                          </span>
+                        </td>
+                        <td className={styles.boolCell}>{rec.requiresRestart ? 'Sim' : 'Não'}</td>
+                        <td className={styles.boolCell}>{rec.rollbackPossible ? 'Sim' : 'Não'}</td>
+                        <td>
+                          <div className={styles.accountCell}>
+                            <div>{rec.accountName}</div>
+                            <div className={styles.accountId}>({rec.accountId})</div>
+                          </div>
+                        </td>
+                        <td>{rec.region}</td>
+                        <td>
+                          {rec.tags && Object.keys(rec.tags).length > 0 ? (
+                            <div className={styles.tagsCell}>
+                              {Object.entries(rec.tags).map(([key, value]) => (
+                                <div key={key} className={styles.tagItem}>
+                                  {key}:{value}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>

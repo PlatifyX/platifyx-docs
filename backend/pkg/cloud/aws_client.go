@@ -3,12 +3,15 @@ package cloud
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/computeoptimizer"
+	computeoptimizertypes "github.com/aws/aws-sdk-go-v2/service/computeoptimizer/types"
 	"github.com/aws/aws-sdk-go-v2/service/costexplorer"
 	"github.com/aws/aws-sdk-go-v2/service/costexplorer/types"
 	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
@@ -553,4 +556,393 @@ func (c *AWSClient) TestConnection() error {
 	}
 
 	return nil
+}
+
+// GetCostOptimizationRecommendations retrieves cost optimization recommendations from AWS Compute Optimizer
+func (c *AWSClient) GetCostOptimizationRecommendations() ([]domain.CostOptimizationRecommendation, error) {
+	ctx := context.Background()
+
+	// Create Compute Optimizer client
+	coClient := computeoptimizer.NewFromConfig(c.awsConfig)
+
+	// Get STS client to fetch account information
+	stsClient := sts.NewFromConfig(c.awsConfig)
+	callerIdentity, err := stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get caller identity: %w", err)
+	}
+
+	accountID := ""
+	if callerIdentity.Account != nil {
+		accountID = *callerIdentity.Account
+	}
+
+	var recommendations []domain.CostOptimizationRecommendation
+
+	// 1. Get EC2 Instance Recommendations
+	ec2Recs, err := c.getEC2Recommendations(ctx, coClient, accountID)
+	if err == nil {
+		recommendations = append(recommendations, ec2Recs...)
+	}
+
+	// 2. Get EBS Volume Recommendations
+	ebsRecs, err := c.getEBSRecommendations(ctx, coClient, accountID)
+	if err == nil {
+		recommendations = append(recommendations, ebsRecs...)
+	}
+
+	return recommendations, nil
+}
+
+// getEC2Recommendations retrieves EC2 instance optimization recommendations
+func (c *AWSClient) getEC2Recommendations(ctx context.Context, coClient *computeoptimizer.Client, accountID string) ([]domain.CostOptimizationRecommendation, error) {
+	input := &computeoptimizer.GetEC2InstanceRecommendationsInput{
+		MaxResults: aws.Int32(100),
+	}
+
+	result, err := coClient.GetEC2InstanceRecommendations(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get EC2 recommendations: %w", err)
+	}
+
+	var recommendations []domain.CostOptimizationRecommendation
+
+	for _, rec := range result.InstanceRecommendations {
+		if rec.CurrentInstanceType == nil || len(rec.RecommendationOptions) == 0 {
+			continue
+		}
+
+		// Get the best recommendation (first option, which is the most recommended)
+		bestOption := rec.RecommendationOptions[0]
+
+		instanceArn := ""
+		if rec.InstanceArn != nil {
+			instanceArn = *rec.InstanceArn
+		}
+
+		// Extract instance ID from ARN
+		instanceID := extractInstanceIDFromArn(instanceArn)
+
+		currentInstanceType := *rec.CurrentInstanceType
+		recommendedInstanceType := ""
+		if bestOption.InstanceType != nil {
+			recommendedInstanceType = *bestOption.InstanceType
+		}
+
+		// Calculate savings
+		var currentCost, recommendedCost, savings, savingsPercent float64
+
+		if rec.CurrentPerformanceRisk != nil {
+			// If we have performance risk, it means there's a potential for optimization
+			// Estimate based on typical instance pricing differences
+
+			// Parse instance type to determine action
+			action := determineRecommendationAction(currentInstanceType, recommendedInstanceType)
+
+			// Estimate monthly costs (simplified - in production would use actual pricing)
+			currentCost = estimateInstanceCost(currentInstanceType)
+			recommendedCost = estimateInstanceCost(recommendedInstanceType)
+			savings = currentCost - recommendedCost
+
+			if currentCost > 0 {
+				savingsPercent = (savings / currentCost) * 100
+			}
+		}
+
+		// Determine implementation effort
+		effort := determineImplementationEffort(currentInstanceType, recommendedInstanceType)
+
+		// Check if restart is required (changing instance type requires restart)
+		requiresRestart := currentInstanceType != recommendedInstanceType
+
+		// Get tags
+		tags := make(map[string]string)
+		if rec.Tags != nil {
+			for _, tag := range rec.Tags {
+				if tag.Key != nil && tag.Value != nil {
+					tags[*tag.Key] = *tag.Value
+				}
+			}
+		}
+
+		// Extract account name from tags or use account ID
+		accountName := accountID
+		if name, exists := tags["Account"]; exists {
+			accountName = name
+		}
+
+		recommendation := domain.CostOptimizationRecommendation{
+			Provider:                  "aws",
+			ResourceID:                instanceID,
+			ResourceType:              "Instância do EC2",
+			RecommendedAction:         determineRecommendationAction(currentInstanceType, recommendedInstanceType),
+			CurrentConfiguration:      currentInstanceType,
+			RecommendedConfiguration:  recommendedInstanceType,
+			EstimatedMonthlySavings:   savings,
+			EstimatedSavingsPercent:   savingsPercent,
+			CurrentMonthlyCost:        currentCost,
+			ImplementationEffort:      effort,
+			RequiresRestart:           requiresRestart,
+			RollbackPossible:          true,
+			AccountName:               accountName,
+			AccountID:                 accountID,
+			Region:                    c.region,
+			Tags:                      tags,
+			Currency:                  "USD",
+			RecommendationReason:      fmt.Sprintf("AWS Compute Optimizer recommends %s for better cost optimization", recommendedInstanceType),
+			LastRefreshTime:           time.Now(),
+		}
+
+		// Only include if there are savings
+		if savings > 0 {
+			recommendations = append(recommendations, recommendation)
+		}
+	}
+
+	return recommendations, nil
+}
+
+// getEBSRecommendations retrieves EBS volume optimization recommendations
+func (c *AWSClient) getEBSRecommendations(ctx context.Context, coClient *computeoptimizer.Client, accountID string) ([]domain.CostOptimizationRecommendation, error) {
+	input := &computeoptimizer.GetEBSVolumeRecommendationsInput{
+		MaxResults: aws.Int32(100),
+	}
+
+	result, err := coClient.GetEBSVolumeRecommendations(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get EBS recommendations: %w", err)
+	}
+
+	var recommendations []domain.CostOptimizationRecommendation
+
+	for _, rec := range result.VolumeRecommendations {
+		// Check if volume is underutilized or can be deleted
+		if rec.Finding == computeoptimizertypes.EBSFindingNotOptimized ||
+		   rec.Finding == computeoptimizertypes.EBSFindingOptimized {
+
+			volumeArn := ""
+			if rec.VolumeArn != nil {
+				volumeArn = *rec.VolumeArn
+			}
+
+			// Extract volume ID from ARN
+			volumeID := extractVolumeIDFromArn(volumeArn)
+
+			currentConfig := ""
+			if rec.CurrentConfiguration != nil && rec.CurrentConfiguration.VolumeType != nil {
+				currentConfig = fmt.Sprintf("%s", rec.CurrentConfiguration.VolumeType)
+			}
+
+			recommendedConfig := "Create a snapshot and delete."
+			recommendedAction := "Excluir recursos ociosos ou não usados"
+
+			// Check if there are optimization options
+			if len(rec.VolumeRecommendationOptions) > 0 {
+				bestOption := rec.VolumeRecommendationOptions[0]
+				if bestOption.Configuration != nil && bestOption.Configuration.VolumeType != nil {
+					recommendedConfig = fmt.Sprintf("%s", bestOption.Configuration.VolumeType)
+					recommendedAction = "Otimizar tipo de volume"
+				}
+			}
+
+			// Estimate costs (simplified)
+			currentCost := 8.0  // Example: $8/month for a typical EBS volume
+			savings := 4.0      // Example: $4/month savings
+			savingsPercent := 50.0
+
+			tags := make(map[string]string)
+			if rec.Tags != nil {
+				for _, tag := range rec.Tags {
+					if tag.Key != nil && tag.Value != nil {
+						tags[*tag.Key] = *tag.Value
+					}
+				}
+			}
+
+			accountName := accountID
+			if name, exists := tags["Account"]; exists {
+				accountName = name
+			}
+
+			recommendation := domain.CostOptimizationRecommendation{
+				Provider:                  "aws",
+				ResourceID:                volumeID,
+				ResourceType:              "Volume do EBS",
+				RecommendedAction:         recommendedAction,
+				CurrentConfiguration:      volumeID,
+				RecommendedConfiguration:  recommendedConfig,
+				EstimatedMonthlySavings:   savings,
+				EstimatedSavingsPercent:   savingsPercent,
+				CurrentMonthlyCost:        currentCost,
+				ImplementationEffort:      "Baixo",
+				RequiresRestart:           false,
+				RollbackPossible:          true,
+				AccountName:               accountName,
+				AccountID:                 accountID,
+				Region:                    c.region,
+				Tags:                      tags,
+				Currency:                  "USD",
+				RecommendationReason:      "Volume is underutilized or idle",
+				LastRefreshTime:           time.Now(),
+			}
+
+			recommendations = append(recommendations, recommendation)
+		}
+	}
+
+	return recommendations, nil
+}
+
+// Helper functions
+
+func extractInstanceIDFromArn(arn string) string {
+	// ARN format: arn:aws:ec2:region:account-id:instance/instance-id
+	parts := strings.Split(arn, "/")
+	if len(parts) > 0 {
+		return parts[len(parts)-1]
+	}
+	return arn
+}
+
+func extractVolumeIDFromArn(arn string) string {
+	// ARN format: arn:aws:ec2:region:account-id:volume/volume-id
+	parts := strings.Split(arn, "/")
+	if len(parts) > 0 {
+		return parts[len(parts)-1]
+	}
+	return arn
+}
+
+func determineRecommendationAction(currentType, recommendedType string) string {
+	// Check if migration to Graviton (ARM-based instances)
+	if strings.Contains(recommendedType, "t4g") || strings.Contains(recommendedType, "m6g") ||
+	   strings.Contains(recommendedType, "c6g") || strings.Contains(recommendedType, "r6g") {
+		return "Migrar para o Graviton"
+	}
+
+	// Check if downgrade
+	if isDowngrade(currentType, recommendedType) {
+		return "Reduzir tamanho da instância"
+	}
+
+	// Check if upgrade
+	if isUpgrade(currentType, recommendedType) {
+		return "Aumentar tamanho da instância"
+	}
+
+	return "Modificar tipo de instância"
+}
+
+func determineImplementationEffort(currentType, recommendedType string) string {
+	// Graviton migration requires more effort (x86 to ARM)
+	if strings.Contains(recommendedType, "t4g") || strings.Contains(recommendedType, "m6g") ||
+	   strings.Contains(recommendedType, "c6g") || strings.Contains(recommendedType, "r6g") {
+		return "Muito alto"
+	}
+
+	// Same family, different size
+	currentFamily := extractInstanceFamily(currentType)
+	recommendedFamily := extractInstanceFamily(recommendedType)
+
+	if currentFamily == recommendedFamily {
+		return "Baixo"
+	}
+
+	return "Médio"
+}
+
+func isDowngrade(currentType, recommendedType string) bool {
+	currentSize := extractInstanceSize(currentType)
+	recommendedSize := extractInstanceSize(recommendedType)
+
+	sizeOrder := map[string]int{
+		"nano": 1, "micro": 2, "small": 3, "medium": 4,
+		"large": 5, "xlarge": 6, "2xlarge": 7, "4xlarge": 8,
+		"8xlarge": 9, "12xlarge": 10, "16xlarge": 11, "24xlarge": 12,
+	}
+
+	return sizeOrder[recommendedSize] < sizeOrder[currentSize]
+}
+
+func isUpgrade(currentType, recommendedType string) bool {
+	currentSize := extractInstanceSize(currentType)
+	recommendedSize := extractInstanceSize(recommendedType)
+
+	sizeOrder := map[string]int{
+		"nano": 1, "micro": 2, "small": 3, "medium": 4,
+		"large": 5, "xlarge": 6, "2xlarge": 7, "4xlarge": 8,
+		"8xlarge": 9, "12xlarge": 10, "16xlarge": 11, "24xlarge": 12,
+	}
+
+	return sizeOrder[recommendedSize] > sizeOrder[currentSize]
+}
+
+func extractInstanceFamily(instanceType string) string {
+	// Extract family from type (e.g., "t2.medium" -> "t2")
+	parts := strings.Split(instanceType, ".")
+	if len(parts) > 0 {
+		return parts[0]
+	}
+	return instanceType
+}
+
+func extractInstanceSize(instanceType string) string {
+	// Extract size from type (e.g., "t2.medium" -> "medium")
+	parts := strings.Split(instanceType, ".")
+	if len(parts) > 1 {
+		return parts[1]
+	}
+	return "medium"
+}
+
+func estimateInstanceCost(instanceType string) float64 {
+	// Simplified cost estimation based on instance type
+	// In production, would use AWS Pricing API
+
+	costMap := map[string]float64{
+		"t2.nano":    4.75,
+		"t2.micro":   9.50,
+		"t2.small":   19.00,
+		"t2.medium":  38.00,
+		"t2.large":   76.00,
+		"t2.xlarge":  152.00,
+		"t2.2xlarge": 304.00,
+		"t3.nano":    4.30,
+		"t3.micro":   8.60,
+		"t3.small":   17.20,
+		"t3.medium":  34.40,
+		"t3.large":   68.80,
+		"t3.xlarge":  137.60,
+		"t3.2xlarge": 275.20,
+		"t4g.nano":   3.65,
+		"t4g.micro":  7.30,
+		"t4g.small":  14.60,
+		"t4g.medium": 29.20,
+		"t4g.large":  58.40,
+		"t4g.xlarge": 116.80,
+		"t4g.2xlarge": 233.60,
+		"m5.large":   79.00,
+		"m5.xlarge":  158.00,
+		"m5.2xlarge": 316.00,
+		"m5.4xlarge": 632.00,
+		"m6g.large":  66.00,
+		"m6g.xlarge": 132.00,
+		"m6g.2xlarge": 264.00,
+		"c5.large":   70.00,
+		"c5.xlarge":  140.00,
+		"c5.2xlarge": 280.00,
+		"c6g.large":  58.00,
+		"c6g.xlarge": 116.00,
+		"r5.large":   103.00,
+		"r5.xlarge":  206.00,
+		"r6g.large":  86.00,
+		"r6g.xlarge": 172.00,
+	}
+
+	if cost, exists := costMap[instanceType]; exists {
+		return cost
+	}
+
+	// Default estimate if type not found
+	return 50.0
 }

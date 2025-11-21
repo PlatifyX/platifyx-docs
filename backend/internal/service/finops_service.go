@@ -397,3 +397,41 @@ func (s *FinOpsService) GetAWSSavingsPlansUtilization() (map[string]interface{},
 		"unusedCommitment":   0,
 	}, nil
 }
+
+// GetCostOptimizationRecommendations retrieves cost optimization recommendations from AWS
+func (s *FinOpsService) GetCostOptimizationRecommendations(provider, integration string) ([]domain.CostOptimizationRecommendation, error) {
+	allRecommendations := make([]domain.CostOptimizationRecommendation, 0)
+
+	// AWS recommendations
+	if provider == "" || provider == "aws" {
+		awsConfigs, err := s.integrationService.GetAllAWSConfigs()
+		if err != nil {
+			s.log.Errorw("Failed to get AWS configs", "error", err)
+			return allRecommendations, err
+		}
+
+		for name, config := range awsConfigs {
+			if integration != "" && name != integration {
+				continue
+			}
+
+			client := cloud.NewAWSClient(*config)
+			recommendations, err := client.GetCostOptimizationRecommendations()
+			if err != nil {
+				s.log.Errorw("Failed to get AWS cost optimization recommendations", "error", err, "integration", name)
+				continue
+			}
+
+			// Add integration name to each recommendation
+			for i := range recommendations {
+				recommendations[i].Integration = name
+			}
+
+			allRecommendations = append(allRecommendations, recommendations...)
+		}
+	}
+
+	// Future: Azure and GCP recommendations can be added here
+
+	return allRecommendations, nil
+}

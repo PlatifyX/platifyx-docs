@@ -215,3 +215,39 @@ func (h *FinOpsHandler) GetAWSSavingsPlansUtilization(c *gin.Context) {
 
 	c.JSON(http.StatusOK, data)
 }
+
+// GetCostOptimizationRecommendations returns cost optimization recommendations
+func (h *FinOpsHandler) GetCostOptimizationRecommendations(c *gin.Context) {
+	provider := c.Query("provider")     // aws, azure, gcp, or empty for all
+	integration := c.Query("integration") // specific integration name
+
+	// Build cache key
+	cacheKey := service.BuildKey("finops:recommendations", provider+":"+integration)
+
+	// Try cache first (1 hour TTL for recommendations)
+	if h.cache != nil {
+		var cachedData interface{}
+		if err := h.cache.GetJSON(cacheKey, &cachedData); err == nil {
+			h.log.Debugw("Cache HIT", "key", cacheKey)
+			c.JSON(http.StatusOK, cachedData)
+			return
+		}
+	}
+
+	// Cache MISS - fetch from service
+	recommendations, err := h.service.GetCostOptimizationRecommendations(provider, integration)
+	if err != nil {
+		h.log.Errorw("Failed to get cost optimization recommendations", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Store in cache (1 hour TTL)
+	if h.cache != nil {
+		if err := h.cache.Set(cacheKey, recommendations, service.CacheDuration1Hour); err != nil {
+			h.log.Warnw("Failed to cache cost optimization recommendations", "error", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, recommendations)
+}
