@@ -43,28 +43,55 @@ Sistema completo de gerenciamento de usuários com autenticação, autorização
   - Filtros avançados
   - Estatísticas
 
-## ⚠️ Importante: Resetar Banco de Dados
+## 🚀 Setup Inicial
 
-Se você já executou uma versão anterior da migration e está recebendo o erro:
-```
-failed to execute migration migrations/009_create_user_management.sql: pq: foreign key constraint "user_teams_user_id_fkey" cannot be implemented
+### Método 1: Automático (Recomendado)
+
+Ao iniciar o backend, as migrations serão executadas automaticamente:
+
+```bash
+cd backend
+go run cmd/api/main.go
 ```
 
-Execute o script de reset para limpar as tabelas antigas:
+O sistema irá:
+1. ✅ Criar tabela `schema_migrations` para controle
+2. ✅ Executar `009_create_user_management.sql` (criar tabelas)
+3. ✅ Executar `010_seed_roles_permissions.sql` (inserir roles e usuário admin)
+
+**Usuário admin padrão criado:**
+- Email: `admin@platifyx.com`
+- Senha: `admin123`
+- ⚠️ **IMPORTANTE: Altere a senha no primeiro login!**
+
+### Método 2: Script de Reset (Se necessário limpar tudo)
+
+Se você já executou uma versão anterior e precisa resetar:
 
 ```bash
 cd backend
 ./reset-user-management.sh
 ```
 
-Ou manualmente:
+Este script irá:
+- 🗑️  Limpar todas as tabelas antigas
+- ✨ Recriar tabelas
+- 📦 Inserir roles e permissões
+- 👤 Criar usuário admin
+
+### Método 3: Manual (Para debugging)
 
 ```bash
-# 1. Limpar tabelas antigas
-psql -U platifyx -d platifyx -f migrations/009_rollback.sql
+cd backend
 
-# 2. Recriar tabelas com a versão corrigida
+# 1. Limpar tabelas antigas (se existirem)
+psql -U platifyx -d platifyx -f rollback_user_management.sql
+
+# 2. Criar tabelas
 psql -U platifyx -d platifyx -f migrations/009_create_user_management.sql
+
+# 3. Inserir roles e permissões
+psql -U platifyx -d platifyx -f migrations/010_seed_roles_permissions.sql
 ```
 
 ## Configuração
