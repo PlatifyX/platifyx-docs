@@ -58,7 +58,7 @@ func NewClient(apiKey, organization string) *Client {
 		organization: organization,
 		baseURL:      "https://api.openai.com/v1",
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 10 * time.Minute,
 		},
 	}
 }

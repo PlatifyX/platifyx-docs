@@ -44,7 +44,7 @@ type Build struct {
 	FinishTime    time.Time `json:"finishTime"`
 	SourceBranch  string    `json:"sourceBranch"`
 	SourceVersion string    `json:"sourceVersion"`
-	RequestedFor  User      `json:"requestedFor"`
+	RequestedFor  AzureUser `json:"requestedFor"`
 	URL           string    `json:"url"`
 	Project       string    `json:"project,omitempty"`
 	Integration   string    `json:"integration,omitempty"`
@@ -54,7 +54,7 @@ type Build struct {
 	} `json:"definition"`
 }
 
-type User struct {
+type AzureUser struct {
 	ID          string `json:"id"`
 	DisplayName string `json:"displayName"`
 	UniqueName  string `json:"uniqueName"`
@@ -66,7 +66,7 @@ type Release struct {
 	Status          string    `json:"status"`
 	CreatedOn       time.Time `json:"createdOn"`
 	ModifiedOn      time.Time `json:"modifiedOn"`
-	CreatedBy       User      `json:"createdBy"`
+	CreatedBy       AzureUser `json:"createdBy"`
 	Description     string    `json:"description"`
 	URL             string    `json:"url"`
 	Project         string    `json:"project,omitempty"`
@@ -91,8 +91,8 @@ type ReleaseEnvironment struct {
 
 type ReleaseApproval struct {
 	ID           int       `json:"id"`
-	Approver     User      `json:"approver"`
-	ApprovedBy   User      `json:"approvedBy,omitempty"`
+	Approver     AzureUser `json:"approver"`
+	ApprovedBy   AzureUser `json:"approvedBy,omitempty"`
 	Status       string    `json:"status"`
 	Comments     string    `json:"comments"`
 	CreatedOn    time.Time `json:"createdOn"`

@@ -28,6 +28,8 @@ type HandlerManager struct {
 	ServiceCatalogHandler  *ServiceCatalogHandler
 	AIHandler              *AIHandler
 	TemplateHandler        *TemplateHandler
+	SSOSettingsHandler     *SSOSettingsHandler
+	RBACHandler            *RBACHandler
 }
 
 func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *HandlerManager {
@@ -54,5 +56,7 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		ServiceCatalogHandler:  NewServiceCatalogHandler(services.ServiceCatalogService, services.SonarQubeService, services.AzureDevOpsService, services.IntegrationService, log),
 		AIHandler:              NewAIHandler(services.AIService, log),
 		TemplateHandler:        NewTemplateHandler(services.TemplateService, log),
+		SSOSettingsHandler:     NewSSOSettingsHandler(services.SSOSettingsService, services.CacheService, log),
+		RBACHandler:            NewRBACHandler(services.RBACService, services.CacheService, log),
 	}
 }

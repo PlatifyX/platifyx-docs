@@ -24,12 +24,18 @@ type ServiceManager struct {
 	AIService              *AIService
 	DiagramService         *DiagramService
 	TemplateService        *TemplateService
+	SSOSettingsService     *SSOSettingsService
+	RBACService            *RBACService
 }
 
 func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *ServiceManager {
 	// Initialize repository layer
 	integrationRepo := repository.NewIntegrationRepository(db)
 	serviceRepo := repository.NewServiceRepository(db)
+	ssoSettingsRepo := repository.NewSSOSettingsRepository(db)
+	userRepo := repository.NewUserRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	permRepo := repository.NewPermissionRepository(db)
 
 	// Initialize integration service
 	integrationService := NewIntegrationService(integrationRepo, log)
@@ -145,6 +151,12 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	// Initialize Infrastructure Template service (for Backstage-style templates)
 	templateService := NewTemplateService(log, awsSecretsService)
 
+	// Initialize SSO Settings service
+	ssoSettingsService := NewSSOSettingsService(ssoSettingsRepo, log)
+
+	// Initialize RBAC service
+	rbacService := NewRBACService(userRepo, roleRepo, permRepo, log)
+
 	return &ServiceManager{
 		CacheService:           cacheService,
 		MetricsService:         NewMetricsService(),
@@ -159,5 +171,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		AIService:              aiService,
 		DiagramService:         diagramService,
 		TemplateService:        templateService,
+		SSOSettingsService:     ssoSettingsService,
+		RBACService:            rbacService,
 	}
 }

@@ -54,8 +54,8 @@ func main() {
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.Port),
 		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 2 * time.Minute,
 		IdleTimeout:  60 * time.Second,
 	}
 
@@ -367,6 +367,41 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			infraTemplates.GET("", handlers.TemplateHandler.ListTemplates)
 			infraTemplates.POST("/generate", handlers.TemplateHandler.GenerateTemplate)
 			infraTemplates.POST("/preview", handlers.TemplateHandler.PreviewTemplate)
+		}
+
+		// SSO Settings
+		ssoSettings := v1.Group("/settings/sso")
+		{
+			ssoSettings.GET("", handlers.SSOSettingsHandler.GetAll)
+			ssoSettings.GET("/:provider", handlers.SSOSettingsHandler.GetByProvider)
+			ssoSettings.POST("", handlers.SSOSettingsHandler.CreateOrUpdate)
+			ssoSettings.PUT("/:provider/enabled", handlers.SSOSettingsHandler.UpdateEnabled)
+			ssoSettings.DELETE("/:provider", handlers.SSOSettingsHandler.Delete)
+			ssoSettings.POST("/test/google", handlers.SSOSettingsHandler.TestGoogle)
+			ssoSettings.POST("/test/microsoft", handlers.SSOSettingsHandler.TestMicrosoft)
+		}
+
+		// RBAC
+		rbac := v1.Group("/rbac")
+		{
+			// Users
+			rbac.GET("/users", handlers.RBACHandler.GetAllUsers)
+			rbac.GET("/users/:id", handlers.RBACHandler.GetUserByID)
+			rbac.POST("/users", handlers.RBACHandler.CreateUser)
+			rbac.PUT("/users/:id", handlers.RBACHandler.UpdateUser)
+			rbac.DELETE("/users/:id", handlers.RBACHandler.DeleteUser)
+			rbac.GET("/users/stats", handlers.RBACHandler.GetUserStats)
+
+			// Roles
+			rbac.GET("/roles", handlers.RBACHandler.GetAllRoles)
+			rbac.GET("/roles/:id", handlers.RBACHandler.GetRoleByID)
+			rbac.POST("/roles", handlers.RBACHandler.CreateRole)
+			rbac.PUT("/roles/:id", handlers.RBACHandler.UpdateRole)
+			rbac.DELETE("/roles/:id", handlers.RBACHandler.DeleteRole)
+			rbac.POST("/roles/:id/permissions", handlers.RBACHandler.AssignRolePermissions)
+
+			// Permissions
+			rbac.GET("/permissions", handlers.RBACHandler.GetAllPermissions)
 		}
 	}
 

@@ -55,7 +55,7 @@ func NewClient(apiKey string) *Client {
 		apiKey:  apiKey,
 		baseURL: "https://generativelanguage.googleapis.com/v1beta",
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 10 * time.Minute,
 		},
 	}
 }

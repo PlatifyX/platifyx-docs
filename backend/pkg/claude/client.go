@@ -51,7 +51,7 @@ func NewClient(apiKey string) *Client {
 		apiKey:  apiKey,
 		baseURL: "https://api.anthropic.com/v1",
 		httpClient: &http.Client{
-			Timeout: 60 * time.Second,
+			Timeout: 10 * time.Minute,
 		},
 	}
 }
