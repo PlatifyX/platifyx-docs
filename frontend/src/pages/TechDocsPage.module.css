@@ -7,11 +7,11 @@
 }
 
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3e5c76 0%, #3e5c76 100%);
   border-radius: 16px;
   padding: 2rem 2.5rem;
   margin-bottom: 2rem;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 8px 24px rgba(62, 92, 118, 0.25);
   position: relative;
   overflow: hidden;
 }
@@ -99,18 +99,18 @@
   border-radius: 12px;
   padding: 1.5rem;
   overflow-y: auto;
-  border: 1px solid #f1f5f9;
+  border: 1px solid #f0ebd8;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .sidebarTitle {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #64748b;
+  color: #f0ebd8;
   text-transform: uppercase;
   margin: 0 0 1rem 0;
   letter-spacing: 0.05em;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3e5c76 0%, #3e5c76 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -134,15 +134,15 @@
 }
 
 .treeItem:hover {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+  background: linear-gradient(135deg, rgba(62, 92, 118, 0.08) 0%, rgba(62, 92, 118, 0.08) 100%);
   transform: translateX(4px);
 }
 
 .treeItemActive {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-  color: #667eea;
+  background: linear-gradient(135deg, rgba(62, 92, 118, 0.15) 0%, rgba(62, 92, 118, 0.15) 100%);
+  color: #3e5c76;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 2px 8px rgba(62, 92, 118, 0.2);
 }
 
 .folderIcon {
@@ -151,7 +151,7 @@
 }
 
 .fileIcon {
-  color: #3b82f6;
+  color: #3e5c76;
   flex-shrink: 0;
 }
 
@@ -166,7 +166,7 @@
   flex: 1;
   background: white;
   border-radius: 12px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid #f0ebd8;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -189,7 +189,7 @@
 .docTitle {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1f2937;
+  color: #0d1321;
   margin: 0;
 }
 
@@ -203,9 +203,9 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.5rem 1rem;
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background-color: #0d1321;
+  color: #f0ebd8;
+  border: 1px solid #f0ebd8;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
@@ -214,8 +214,8 @@
 }
 
 .actionButton:hover {
-  background-color: #e5e7eb;
-  border-color: #9ca3af;
+  background-color: #0d1321;
+  border-color: #f0ebd8;
 }
 
 .actionButtonDanger {
@@ -346,7 +346,7 @@
 }
 
 .modalInput:focus {
-  border-color: #3b82f6;
+  border-color: #3e5c76;
 }
 
 .modalActions {
@@ -357,7 +357,7 @@
 
 .modalButton {
   padding: 0.625rem 1.5rem;
-  background-color: #3b82f6;
+  background-color: #3e5c76;
   color: white;
   border: none;
   border-radius: 8px;
@@ -367,7 +367,7 @@
 }
 
 .modalButton:hover {
-  background-color: #2563eb;
+  background-color: #3e5c76;
 }
 
 .modalButtonCancel {
@@ -390,19 +390,19 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3e5c76 0%, #3e5c76 100%);
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 2px 4px rgba(62, 92, 118, 0.2);
 }
 
 .aiButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 8px rgba(62, 92, 118, 0.3);
 }
 
 .aiPanel {
@@ -427,27 +427,27 @@
 .mdH1 {
   font-size: 2.25rem;
   font-weight: 700;
-  color: #111827;
+  color: #ffffff;
   margin: 0 0 1.5rem 0;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid #f0ebd8;
   line-height: 1.2;
 }
 
 .mdH2 {
   font-size: 1.875rem;
   font-weight: 600;
-  color: #1f2937;
+  color: #ffffff;
   margin: 2rem 0 1rem 0;
   padding-bottom: 0.375rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #f0ebd8;
   line-height: 1.3;
 }
 
 .mdH3 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #374151;
+  color: #ffffff;
   margin: 1.5rem 0 0.75rem 0;
   line-height: 1.4;
 }
@@ -455,14 +455,14 @@
 .mdH4 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #4b5563;
+  color: #f0ebd8;
   margin: 1.25rem 0 0.5rem 0;
   line-height: 1.4;
 }
 
 .mdP {
   margin: 0 0 1rem 0;
-  color: #374151;
+  color: #f0ebd8;
   font-size: 1rem;
   line-height: 1.75;
 }
@@ -478,12 +478,12 @@
 }
 
 .mdPre {
-  background-color: #1f2937;
+  background-color: #0d1321;
   border-radius: 0.5rem;
   padding: 1rem;
   overflow-x: auto;
   margin: 1rem 0;
-  border: 1px solid #374151;
+  border: 1px solid #f0ebd8;
 }
 
 .mdCodeBlock {
@@ -506,20 +506,20 @@
 }
 
 .mdLink {
-  color: #3b82f6;
+  color: #3e5c76;
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition: all 0.2s;
 }
 
 .mdLink:hover {
-  border-bottom-color: #3b82f6;
-  color: #2563eb;
+  border-bottom-color: #3e5c76;
+  color: #3e5c76;
 }
 
 .mdBlockquote {
-  border-left: 4px solid #3b82f6;
-  background-color: #eff6ff;
+  border-left: 4px solid #3e5c76;
+  background-color: #0d1321;
   padding: 0.75rem 1.25rem;
   margin: 1.5rem 0;
   border-radius: 0 0.375rem 0.375rem 0;
@@ -527,7 +527,7 @@
 
 .mdBlockquote p {
   margin: 0;
-  color: #1e40af;
+  color: #f0ebd8;
   font-style: italic;
 }
 

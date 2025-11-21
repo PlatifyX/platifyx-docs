@@ -6,7 +6,7 @@ function Header() {
     <header className={styles.header}>
       <div className={styles.logo}>
         <img
-          src="public/logos/platifyx1.png"
+          src="public/logos/platifyx.png"
           alt="PlatifyX"
           className={styles.logoImage}
         />
