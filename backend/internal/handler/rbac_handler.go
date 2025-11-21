@@ -90,7 +90,7 @@ func (h *RBACHandler) DeleteUser(c *gin.Context) {
 }
 
 func (h *RBACHandler) GetUserStats(c *gin.Context) {
-	cacheKey := service.BuildKey("rbac", "user", "stats")
+	cacheKey := service.BuildKey("rbac", "user:stats")
 
 	h.WithCache(c, cacheKey, service.CacheDuration5Minutes, func() (interface{}, error) {
 		return h.rbacService.GetUserStats()

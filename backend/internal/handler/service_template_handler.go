@@ -125,7 +125,7 @@ func (h *ServiceTemplateHandler) GetServiceByID(c *gin.Context) {
 
 // GetStats returns template statistics
 func (h *ServiceTemplateHandler) GetStats(c *gin.Context) {
-	cacheKey := service.BuildKey("service", "template", "stats")
+	cacheKey := service.BuildKey("service", "template:stats")
 
 	h.WithCache(c, cacheKey, service.CacheDuration5Minutes, func() (interface{}, error) {
 		return h.templateService.GetStats()

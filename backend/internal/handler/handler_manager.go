@@ -53,7 +53,7 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		VaultHandler:           NewVaultHandler(services.IntegrationService, services.CacheService, log),
 		AWSSecretsHandler:      NewAWSSecretsHandler(services.IntegrationService, services.CacheService, log),
 		ServiceTemplateHandler: NewServiceTemplateHandler(services.ServiceTemplateService, services.CacheService, log),
-		ServiceCatalogHandler:  NewServiceCatalogHandler(services.ServiceCatalogService, services.SonarQubeService, services.AzureDevOpsService, services.IntegrationService, log),
+		ServiceCatalogHandler:  NewServiceCatalogHandler(services.ServiceCatalogService, services.SonarQubeService, services.AzureDevOpsService, services.IntegrationService, services.CacheService, log),
 		AIHandler:              NewAIHandler(services.AIService, services.CacheService, log),
 		TemplateHandler:        NewTemplateHandler(services.TemplateService, services.CacheService, log),
 		SSOSettingsHandler:     NewSSOSettingsHandler(services.SSOSettingsService, services.CacheService, log),

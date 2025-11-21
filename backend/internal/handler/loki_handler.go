@@ -53,7 +53,7 @@ func (h *LokiHandler) GetLabels(c *gin.Context) {
 func (h *LokiHandler) GetLabelValues(c *gin.Context) {
 	label := c.Param("label")
 
-	cacheKey := service.BuildKey("loki", "label", label)
+	cacheKey := service.BuildKey("loki", "label:"+label)
 
 	h.WithCache(c, cacheKey, service.CacheDuration5Minutes, func() (interface{}, error) {
 		lokiService, err := h.integrationService.GetLokiService()
@@ -76,7 +76,7 @@ func (h *LokiHandler) GetLabelValues(c *gin.Context) {
 
 // GetAppLabels returns all values for the 'app' label
 func (h *LokiHandler) GetAppLabels(c *gin.Context) {
-	cacheKey := service.BuildKey("loki", "app", "labels")
+	cacheKey := service.BuildKey("loki", "app:labels")
 
 	h.WithCache(c, cacheKey, service.CacheDuration5Minutes, func() (interface{}, error) {
 		lokiService, err := h.integrationService.GetLokiService()
