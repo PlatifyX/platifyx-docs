@@ -7,11 +7,11 @@
 
 /* Header Section with Gradient */
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3e5c76 0%, #3e5c76 100%);
   border-radius: 16px;
   padding: 2rem 2.5rem;
   margin-bottom: 2rem;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 8px 24px rgba(62, 92, 118, 0.25);
   position: relative;
   overflow: hidden;
 }
@@ -122,13 +122,13 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   gap: 1rem;
-  border: 1px solid #f1f5f9;
+  border: 1px solid #f0ebd8;
 }
 
 .metricCard:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  border-color: #e2e8f0;
+  border-color: #f0ebd8;
 }
 
 .metricIconWrapper {
@@ -160,7 +160,7 @@
 
 .metricLabel {
   font-size: 0.875rem;
-  color: #64748b;
+  color: #f0ebd8;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.025em;
@@ -190,7 +190,7 @@
 .metricValue {
   font-size: 2rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #0d1321;
   line-height: 1;
 }
 
@@ -208,7 +208,7 @@
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f1f5f9;
+  border: 1px solid #f0ebd8;
 }
 
 .sectionHeader {
@@ -217,7 +217,7 @@
   align-items: center;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 2px solid #f0ebd8;
 }
 
 .sectionTitle {
@@ -226,7 +226,7 @@
   gap: 0.75rem;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #0d1321;
   margin: 0;
 }
 
@@ -234,12 +234,12 @@
   display: inline-flex;
   align-items: center;
   padding: 0.375rem 0.875rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3e5c76 0%, #3e5c76 100%);
   color: white;
   border-radius: 20px;
   font-size: 0.875rem;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(62, 92, 118, 0.3);
 }
 
 .servicesList {
@@ -249,8 +249,8 @@
 }
 
 .serviceCard {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: #0d1321;
+  border: 1px solid #f0ebd8;
   border-radius: 10px;
   padding: 1rem;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -258,7 +258,7 @@
 
 .serviceCard:hover {
   background: white;
-  border-color: #cbd5e1;
+  border-color: #f0ebd8;
   transform: translateX(4px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
@@ -297,7 +297,7 @@
 .serviceName {
   font-size: 1rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #ffffff;
   margin-bottom: 0.25rem;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
@@ -307,21 +307,21 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  color: #64748b;
+  color: #f0ebd8;
 }
 
 .serviceVersion {
   font-weight: 600;
-  color: #3b82f6;
+  color: #3e5c76;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
 .serviceTime {
-  color: #94a3b8;
+  color: #f0ebd8;
 }
 
 .separator {
-  color: #cbd5e1;
+  color: #f0ebd8;
 }
 
 .serviceStats {
@@ -338,7 +338,7 @@
 
 .serviceStatLabel {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: #f0ebd8;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -347,7 +347,7 @@
 .serviceStatValue {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #ffffff;
 }
 
 /* Deployments Section */
@@ -356,7 +356,7 @@
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f1f5f9;
+  border: 1px solid #f0ebd8;
 }
 
 .deploymentsList {
@@ -369,7 +369,7 @@
   display: flex;
   gap: 1rem;
   padding: 1.25rem 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f0ebd8;
   transition: all 0.2s;
 }
 
@@ -378,7 +378,7 @@
 }
 
 .deploymentCard:hover {
-  background: #f8fafc;
+  background: #0d1321;
   margin: 0 -1rem;
   padding: 1.25rem 1rem;
   border-radius: 8px;
@@ -399,7 +399,7 @@
   border-radius: 50%;
   border: 2px solid currentColor;
   flex-shrink: 0;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 4px rgba(62, 92, 118, 0.1);
 }
 
 .deploymentDot.success {
@@ -417,7 +417,7 @@
 .deploymentLine {
   width: 2px;
   flex: 1;
-  background: linear-gradient(to bottom, #e2e8f0 0%, transparent 100%);
+  background: linear-gradient(to bottom, #f0ebd8 0%, transparent 100%);
   min-height: 24px;
 }
 
@@ -437,16 +437,16 @@
 .deploymentService {
   font-size: 0.9375rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #ffffff;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
 .deploymentVersion {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #3b82f6;
+  color: #3e5c76;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  background: #eff6ff;
+  background: #0d1321;
   padding: 0.125rem 0.5rem;
   border-radius: 4px;
 }
@@ -456,7 +456,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8125rem;
-  color: #64748b;
+  color: #f0ebd8;
 }
 
 .deploymentAuthor {
@@ -464,7 +464,7 @@
 }
 
 .deploymentTime {
-  color: #94a3b8;
+  color: #f0ebd8;
 }
 
 .deploymentStatus {
@@ -495,9 +495,9 @@
   justify-content: center;
   padding: 3rem 2rem;
   text-align: center;
-  background: #f8fafc;
+  background: #0d1321;
   border-radius: 10px;
-  border: 2px dashed #e2e8f0;
+  border: 2px dashed #f0ebd8;
   min-height: 200px;
 }
 

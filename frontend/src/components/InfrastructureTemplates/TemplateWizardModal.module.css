@@ -39,20 +39,20 @@
 .modalHeader h2 {
   margin: 0 0 0.5rem 0;
   font-size: 1.5rem;
-  color: #000000;
+  color: #ffffff;
   font-weight: 700;
 }
 
 .modalHeader p {
   margin: 0;
-  color: #333333;
+  color: #f0ebd8;
   font-size: 0.9rem;
 }
 
 .closeButton {
   background: none;
   border: none;
-  color: #333333;
+  color: #f0ebd8;
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 8px;
@@ -60,8 +60,8 @@
 }
 
 .closeButton:hover {
-  background: #f3f4f6;
-  color: #000000;
+  background: #0d1321;
+  color: #ffffff;
 }
 
 .stepsIndicator {
@@ -96,8 +96,8 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #e5e7eb;
-  color: #000000;
+  background: #f0ebd8;
+  color: #0d1321;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -118,7 +118,7 @@
 
 .stepTitle {
   font-weight: 600;
-  color: #000000;
+  color: #ffffff;
   font-size: 0.85rem;
   white-space: nowrap;
   overflow: hidden;
@@ -127,7 +127,7 @@
 
 .stepDescription {
   font-size: 0.75rem;
-  color: #333333;
+  color: #f0ebd8;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -142,7 +142,7 @@
 .stepContent h3 {
   margin: 0 0 1.5rem 0;
   font-size: 1.25rem;
-  color: #000000;
+  color: #ffffff;
   font-weight: 700;
 }
 
@@ -154,7 +154,7 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #000000;
+  color: #ffffff;
   font-size: 0.9rem;
 }
 
@@ -163,10 +163,10 @@
 .formGroup select {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid #f0ebd8;
   border-radius: 8px;
   background: #ffffff;
-  color: #000000;
+  color: #0d1321;
   font-size: 0.9rem;
   transition: all 0.2s;
 }
@@ -174,14 +174,14 @@
 .formGroup input:focus,
 .formGroup select:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: #3e5c76;
+  box-shadow: 0 0 0 3px rgba(62, 92, 118, 0.1);
 }
 
 .formGroup small {
   display: block;
   margin-top: 0.5rem;
-  color: #555555;
+  color: #f0ebd8;
   font-size: 0.75rem;
 }
 
@@ -218,14 +218,14 @@
 }
 
 .backButton {
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  color: #000000;
+  background: #0d1321;
+  border: 1px solid #f0ebd8;
+  color: #ffffff;
   font-weight: 600;
 }
 
 .backButton:hover:not(:disabled) {
-  background: #e5e7eb;
+  background: #0d1321;
 }
 
 .backButton:disabled {
@@ -234,14 +234,14 @@
 }
 
 .nextButton {
-  background: #2563eb;
+  background: #3e5c76;
   border: none;
   color: white;
   font-weight: 600;
 }
 
 .nextButton:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: #3e5c76;
 }
 
 .nextButton:disabled {
@@ -250,20 +250,20 @@
 }
 
 .closeButtonSecondary {
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  color: #000000;
+  background: #0d1321;
+  border: 1px solid #f0ebd8;
+  color: #ffffff;
   font-weight: 600;
 }
 
 .closeButtonSecondary:hover {
-  background: #e5e7eb;
+  background: #0d1321;
 }
 
 .loading {
   text-align: center;
   padding: 3rem;
-  color: #000000;
+  color: #ffffff;
   font-weight: 500;
 }
 
@@ -271,7 +271,7 @@
   background: #ffffff;
   border-radius: 12px;
   padding: 1.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #f0ebd8;
 }
 
 .previewHeader {
@@ -286,7 +286,7 @@
 .previewHeader h4 {
   margin: 0;
   font-size: 1.1rem;
-  color: #000000;
+  color: #0d1321;
   font-weight: 700;
 }
 
@@ -306,7 +306,7 @@
 .filesList h5 {
   margin: 0 0 1rem 0;
   font-size: 0.9rem;
-  color: #000000;
+  color: #0d1321;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 700;
@@ -321,9 +321,9 @@
   border-radius: 6px;
   margin-bottom: 0.5rem;
   font-size: 0.85rem;
-  color: #000000;
+  color: #0d1321;
   font-family: 'Monaco', 'Courier New', monospace;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #f0ebd8;
 }
 
 .fileItem svg {
@@ -336,13 +336,13 @@
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #f0ebd8;
 }
 
 .instructions h5 {
   margin: 0 0 1rem 0;
   font-size: 0.9rem;
-  color: #000000;
+  color: #0d1321;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 700;
@@ -351,14 +351,14 @@
 .instructions ol {
   margin: 0;
   padding-left: 1.5rem;
-  color: #000000;
+  color: #0d1321;
 }
 
 .instructions li {
   margin-bottom: 0.75rem;
   line-height: 1.6;
   font-size: 0.9rem;
-  color: #000000;
+  color: #0d1321;
 }
 
 .actions {
@@ -381,16 +381,16 @@
 }
 
 .downloadButton {
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  color: #000000;
+  background: #0d1321;
+  border: 1px solid #f0ebd8;
+  color: #ffffff;
   font-weight: 600;
 }
 
 .downloadButton:hover {
   background: #ffffff;
-  border-color: #2563eb;
-  color: #2563eb;
+  border-color: #3e5c76;
+  color: #3e5c76;
   transform: translateY(-1px);
 }
 

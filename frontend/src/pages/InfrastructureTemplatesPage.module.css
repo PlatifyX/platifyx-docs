@@ -3,7 +3,7 @@
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3e5c76 0%, #3e5c76 100%);
   background-attachment: fixed;
 }
 
@@ -30,7 +30,7 @@
   font-size: 32px;
   font-weight: 700;
   margin: 0 0 8px 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3e5c76 0%, #3e5c76 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -38,7 +38,7 @@
 
 .subtitle {
   font-size: 16px;
-  color: #64748b;
+  color: #f0ebd8;
   margin: 0;
 }
 
@@ -52,10 +52,10 @@
   flex-direction: column;
   align-items: center;
   padding: 16px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3e5c76 0%, #3e5c76 100%);
   border-radius: 12px;
   min-width: 100px;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(62, 92, 118, 0.3);
 }
 
 .statNumber {
@@ -93,24 +93,24 @@
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #94a3b8;
+  color: #f0ebd8;
 }
 
 .searchInput {
   width: 100%;
   padding: 12px 16px 12px 48px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid #f0ebd8;
   border-radius: 12px;
   font-size: 15px;
   transition: all 0.2s;
-  background: #f8fafc;
+  background: #0d1321;
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #3e5c76;
   background: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(62, 92, 118, 0.1);
 }
 
 .filterGroup {
@@ -122,7 +122,7 @@
 
 .filterLabel {
   font-weight: 600;
-  color: #334155;
+  color: #ffffff;
   font-size: 14px;
 }
 
@@ -137,10 +137,10 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid #f0ebd8;
   border-radius: 10px;
   background: white;
-  color: #64748b;
+  color: #f0ebd8;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -148,16 +148,16 @@
 }
 
 .categoryTab:hover {
-  border-color: #667eea;
-  color: #667eea;
+  border-color: #3e5c76;
+  color: #3e5c76;
   transform: translateY(-1px);
 }
 
 .categoryTabActive {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3e5c76 0%, #3e5c76 100%);
   color: white;
   border-color: transparent;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(62, 92, 118, 0.3);
 }
 
 .languageFilter {
@@ -168,13 +168,13 @@
 
 .languageFilter label {
   font-weight: 600;
-  color: #334155;
+  color: #ffffff;
   font-size: 14px;
 }
 
 .languageSelect {
   padding: 8px 32px 8px 12px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid #f0ebd8;
   border-radius: 10px;
   font-size: 14px;
   background: white;
@@ -184,13 +184,13 @@
 }
 
 .languageSelect:hover {
-  border-color: #667eea;
+  border-color: #3e5c76;
 }
 
 .languageSelect:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #3e5c76;
+  box-shadow: 0 0 0 3px rgba(62, 92, 118, 0.1);
 }
 
 .templatesGrid {
@@ -207,7 +207,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  border-top: 4px solid #667eea;
+  border-top: 4px solid #3e5c76;
   position: relative;
   overflow: hidden;
 }
@@ -219,7 +219,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(62, 92, 118, 0.05) 0%, rgba(62, 92, 118, 0.05) 100%);
   opacity: 0;
   transition: opacity 0.3s;
   z-index: 0;
@@ -250,11 +250,11 @@
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3e5c76 0%, #3e5c76 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(62, 92, 118, 0.3);
 }
 
 .templateIcon {
@@ -276,13 +276,13 @@
 .templateName {
   font-size: 20px;
   font-weight: 700;
-  color: #1e293b;
+  color: #0d1321;
   margin: 0 0 8px 0;
 }
 
 .templateDescription {
   font-size: 14px;
-  color: #64748b;
+  color: #f0ebd8;
   line-height: 1.6;
   margin: 0 0 20px 0;
   flex-grow: 1;
@@ -291,14 +291,14 @@
 .templateLanguages {
   margin-bottom: 20px;
   padding-top: 16px;
-  border-top: 2px solid #f1f5f9;
+  border-top: 2px solid #f0ebd8;
 }
 
 .languagesLabel {
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: #f0ebd8;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -312,8 +312,8 @@
 
 .languageBadge {
   padding: 4px 10px;
-  background: #f1f5f9;
-  color: #475569;
+  background: #0d1321;
+  color: #f0ebd8;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
@@ -321,7 +321,7 @@
 }
 
 .languageBadge:hover {
-  background: #e2e8f0;
+  background: #0d1321;
   transform: scale(1.05);
 }
 
@@ -331,7 +331,7 @@
   justify-content: center;
   gap: 8px;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3e5c76 0%, #3e5c76 100%);
   color: white;
   border: none;
   border-radius: 10px;
@@ -339,13 +339,13 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(62, 92, 118, 0.3);
   width: 100%;
 }
 
 .createButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(62, 92, 118, 0.4);
 }
 
 .createButton:active {
@@ -366,15 +366,15 @@
 
 .loading p {
   font-size: 16px;
-  color: #64748b;
+  color: #f0ebd8;
   margin: 0;
 }
 
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid #f1f5f9;
-  border-top-color: #667eea;
+  border: 4px solid #f0ebd8;
+  border-top-color: #3e5c76;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -399,20 +399,20 @@
 }
 
 .noResults svg {
-  color: #cbd5e1;
+  color: #f0ebd8;
   margin-bottom: 16px;
 }
 
 .noResults h3 {
   font-size: 20px;
   font-weight: 600;
-  color: #334155;
+  color: #ffffff;
   margin: 0 0 8px 0;
 }
 
 .noResults p {
   font-size: 14px;
-  color: #64748b;
+  color: #f0ebd8;
   margin: 0;
 }
 
