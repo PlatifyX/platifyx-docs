@@ -194,6 +194,102 @@ import { Package } from 'lucide-react'
 
 ---
 
+#### Button
+
+Botão padronizado com múltiplas variantes e tamanhos.
+
+**Localização**: `/src/components/UI/Button.tsx`
+
+**Uso**:
+```tsx
+import Button from '../components/UI/Button'
+import { Plus } from 'lucide-react'
+
+<Button
+  variant="primary"
+  size="md"
+  icon={Plus}
+  iconPosition="left"
+  onClick={() => handleClick()}
+>
+  Criar Novo
+</Button>
+```
+
+**Propriedades**:
+- `children`: ReactNode (obrigatório - texto do botão)
+- `onClick`: () => void (opcional - handler de click)
+- `variant`: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' (padrão: 'primary')
+- `size`: 'sm' | 'md' | 'lg' (padrão: 'md')
+- `icon`: LucideIcon (opcional - ícone a exibir)
+- `iconPosition`: 'left' | 'right' (padrão: 'left')
+- `disabled`: boolean (padrão: false)
+- `fullWidth`: boolean (padrão: false)
+- `type`: 'button' | 'submit' | 'reset' (padrão: 'button')
+
+---
+
+#### Badge
+
+Badge para tags, status e contadores.
+
+**Localização**: `/src/components/UI/Badge.tsx`
+
+**Uso**:
+```tsx
+import Badge from '../components/UI/Badge'
+
+<Badge variant="success" size="md">Ativo</Badge>
+<Badge variant="error" size="sm">3</Badge>
+```
+
+**Propriedades**:
+- `children`: ReactNode (obrigatório - conteúdo do badge)
+- `variant`: 'default' | 'success' | 'warning' | 'error' | 'info' (padrão: 'default')
+- `size`: 'sm' | 'md' | 'lg' (padrão: 'md')
+
+---
+
+#### Tabs
+
+Componente de abas/tabs para navegação.
+
+**Localização**: `/src/components/UI/Tabs.tsx`
+
+**Uso**:
+```tsx
+import Tabs, { Tab } from '../components/UI/Tabs'
+import { Server, Database } from 'lucide-react'
+
+const tabs: Tab[] = [
+  { id: 'services', label: 'Serviços', icon: <Server size={18} /> },
+  { id: 'databases', label: 'Bancos', icon: <Database size={18} />, badge: 5 }
+]
+
+<Tabs
+  tabs={tabs}
+  activeTab={activeTab}
+  onChange={setActiveTab}
+/>
+```
+
+**Propriedades**:
+- `tabs`: Tab[] (obrigatório - array de tabs)
+- `activeTab`: string (obrigatório - ID da tab ativa)
+- `onChange`: (tabId: string) => void (obrigatório - handler de mudança)
+
+**Tab Interface**:
+```tsx
+interface Tab {
+  id: string           // Identificador único
+  label: string        // Texto da tab
+  icon?: ReactNode     // Ícone opcional
+  badge?: number       // Badge com contador opcional
+}
+```
+
+---
+
 ### 📊 Table Components
 
 #### DataTable
