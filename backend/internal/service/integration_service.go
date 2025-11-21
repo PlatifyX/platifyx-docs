@@ -726,6 +726,57 @@ func (s *IntegrationService) GetAWSSecretsService() (*AWSSecretsService, error) 
 	return NewAWSSecretsService(*config, s.log)
 }
 
+// GetAWSSecretsServiceByID returns an AWSSecretsService for a specific integration ID
+func (s *IntegrationService) GetAWSSecretsServiceByID(integrationID int) (*AWSSecretsService, error) {
+	integration, err := s.repo.GetByID(integrationID)
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, fmt.Errorf("integration not found")
+	}
+
+	if integration.Type != string(domain.IntegrationTypeAWS) && integration.Type != string(domain.IntegrationTypeAWSSecrets) {
+		return nil, fmt.Errorf("integration is not an AWS type")
+	}
+
+	if !integration.Enabled {
+		return nil, fmt.Errorf("integration is disabled")
+	}
+
+	var config domain.AWSSecretsIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse AWS Secrets config: %w", err)
+	}
+
+	awsConfig := domain.AWSSecretsConfig{
+		AccessKeyID:     config.AccessKeyID,
+		SecretAccessKey: config.SecretAccessKey,
+		Region:          config.Region,
+		SessionToken:    config.SessionToken,
+	}
+
+	return NewAWSSecretsService(awsConfig, s.log)
+}
+
+// GetAllAWSIntegrations returns all AWS integrations (both aws and awssecrets types)
+func (s *IntegrationService) GetAllAWSIntegrations() ([]domain.Integration, error) {
+	allIntegrations, err := s.repo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	var awsIntegrations []domain.Integration
+	for _, integration := range allIntegrations {
+		if integration.Type == string(domain.IntegrationTypeAWS) || integration.Type == string(domain.IntegrationTypeAWSSecrets) {
+			awsIntegrations = append(awsIntegrations, integration)
+		}
+	}
+
+	return awsIntegrations, nil
+}
+
 // AI Provider methods
 func (s *IntegrationService) GetOpenAIConfig() (*domain.OpenAIIntegrationConfig, error) {
 	integration, err := s.repo.GetByType(string(domain.IntegrationTypeOpenAI))

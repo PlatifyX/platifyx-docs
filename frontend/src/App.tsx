@@ -13,6 +13,7 @@ import FinOpsPageEnhanced from './pages/FinOpsPageEnhanced'
 import TechDocsPage from './pages/TechDocsPage'
 import ObservabilityPage from './pages/ObservabilityPage'
 import SettingsPage from './pages/SettingsPage'
+import AWSSecretsPage from './pages/AWSSecretsPage'
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path="/quality" element={<QualityPage />} />
           <Route path="/finops" element={<FinOpsPageEnhanced />} />
           <Route path="/integrations" element={<IntegrationsPage />} />
+          <Route path="/awssecrets" element={<AWSSecretsPage />} />
           <Route path="/techdocs" element={<TechDocsPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/settings" element={<SettingsPage />} />

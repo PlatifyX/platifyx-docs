@@ -20,6 +20,7 @@ interface AWSModalProps {
 
 function AWSModal({ integration, isCreating, onSave, onClose }: AWSModalProps) {
   const [name, setName] = useState(integration?.name || '')
+  const [accountName, setAccountName] = useState(integration?.config?.accountName || '')
   const [accessKeyId, setAccessKeyId] = useState(integration?.config?.accessKeyId || '')
   const [secretAccessKey, setSecretAccessKey] = useState(integration?.config?.secretAccessKey || '')
   const [region, setRegion] = useState(integration?.config?.region || 'us-east-1')
@@ -86,8 +87,8 @@ function AWSModal({ integration, isCreating, onSave, onClose }: AWSModalProps) {
       return
     }
 
-    if (!accessKeyId || !secretAccessKey || !region) {
-      alert('Access Key ID, Secret Access Key e Região são obrigatórios')
+    if (!accountName || !accessKeyId || !secretAccessKey || !region) {
+      alert('Nome da Conta, Access Key ID, Secret Access Key e Região são obrigatórios')
       return
     }
 
@@ -101,6 +102,7 @@ function AWSModal({ integration, isCreating, onSave, onClose }: AWSModalProps) {
       await onSave({
         name: name || integration?.name,
         config: {
+          accountName,
           accessKeyId,
           secretAccessKey,
           region,
@@ -145,6 +147,24 @@ function AWSModal({ integration, isCreating, onSave, onClose }: AWSModalProps) {
               </p>
             </div>
           )}
+
+          <div className={styles.formGroup}>
+            <label htmlFor="accountName" className={styles.label}>
+              Nome da Conta AWS *
+            </label>
+            <input
+              id="accountName"
+              type="text"
+              className={styles.input}
+              value={accountName}
+              onChange={(e) => setAccountName(e.target.value)}
+              placeholder="Ex: Produção, Dev, Staging"
+              required
+            />
+            <p className={styles.hint}>
+              Nome identificador desta conta AWS (útil para diferenciar múltiplas contas)
+            </p>
+          </div>
 
           <div className={styles.formGroup}>
             <label htmlFor="accessKeyId" className={styles.label}>

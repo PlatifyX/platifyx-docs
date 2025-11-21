@@ -338,6 +338,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 
 		awssecrets := v1.Group("/awssecrets")
 		{
+			awssecrets.GET("/integrations", handlers.AWSSecretsHandler.GetAWSIntegrations)
 			awssecrets.GET("/stats", handlers.AWSSecretsHandler.GetStats)
 			awssecrets.GET("/list", handlers.AWSSecretsHandler.ListSecrets)
 			awssecrets.GET("/secret/:name", handlers.AWSSecretsHandler.GetSecret)

@@ -14,7 +14,8 @@ import {
   FileText,
   Github,
   Network,
-  Boxes
+  Boxes,
+  Lock
 } from 'lucide-react'
 import styles from './Sidebar.module.css'
 
@@ -40,6 +41,7 @@ const navItems: NavItem[] = [
   { path: '/templates', label: 'Templates', icon: <FileText size={20} /> },
   { path: '/infrastructure-templates', label: 'Infra Templates', icon: <Boxes size={20} /> },
   { path: '/integrations', label: 'Integrações', icon: <Plug size={20} /> },
+  { path: '/awssecrets', label: 'AWS Secrets', icon: <Lock size={20} /> },
   { path: '/settings', label: 'Configurações', icon: <Settings size={20} /> },
 ]
 

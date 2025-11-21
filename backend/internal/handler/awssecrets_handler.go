@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"fmt"
+
 	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
 	"github.com/PlatifyX/platifyx-core/pkg/httperr"
@@ -25,13 +27,9 @@ func NewAWSSecretsHandler(
 }
 
 func (h *AWSSecretsHandler) GetStats(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+	awsSecretsService, err := h.getAWSSecretsServiceFromRequest(c)
 	if err != nil {
-		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
-		return
-	}
-	if awsSecretsService == nil {
-		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
+		h.HandleError(c, err)
 		return
 	}
 
@@ -44,14 +42,40 @@ func (h *AWSSecretsHandler) GetStats(c *gin.Context) {
 	h.Success(c, stats)
 }
 
-func (h *AWSSecretsHandler) ListSecrets(c *gin.Context) {
+// Helper method to get AWS Secrets service from request
+func (h *AWSSecretsHandler) getAWSSecretsServiceFromRequest(c *gin.Context) (*service.AWSSecretsService, error) {
+	integrationIDStr := c.Query("integrationId")
+
+	if integrationIDStr != "" {
+		// Use specific integration by ID
+		var integrationID int
+		if _, err := fmt.Sscanf(integrationIDStr, "%d", &integrationID); err != nil {
+			return nil, httperr.BadRequest("Invalid integration ID")
+		}
+
+		awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+		if err != nil {
+			return nil, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err)
+		}
+		return awsSecretsService, nil
+	}
+
+	// Use default integration (for backward compatibility)
 	awsSecretsService, err := h.service.GetAWSSecretsService()
 	if err != nil {
-		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
-		return
+		return nil, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err)
 	}
 	if awsSecretsService == nil {
-		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
+		return nil, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured")
+	}
+
+	return awsSecretsService, nil
+}
+
+func (h *AWSSecretsHandler) ListSecrets(c *gin.Context) {
+	awsSecretsService, err := h.getAWSSecretsServiceFromRequest(c)
+	if err != nil {
+		h.HandleError(c, err)
 		return
 	}
 
@@ -61,16 +85,9 @@ func (h *AWSSecretsHandler) ListSecrets(c *gin.Context) {
 		return
 	}
 
-	// Type assert to get the length
-	secretsList, ok := secrets.([]interface{})
-	total := 0
-	if ok {
-		total = len(secretsList)
-	}
-
 	h.Success(c, map[string]interface{}{
 		"secrets": secrets,
-		"total":   total,
+		"total":   len(secrets),
 	})
 }
 
@@ -81,13 +98,9 @@ func (h *AWSSecretsHandler) GetSecret(c *gin.Context) {
 		return
 	}
 
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+	awsSecretsService, err := h.getAWSSecretsServiceFromRequest(c)
 	if err != nil {
-		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
-		return
-	}
-	if awsSecretsService == nil {
-		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
+		h.HandleError(c, err)
 		return
 	}
 
@@ -118,13 +131,9 @@ func (h *AWSSecretsHandler) CreateSecret(c *gin.Context) {
 		return
 	}
 
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+	awsSecretsService, err := h.getAWSSecretsServiceFromRequest(c)
 	if err != nil {
-		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
-		return
-	}
-	if awsSecretsService == nil {
-		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
+		h.HandleError(c, err)
 		return
 	}
 
@@ -159,13 +168,9 @@ func (h *AWSSecretsHandler) UpdateSecret(c *gin.Context) {
 		return
 	}
 
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+	awsSecretsService, err := h.getAWSSecretsServiceFromRequest(c)
 	if err != nil {
-		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
-		return
-	}
-	if awsSecretsService == nil {
-		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
+		h.HandleError(c, err)
 		return
 	}
 
@@ -186,13 +191,9 @@ func (h *AWSSecretsHandler) DeleteSecret(c *gin.Context) {
 		return
 	}
 
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+	awsSecretsService, err := h.getAWSSecretsServiceFromRequest(c)
 	if err != nil {
-		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
-		return
-	}
-	if awsSecretsService == nil {
-		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
+		h.HandleError(c, err)
 		return
 	}
 
@@ -215,13 +216,9 @@ func (h *AWSSecretsHandler) DescribeSecret(c *gin.Context) {
 		return
 	}
 
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+	awsSecretsService, err := h.getAWSSecretsServiceFromRequest(c)
 	if err != nil {
-		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS Secrets service", err))
-		return
-	}
-	if awsSecretsService == nil {
-		h.HandleError(c, httperr.ServiceUnavailable("AWS Secrets Manager integration not configured"))
+		h.HandleError(c, err)
 		return
 	}
 
@@ -232,4 +229,15 @@ func (h *AWSSecretsHandler) DescribeSecret(c *gin.Context) {
 	}
 
 	h.Success(c, secret)
+}
+
+// GetAWSIntegrations returns all AWS integrations
+func (h *AWSSecretsHandler) GetAWSIntegrations(c *gin.Context) {
+	integrations, err := h.service.GetAllAWSIntegrations()
+	if err != nil {
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AWS integrations", err))
+		return
+	}
+
+	h.Success(c, integrations)
 }

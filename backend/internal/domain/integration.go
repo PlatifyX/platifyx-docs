@@ -39,6 +39,7 @@ type GCPCloudIntegrationConfig struct {
 }
 
 type AWSCloudIntegrationConfig struct {
+	AccountName     string `json:"accountName"`
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
 	Region          string `json:"region"`
@@ -113,6 +114,7 @@ type VaultIntegrationConfig struct {
 }
 
 type AWSSecretsIntegrationConfig struct {
+	AccountName     string `json:"accountName"`
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
 	Region          string `json:"region"`
