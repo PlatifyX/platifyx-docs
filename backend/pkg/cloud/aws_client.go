@@ -732,7 +732,7 @@ func (c *AWSClient) getEBSRecommendations(ctx context.Context, coClient *compute
 			if len(rec.VolumeRecommendationOptions) > 0 {
 				bestOption := rec.VolumeRecommendationOptions[0]
 				if bestOption.Configuration != nil && bestOption.Configuration.VolumeType != nil {
-					recommendedConfig = fmt.Sprintf("%s", bestOption.Configuration.VolumeType)
+					recommendedConfig = string(*bestOption.Configuration.VolumeType)
 					recommendedAction = "Otimizar tipo de volume"
 				}
 			}

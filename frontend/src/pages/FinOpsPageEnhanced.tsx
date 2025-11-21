@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, TrendingDown, Cloud, AlertTriangle, Calendar, Filter, Lightbulb } from 'lucide-react'
+import { DollarSign, TrendingUp, TrendingDown, Cloud, AlertTriangle, Calendar, Filter, Lightbulb, Eye } from 'lucide-react'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart
@@ -7,6 +7,7 @@ import {
 import styles from './FinOpsPage.module.css'
 import { buildApiUrl } from '../config/api'
 import Loader from '../components/Loader/Loader'
+import RecommendationDetailsModal from '../components/FinOps/RecommendationDetailsModal'
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
@@ -48,6 +49,7 @@ function FinOpsPageEnhanced() {
   const [forecast, setForecast] = useState<any[]>([])
   const [spUtilization, setSpUtilization] = useState<any>(null)
   const [recommendations, setRecommendations] = useState<CostOptimizationRecommendation[]>([])
+  const [selectedRecommendation, setSelectedRecommendation] = useState<CostOptimizationRecommendation | null>(null)
 
   // Date filters
   const [monthsToShow, setMonthsToShow] = useState(1)
@@ -366,55 +368,24 @@ function FinOpsPageEnhanced() {
                     <th>Tipo de recurso</th>
                     <th>ID do recurso</th>
                     <th>Ação mais recomendada</th>
-                    <th>Resumo do recurso atual</th>
-                    <th>Resumo do recurso recomendado</th>
-                    <th>Porcentagem estimada de economia</th>
-                    <th>Custo mensal estimado</th>
-                    <th>Esforço de implementação</th>
-                    <th>É necessário reiniciar o recurso</th>
-                    <th>A reversão é possível?</th>
-                    <th>Nome e ID da conta</th>
-                    <th>Região</th>
-                    <th>Tags</th>
+                    <th style={{ width: '80px', textAlign: 'center' }}>Detalhes</th>
                   </tr>
                 </thead>
                 <tbody>
                   {recommendations.map((rec, index) => (
-                    <tr key={index}>
+                    <tr key={index} className={styles.clickableRow}>
                       <td className={styles.savingsCell}>{formatCurrency(rec.estimatedMonthlySavings)}</td>
                       <td>{rec.resourceType}</td>
                       <td className={styles.resourceIdCell}>{rec.resourceId}</td>
                       <td className={styles.actionCell}>{rec.recommendedAction}</td>
-                      <td>{rec.currentConfiguration}</td>
-                      <td>{rec.recommendedConfiguration}</td>
-                      <td className={styles.percentCell}>{rec.estimatedSavingsPercent.toFixed(0)}%</td>
-                      <td>{formatCurrency(rec.currentMonthlyCost)}</td>
-                      <td>
-                        <span className={`${styles.effortBadge} ${styles[`effort${rec.implementationEffort.replace(/\s/g, '')}`]}`}>
-                          {rec.implementationEffort}
-                        </span>
-                      </td>
-                      <td className={styles.boolCell}>{rec.requiresRestart ? 'Sim' : 'Não'}</td>
-                      <td className={styles.boolCell}>{rec.rollbackPossible ? 'Sim' : 'Não'}</td>
-                      <td>
-                        <div className={styles.accountCell}>
-                          <div>{rec.accountName}</div>
-                          <div className={styles.accountId}>({rec.accountId})</div>
-                        </div>
-                      </td>
-                      <td>{rec.region}</td>
-                      <td>
-                        {rec.tags && Object.keys(rec.tags).length > 0 ? (
-                          <div className={styles.tagsCell}>
-                            {Object.entries(rec.tags).map(([key, value]) => (
-                              <div key={key} className={styles.tagItem}>
-                                {key}:{value}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          '-'
-                        )}
+                      <td style={{ textAlign: 'center' }}>
+                        <button
+                          className={styles.detailsButton}
+                          onClick={() => setSelectedRecommendation(rec)}
+                          title="Ver detalhes completos"
+                        >
+                          <Eye size={18} />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -424,6 +395,12 @@ function FinOpsPageEnhanced() {
           )}
         </div>
       </section>
+
+      {/* Modal de Detalhes */}
+      <RecommendationDetailsModal
+        recommendation={selectedRecommendation}
+        onClose={() => setSelectedRecommendation(null)}
+      />
 
     </div>
   )

@@ -945,3 +945,31 @@
   background: #fecaca;
   color: #dc2626;
 }
+
+/* Details Button */
+.detailsButton {
+  background: var(--deep-sea-blue-slate);
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: var(--deep-sea-eggshell);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.detailsButton:hover {
+  background: var(--deep-sea-dusty-denim);
+  transform: scale(1.1);
+}
+
+.clickableRow {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clickableRow:hover {
+  background: rgba(240, 235, 216, 0.05) !important;
+}
