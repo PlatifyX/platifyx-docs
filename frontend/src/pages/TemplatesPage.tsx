@@ -1,7 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Package, Clock, Cog, Layers, Plus, Search, Filter, Database, Globe, MessageSquare, Box } from 'lucide-react'
 import TemplateWizardModal from '../components/InfrastructureTemplates/TemplateWizardModal'
-import styles from './InfrastructureTemplatesPage.module.css'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import Section from '../components/Layout/Section'
+import EmptyState from '../components/UI/EmptyState'
+import styles from './TemplatesPage.module.css'
 import { buildApiUrl } from '../config/api'
 
 interface Template {
@@ -31,7 +35,7 @@ const templateCategories: { [key: string]: string } = {
   'deployment': 'infra',
 }
 
-function InfrastructureTemplatesPage() {
+function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
@@ -110,35 +114,31 @@ function InfrastructureTemplatesPage() {
 
   if (loading) {
     return (
-      <div className={styles.page}>
+      <PageContainer>
         <div className={styles.loading}>
           <div className={styles.spinner}></div>
           <p>Carregando templates...</p>
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <div className={styles.headerTitle}>
-            <h1 className={styles.title}>Infrastructure Templates</h1>
-            <p className={styles.subtitle}>
-              Crie novos serviços seguindo os padrões da plataforma em minutos
-            </p>
-          </div>
-          <div className={styles.headerStats}>
-            <div className={styles.statCard}>
-              <span className={styles.statNumber}>{templates.length}</span>
-              <span className={styles.statLabel}>Templates</span>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statNumber}>{allLanguages.length}</span>
-              <span className={styles.statLabel}>Linguagens</span>
-            </div>
-          </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={Package}
+        title="Templates"
+        subtitle="Crie novos serviços seguindo os padrões da plataforma em minutos"
+      />
+
+      <div className={styles.headerStats}>
+        <div className={styles.statCard}>
+          <span className={styles.statNumber}>{templates.length}</span>
+          <span className={styles.statLabel}>Templates</span>
+        </div>
+        <div className={styles.statCard}>
+          <span className={styles.statNumber}>{allLanguages.length}</span>
+          <span className={styles.statLabel}>Linguagens</span>
         </div>
       </div>
 
@@ -186,15 +186,16 @@ function InfrastructureTemplatesPage() {
         </div>
       </div>
 
-      {filteredTemplates.length === 0 ? (
-        <div className={styles.noResults}>
-          <Package size={48} />
-          <h3>Nenhum template encontrado</h3>
-          <p>Tente ajustar os filtros ou termo de busca</p>
-        </div>
-      ) : (
-        <div className={styles.templatesGrid}>
-          {filteredTemplates.map((template) => (
+      <Section spacing="lg">
+        {filteredTemplates.length === 0 ? (
+          <EmptyState
+            icon={Package}
+            title="Nenhum template encontrado"
+            description="Tente ajustar os filtros ou termo de busca"
+          />
+        ) : (
+          <div className={styles.templatesGrid}>
+            {filteredTemplates.map((template) => (
             <div
               key={template.type}
               className={styles.templateCard}
@@ -231,9 +232,10 @@ function InfrastructureTemplatesPage() {
                 Criar Serviço
               </button>
             </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </Section>
 
       {showWizard && selectedTemplate && (
         <TemplateWizardModal
@@ -241,8 +243,8 @@ function InfrastructureTemplatesPage() {
           onClose={handleCloseWizard}
         />
       )}
-    </div>
+    </PageContainer>
   )
 }
 
-export default InfrastructureTemplatesPage
+export default TemplatesPage

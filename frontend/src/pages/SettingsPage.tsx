@@ -4,6 +4,10 @@ import GoogleSSOModal from '../components/Settings/GoogleSSOModal'
 import MicrosoftSSOModal from '../components/Settings/MicrosoftSSOModal'
 import RBACModal from '../components/Settings/RBACModal'
 import SettingCard from '../components/Settings/SettingCard'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import Section from '../components/Layout/Section'
+import { buildApiUrl } from '../config/api'
 import styles from './SettingsPage.module.css'
 
 interface SSOConfig {
@@ -55,11 +59,11 @@ function SettingsPage() {
   const fetchSettings = async () => {
     try {
       // Fetch SSO settings
-      const ssoResponse = await fetch('http://localhost:8060/api/v1/settings/sso')
+      const ssoResponse = await fetch(buildApiUrl('settings/sso'))
       const ssoData = await ssoResponse.json()
 
       // Fetch RBAC stats
-      const rbacResponse = await fetch('http://localhost:8060/api/v1/rbac/users/stats')
+      const rbacResponse = await fetch(buildApiUrl('rbac/users/stats'))
       const rbacStats = await rbacResponse.json()
 
       // Process SSO data
@@ -95,7 +99,7 @@ function SettingsPage() {
 
   const handleSaveGoogleSSO = async (data: any) => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/settings/sso', {
+      const response = await fetch(buildApiUrl('settings/sso'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +126,7 @@ function SettingsPage() {
 
   const handleSaveMicrosoftSSO = async (data: any) => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/settings/sso', {
+      const response = await fetch(buildApiUrl('settings/sso'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +159,7 @@ function SettingsPage() {
         return
       }
 
-      const response = await fetch(`http://localhost:8060/api/v1/settings/sso/${provider}/enabled`, {
+      const response = await fetch(buildApiUrl(`settings/sso/${provider}/enabled`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -184,7 +188,7 @@ function SettingsPage() {
     if (!confirmed) return
 
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/settings/sso/${provider}`, {
+      const response = await fetch(buildApiUrl(`settings/sso/${provider}`), {
         method: 'DELETE'
       })
 
@@ -201,9 +205,9 @@ function SettingsPage() {
 
   if (loading) {
     return (
-      <div className={styles.container}>
+      <PageContainer>
         <div className={styles.loading}>Carregando configurações...</div>
-      </div>
+      </PageContainer>
     )
   }
 
@@ -211,28 +215,18 @@ function SettingsPage() {
   const microsoftConfig = settings.sso.microsoft
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Settings size={32} className={styles.headerIcon} />
-          <div>
-            <h1 className={styles.title}>Configurações</h1>
-            <p className={styles.subtitle}>Gerencie autenticação, permissões e auditoria</p>
-          </div>
-        </div>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={Settings}
+        title="Configurações"
+        subtitle="Gerencie autenticação, permissões e auditoria"
+      />
 
       {/* SSO Section */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <Key size={24} className={styles.sectionIcon} />
-          <div>
-            <h2 className={styles.sectionTitle}>Single Sign-On (SSO)</h2>
-            <p className={styles.sectionDescription}>
-              Configure autenticação via Google Workspace ou Microsoft Azure AD
-            </p>
-          </div>
-        </div>
+      <Section title="Single Sign-On (SSO)" icon="🔐" spacing="lg">
+        <p className={styles.sectionDescription} style={{ marginBottom: '1.5rem' }}>
+          Configure autenticação via Google Workspace ou Microsoft Azure AD
+        </p>
 
         <div className={styles.stats}>
           <div className={styles.statItem}>
@@ -284,19 +278,13 @@ function SettingsPage() {
             ]}
           />
         </div>
-      </section>
+      </Section>
 
       {/* RBAC Section */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <Shield size={24} className={styles.sectionIcon} />
-          <div>
-            <h2 className={styles.sectionTitle}>Controle de Acesso (RBAC)</h2>
-            <p className={styles.sectionDescription}>
-              Gerencie perfis, permissões e grupos de usuários
-            </p>
-          </div>
-        </div>
+      <Section title="Controle de Acesso (RBAC)" icon="🛡️" spacing="lg">
+        <p className={styles.sectionDescription} style={{ marginBottom: '1.5rem' }}>
+          Gerencie perfis, permissões e grupos de usuários
+        </p>
 
         <div className={styles.featureBox}>
           <div className={styles.featureContent}>
@@ -328,19 +316,13 @@ function SettingsPage() {
             Configurar RBAC
           </button>
         </div>
-      </section>
+      </Section>
 
       {/* MFA Section */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <Shield size={24} className={styles.sectionIcon} />
-          <div>
-            <h2 className={styles.sectionTitle}>Autenticação Multi-Fator (MFA)</h2>
-            <p className={styles.sectionDescription}>
-              Configure autenticação de dois fatores para maior segurança
-            </p>
-          </div>
-        </div>
+      <Section title="Autenticação Multi-Fator (MFA)" icon="🔒" spacing="lg">
+        <p className={styles.sectionDescription} style={{ marginBottom: '1.5rem' }}>
+          Configure autenticação de dois fatores para maior segurança
+        </p>
 
         <div className={styles.featureBox}>
           <div className={styles.featureContent}>
@@ -373,19 +355,13 @@ function SettingsPage() {
             <span className={styles.comingSoon}>Em breve</span>
           </button>
         </div>
-      </section>
+      </Section>
 
       {/* Audit Section */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <FileText size={24} className={styles.sectionIcon} />
-          <div>
-            <h2 className={styles.sectionTitle}>Auditoria</h2>
-            <p className={styles.sectionDescription}>
-              Visualize logs de atividades e alterações no sistema
-            </p>
-          </div>
-        </div>
+      <Section title="Auditoria" icon="📝" spacing="lg">
+        <p className={styles.sectionDescription} style={{ marginBottom: '1.5rem' }}>
+          Visualize logs de atividades e alterações no sistema
+        </p>
 
         <div className={styles.featureBox}>
           <div className={styles.featureContent}>
@@ -402,7 +378,7 @@ function SettingsPage() {
             <span className={styles.comingSoon}>Em breve</span>
           </button>
         </div>
-      </section>
+      </Section>
 
       {/* Modals */}
       {showGoogleModal && (
@@ -429,7 +405,7 @@ function SettingsPage() {
           }}
         />
       )}
-    </div>
+    </PageContainer>
   )
 }
 

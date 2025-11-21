@@ -1,80 +1,74 @@
 package handler
 
 import (
-	"net/http"
 	"strconv"
 
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type JiraHandler struct {
-	service *service.IntegrationService
-	log     *logger.Logger
+	*base.BaseHandler
+	integrationService *service.IntegrationService
 }
 
-func NewJiraHandler(svc *service.IntegrationService, log *logger.Logger) *JiraHandler {
+func NewJiraHandler(
+	svc *service.IntegrationService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *JiraHandler {
 	return &JiraHandler{
-		service: svc,
-		log:     log,
+		BaseHandler:        base.NewBaseHandler(cache, log),
+		integrationService: svc,
 	}
 }
 
 func (h *JiraHandler) GetStats(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
-	if err != nil {
-		h.log.Errorw("Failed to get Jira service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Jira integration not configured",
-		})
-		return
-	}
+	cacheKey := service.BuildKey("jira", "stats")
 
-	stats, err := jiraService.GetStats()
-	if err != nil {
-		h.log.Errorw("Failed to get Jira stats", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	h.WithCache(c, cacheKey, service.CacheDuration5Minutes, func() (interface{}, error) {
+		jiraService, err := h.integrationService.GetJiraService()
+		if err != nil {
+			return nil, httperr.ServiceUnavailable("Jira integration not configured")
+		}
 
-	c.JSON(http.StatusOK, stats)
+		stats, err := jiraService.GetStats()
+		if err != nil {
+			return nil, httperr.InternalErrorWrap("Failed to get Jira stats", err)
+		}
+
+		return stats, nil
+	})
 }
 
 func (h *JiraHandler) GetProjects(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
-	if err != nil {
-		h.log.Errorw("Failed to get Jira service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Jira integration not configured",
-		})
-		return
-	}
+	cacheKey := service.BuildKey("jira", "projects")
 
-	projects, err := jiraService.GetProjects()
-	if err != nil {
-		h.log.Errorw("Failed to get Jira projects", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	h.WithCache(c, cacheKey, service.CacheDuration15Minutes, func() (interface{}, error) {
+		jiraService, err := h.integrationService.GetJiraService()
+		if err != nil {
+			return nil, httperr.ServiceUnavailable("Jira integration not configured")
+		}
 
-	c.JSON(http.StatusOK, gin.H{
-		"projects": projects,
-		"total":    len(projects),
+		projects, err := jiraService.GetProjects()
+		if err != nil {
+			return nil, httperr.InternalErrorWrap("Failed to get Jira projects", err)
+		}
+
+		return map[string]interface{}{
+			"projects": projects,
+			"total":    len(projects),
+		}, nil
 	})
 }
 
 func (h *JiraHandler) SearchIssues(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
+	jiraService, err := h.integrationService.GetJiraService()
 	if err != nil {
-		h.log.Errorw("Failed to get Jira service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Jira integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Jira integration not configured"))
 		return
 	}
 
@@ -84,126 +78,97 @@ func (h *JiraHandler) SearchIssues(c *gin.Context) {
 
 	issues, err := jiraService.SearchIssues(jql, maxResults)
 	if err != nil {
-		h.log.Errorw("Failed to search Jira issues", "error", err, "jql", jql)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to search Jira issues", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"issues": issues,
 		"total":  len(issues),
 	})
 }
 
 func (h *JiraHandler) GetIssue(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
+	jiraService, err := h.integrationService.GetJiraService()
 	if err != nil {
-		h.log.Errorw("Failed to get Jira service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Jira integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Jira integration not configured"))
 		return
 	}
 
 	issueKey := c.Param("key")
 	if issueKey == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Issue key is required",
-		})
+		h.BadRequest(c, "Issue key is required")
 		return
 	}
 
 	issue, err := jiraService.GetIssue(issueKey)
 	if err != nil {
-		h.log.Errorw("Failed to get Jira issue", "error", err, "key", issueKey)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Jira issue", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, issue)
+	h.Success(c, issue)
 }
 
 func (h *JiraHandler) GetBoards(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
-	if err != nil {
-		h.log.Errorw("Failed to get Jira service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Jira integration not configured",
-		})
-		return
-	}
+	cacheKey := service.BuildKey("jira", "boards")
 
-	boards, err := jiraService.GetBoards()
-	if err != nil {
-		h.log.Errorw("Failed to get Jira boards", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	h.WithCache(c, cacheKey, service.CacheDuration15Minutes, func() (interface{}, error) {
+		jiraService, err := h.integrationService.GetJiraService()
+		if err != nil {
+			return nil, httperr.ServiceUnavailable("Jira integration not configured")
+		}
 
-	c.JSON(http.StatusOK, gin.H{
-		"boards": boards,
-		"total":  len(boards),
+		boards, err := jiraService.GetBoards()
+		if err != nil {
+			return nil, httperr.InternalErrorWrap("Failed to get Jira boards", err)
+		}
+
+		return map[string]interface{}{
+			"boards": boards,
+			"total":  len(boards),
+		}, nil
 	})
 }
 
 func (h *JiraHandler) GetSprints(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
+	jiraService, err := h.integrationService.GetJiraService()
 	if err != nil {
-		h.log.Errorw("Failed to get Jira service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Jira integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Jira integration not configured"))
 		return
 	}
 
 	boardIDStr := c.Param("boardId")
 	boardID, err := strconv.Atoi(boardIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid board ID",
-		})
+		h.BadRequest(c, "Invalid board ID")
 		return
 	}
 
 	sprints, err := jiraService.GetSprints(boardID)
 	if err != nil {
-		h.log.Errorw("Failed to get Jira sprints", "error", err, "boardId", boardID)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Jira sprints", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"sprints": sprints,
 		"total":   len(sprints),
 	})
 }
 
 func (h *JiraHandler) GetCurrentUser(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
+	jiraService, err := h.integrationService.GetJiraService()
 	if err != nil {
-		h.log.Errorw("Failed to get Jira service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Jira integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Jira integration not configured"))
 		return
 	}
 
 	user, err := jiraService.GetCurrentUser()
 	if err != nil {
-		h.log.Errorw("Failed to get current Jira user", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get current Jira user", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	h.Success(c, user)
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Users, Shield, Plus, Edit2, Trash2, Eye } from 'lucide-react'
+import { buildApiUrl } from '../../config/api'
 import styles from './RBACModal.module.css'
 
 interface User {
@@ -68,19 +69,19 @@ function RBACModal({ onClose }: RBACModalProps) {
     setLoading(true)
     try {
       if (activeTab === 'users') {
-        const usersRes = await fetch('http://localhost:8060/api/v1/rbac/users')
+        const usersRes = await fetch(buildApiUrl('rbac/users'))
         const usersData = await usersRes.json()
         setUsers(usersData)
 
-        const rolesRes = await fetch('http://localhost:8060/api/v1/rbac/roles')
+        const rolesRes = await fetch(buildApiUrl('rbac/roles'))
         const rolesData = await rolesRes.json()
         setRoles(rolesData)
       } else {
-        const rolesRes = await fetch('http://localhost:8060/api/v1/rbac/roles')
+        const rolesRes = await fetch(buildApiUrl('rbac/roles'))
         const rolesData = await rolesRes.json()
         setRoles(rolesData)
 
-        const permsRes = await fetch('http://localhost:8060/api/v1/rbac/permissions')
+        const permsRes = await fetch(buildApiUrl('rbac/permissions'))
         const permsData = await permsRes.json()
         setPermissions(permsData)
       }
@@ -93,7 +94,7 @@ function RBACModal({ onClose }: RBACModalProps) {
 
   const handleCreateUser = async () => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/rbac/users', {
+      const response = await fetch(buildApiUrl('rbac/users'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userForm)
@@ -117,7 +118,7 @@ function RBACModal({ onClose }: RBACModalProps) {
     if (!editingUser) return
 
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/rbac/users/${editingUser.id}`, {
+      const response = await fetch(buildApiUrl(`rbac/users/${editingUser.id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -141,7 +142,7 @@ function RBACModal({ onClose }: RBACModalProps) {
     if (!confirm('Tem certeza que deseja deletar este usuário?')) return
 
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/rbac/users/${id}`, {
+      const response = await fetch(buildApiUrl(`rbac/users/${id}`), {
         method: 'DELETE'
       })
 
@@ -156,7 +157,7 @@ function RBACModal({ onClose }: RBACModalProps) {
 
   const handleCreateRole = async () => {
     try {
-      const response = await fetch('http://localhost:8060/api/v1/rbac/roles', {
+      const response = await fetch(buildApiUrl('rbac/roles'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(roleForm)
@@ -185,7 +186,7 @@ function RBACModal({ onClose }: RBACModalProps) {
     if (!confirm('Tem certeza que deseja deletar este perfil?')) return
 
     try {
-      const response = await fetch(`http://localhost:8060/api/v1/rbac/roles/${id}`, {
+      const response = await fetch(buildApiUrl(`rbac/roles/${id}`), {
         method: 'DELETE'
       })
 

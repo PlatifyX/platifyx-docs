@@ -4,6 +4,9 @@ import QualityStatsCard from '../components/Quality/QualityStatsCard'
 import ProjectsTab from '../components/Quality/ProjectsTab'
 import IssuesTab from '../components/Quality/IssuesTab'
 import QualityFilters, { QualityFilterValues } from '../components/Quality/QualityFilters'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import Section from '../components/Layout/Section'
 import styles from './QualityPage.module.css'
 import { buildApiUrl } from '../config/api'
 
@@ -59,16 +62,12 @@ function QualityPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Shield size={32} className={styles.headerIcon} />
-          <div>
-            <h1 className={styles.title}>Qualidade de Código</h1>
-            <p className={styles.subtitle}>Análise estática, bugs e vulnerabilidades</p>
-          </div>
-        </div>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={Shield}
+        title="Qualidade de Código"
+        subtitle="Análise estática, bugs e vulnerabilidades"
+      />
 
       {!loading && stats && !error && (
         <QualityStatsCard stats={stats} />
@@ -100,11 +99,11 @@ function QualityPage() {
         </button>
       </div>
 
-      <div className={styles.tabContent}>
+      <Section spacing="lg">
         {activeTab === 'projects' && <ProjectsTab filters={filters} />}
         {activeTab === 'issues' && <IssuesTab filters={filters} />}
-      </div>
-    </div>
+      </Section>
+    </PageContainer>
   )
 }
 

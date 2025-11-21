@@ -1,22 +1,26 @@
 package handler
 
 import (
-	"net/http"
-
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type AIHandler struct {
+	*base.BaseHandler
 	service *service.AIService
-	log     *logger.Logger
 }
 
-func NewAIHandler(svc *service.AIService, log *logger.Logger) *AIHandler {
+func NewAIHandler(
+	svc *service.AIService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *AIHandler {
 	return &AIHandler{
-		service: svc,
-		log:     log,
+		BaseHandler: base.NewBaseHandler(cache, log),
+		service:     svc,
 	}
 }
 
@@ -24,14 +28,11 @@ func NewAIHandler(svc *service.AIService, log *logger.Logger) *AIHandler {
 func (h *AIHandler) GetProviders(c *gin.Context) {
 	providers, err := h.service.GetAvailableProviders()
 	if err != nil {
-		h.log.Errorw("Failed to get AI providers", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get AI providers",
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get AI providers", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"providers": providers,
 		"total":     len(providers),
 	})

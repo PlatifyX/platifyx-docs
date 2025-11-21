@@ -1,185 +1,205 @@
 package handler
 
 import (
-	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/PlatifyX/platifyx-core/internal/domain"
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
+	"github.com/gin-gonic/gin"
 )
 
 type RBACHandler struct {
-	service *service.RBACService
-	cache   *service.CacheService
-	log     *logger.Logger
+	*base.BaseHandler
+	rbacService *service.RBACService
 }
 
-func NewRBACHandler(service *service.RBACService, cache *service.CacheService, log *logger.Logger) *RBACHandler {
+func NewRBACHandler(
+	service *service.RBACService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *RBACHandler {
 	return &RBACHandler{
-		service: service,
-		cache:   cache,
-		log:     log,
+		BaseHandler: base.NewBaseHandler(cache, log),
+		rbacService: service,
 	}
 }
 
 // User handlers
 func (h *RBACHandler) GetAllUsers(c *gin.Context) {
-	users, err := h.service.GetAllUsers()
+	users, err := h.rbacService.GetAllUsers()
 	if err != nil {
-		h.log.Error("Failed to get users", err, nil)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve users"})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to retrieve users", err))
 		return
 	}
-	c.JSON(http.StatusOK, users)
+	h.Success(c, users)
 }
 
 func (h *RBACHandler) GetUserByID(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	user, err := h.service.GetUserByID(id)
+	user, err := h.rbacService.GetUserByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		h.HandleError(c, httperr.NotFoundWrap("User not found", err))
 		return
 	}
-	c.JSON(http.StatusOK, user)
+	h.Success(c, user)
 }
 
 func (h *RBACHandler) CreateUser(c *gin.Context) {
 	var req domain.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	user, err := h.service.CreateUser(req)
+	user, err := h.rbacService.CreateUser(req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.HandleError(c, httperr.BadRequestWrap("Failed to create user", err))
 		return
 	}
 
-	c.JSON(http.StatusCreated, user)
+	h.Created(c, user)
 }
 
 func (h *RBACHandler) UpdateUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var req domain.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	user, err := h.service.UpdateUser(id, req)
+	user, err := h.rbacService.UpdateUser(id, req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.HandleError(c, httperr.BadRequestWrap("Failed to update user", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	h.Success(c, user)
 }
 
 func (h *RBACHandler) DeleteUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	if err := h.service.DeleteUser(id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := h.rbacService.DeleteUser(id); err != nil {
+		h.HandleError(c, httperr.BadRequestWrap("Failed to delete user", err))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
+	h.Success(c, map[string]interface{}{"message": "User deleted"})
 }
 
 func (h *RBACHandler) GetUserStats(c *gin.Context) {
-	stats, err := h.service.GetUserStats()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get stats"})
-		return
-	}
-	c.JSON(http.StatusOK, stats)
+	cacheKey := service.BuildKey("rbac", "user", "stats")
+
+	h.WithCache(c, cacheKey, service.CacheDuration5Minutes, func() (interface{}, error) {
+		return h.rbacService.GetUserStats()
+	})
 }
 
 // Role handlers
 func (h *RBACHandler) GetAllRoles(c *gin.Context) {
-	roles, err := h.service.GetAllRoles()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve roles"})
-		return
-	}
-	c.JSON(http.StatusOK, roles)
+	cacheKey := service.BuildKey("rbac", "roles")
+
+	h.WithCache(c, cacheKey, service.CacheDuration15Minutes, func() (interface{}, error) {
+		return h.rbacService.GetAllRoles()
+	})
 }
 
 func (h *RBACHandler) GetRoleByID(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	role, err := h.service.GetRoleByID(id)
+	role, err := h.rbacService.GetRoleByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		h.HandleError(c, httperr.NotFoundWrap("Role not found", err))
 		return
 	}
-	c.JSON(http.StatusOK, role)
+	h.Success(c, role)
 }
 
 func (h *RBACHandler) CreateRole(c *gin.Context) {
 	var req domain.CreateRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	role, err := h.service.CreateRole(req)
+	role, err := h.rbacService.CreateRole(req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.HandleError(c, httperr.BadRequestWrap("Failed to create role", err))
 		return
 	}
 
-	c.JSON(http.StatusCreated, role)
+	// Invalidate cache
+	if h.GetCache() != nil {
+		h.GetCache().Delete(service.BuildKey("rbac", "roles"))
+	}
+
+	h.Created(c, role)
 }
 
 func (h *RBACHandler) UpdateRole(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var req domain.UpdateRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	role, err := h.service.UpdateRole(id, req)
+	role, err := h.rbacService.UpdateRole(id, req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.HandleError(c, httperr.BadRequestWrap("Failed to update role", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, role)
+	// Invalidate cache
+	if h.GetCache() != nil {
+		h.GetCache().Delete(service.BuildKey("rbac", "roles"))
+	}
+
+	h.Success(c, role)
 }
 
 func (h *RBACHandler) DeleteRole(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	if err := h.service.DeleteRole(id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := h.rbacService.DeleteRole(id); err != nil {
+		h.HandleError(c, httperr.BadRequestWrap("Failed to delete role", err))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Role deleted"})
+
+	// Invalidate cache
+	if h.GetCache() != nil {
+		h.GetCache().Delete(service.BuildKey("rbac", "roles"))
+	}
+
+	h.Success(c, map[string]interface{}{"message": "Role deleted"})
 }
 
 func (h *RBACHandler) AssignRolePermissions(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var req domain.AssignPermissionsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	if err := h.service.AssignRolePermissions(id, req.PermissionIDs); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := h.rbacService.AssignRolePermissions(id, req.PermissionIDs); err != nil {
+		h.HandleError(c, httperr.BadRequestWrap("Failed to assign permissions", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Permissions assigned"})
+	// Invalidate cache
+	if h.GetCache() != nil {
+		h.GetCache().Delete(service.BuildKey("rbac", "roles"))
+	}
+
+	h.Success(c, map[string]interface{}{"message": "Permissions assigned"})
 }
 
 // Permission handlers
 func (h *RBACHandler) GetAllPermissions(c *gin.Context) {
-	perms, err := h.service.GetAllPermissions()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve permissions"})
-		return
-	}
-	c.JSON(http.StatusOK, perms)
+	cacheKey := service.BuildKey("rbac", "permissions")
+
+	h.WithCache(c, cacheKey, service.CacheDuration15Minutes, func() (interface{}, error) {
+		return h.rbacService.GetAllPermissions()
+	})
 }

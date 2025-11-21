@@ -1,63 +1,59 @@
 package handler
 
 import (
-	"net/http"
 	"time"
 
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type PrometheusHandler struct {
-	service *service.IntegrationService
-	log     *logger.Logger
+	*base.BaseHandler
+	integrationService *service.IntegrationService
 }
 
-func NewPrometheusHandler(svc *service.IntegrationService, log *logger.Logger) *PrometheusHandler {
+func NewPrometheusHandler(
+	svc *service.IntegrationService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *PrometheusHandler {
 	return &PrometheusHandler{
-		service: svc,
-		log:     log,
+		BaseHandler:        base.NewBaseHandler(cache, log),
+		integrationService: svc,
 	}
 }
 
 func (h *PrometheusHandler) GetStats(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
-	if err != nil {
-		h.log.Errorw("Failed to get Prometheus service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Prometheus integration not configured",
-		})
-		return
-	}
+	cacheKey := service.BuildKey("prometheus", "stats")
 
-	stats, err := prometheusService.GetStats()
-	if err != nil {
-		h.log.Errorw("Failed to get Prometheus stats", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	h.WithCache(c, cacheKey, service.CacheDuration5Minutes, func() (interface{}, error) {
+		prometheusService, err := h.integrationService.GetPrometheusService()
+		if err != nil {
+			return nil, httperr.ServiceUnavailable("Prometheus integration not configured")
+		}
 
-	c.JSON(http.StatusOK, stats)
+		stats, err := prometheusService.GetStats()
+		if err != nil {
+			return nil, httperr.InternalErrorWrap("Failed to get Prometheus stats", err)
+		}
+
+		return stats, nil
+	})
 }
 
 func (h *PrometheusHandler) Query(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	prometheusService, err := h.integrationService.GetPrometheusService()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Prometheus integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Prometheus integration not configured"))
 		return
 	}
 
 	query := c.Query("query")
 	if query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Query parameter is required",
-		})
+		h.BadRequest(c, "Query parameter is required")
 		return
 	}
 
@@ -66,9 +62,7 @@ func (h *PrometheusHandler) Query(c *gin.Context) {
 	if timeStr != "" {
 		t, err := time.Parse(time.RFC3339, timeStr)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid time format, use RFC3339",
-			})
+			h.BadRequest(c, "Invalid time format, use RFC3339")
 			return
 		}
 		timestamp = &t
@@ -76,31 +70,23 @@ func (h *PrometheusHandler) Query(c *gin.Context) {
 
 	result, err := prometheusService.Query(query, timestamp)
 	if err != nil {
-		h.log.Errorw("Failed to execute Prometheus query", "error", err, "query", query)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to execute Prometheus query", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	h.Success(c, result)
 }
 
 func (h *PrometheusHandler) QueryRange(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	prometheusService, err := h.integrationService.GetPrometheusService()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Prometheus integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Prometheus integration not configured"))
 		return
 	}
 
 	query := c.Query("query")
 	if query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Query parameter is required",
-		})
+		h.BadRequest(c, "Query parameter is required")
 		return
 	}
 
@@ -109,151 +95,111 @@ func (h *PrometheusHandler) QueryRange(c *gin.Context) {
 	step := c.Query("step")
 
 	if startStr == "" || endStr == "" || step == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "start, end, and step parameters are required",
-		})
+		h.BadRequest(c, "start, end, and step parameters are required")
 		return
 	}
 
 	start, err := time.Parse(time.RFC3339, startStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid start time format, use RFC3339",
-		})
+		h.BadRequest(c, "Invalid start time format, use RFC3339")
 		return
 	}
 
 	end, err := time.Parse(time.RFC3339, endStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid end time format, use RFC3339",
-		})
+		h.BadRequest(c, "Invalid end time format, use RFC3339")
 		return
 	}
 
 	result, err := prometheusService.QueryRange(query, start, end, step)
 	if err != nil {
-		h.log.Errorw("Failed to execute Prometheus range query", "error", err, "query", query)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to execute Prometheus range query", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	h.Success(c, result)
 }
 
 func (h *PrometheusHandler) GetTargets(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	prometheusService, err := h.integrationService.GetPrometheusService()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Prometheus integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Prometheus integration not configured"))
 		return
 	}
 
 	result, err := prometheusService.GetTargets()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus targets", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Prometheus targets", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	h.Success(c, result)
 }
 
 func (h *PrometheusHandler) GetAlerts(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	prometheusService, err := h.integrationService.GetPrometheusService()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Prometheus integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Prometheus integration not configured"))
 		return
 	}
 
 	result, err := prometheusService.GetAlerts()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus alerts", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Prometheus alerts", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	h.Success(c, result)
 }
 
 func (h *PrometheusHandler) GetRules(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	prometheusService, err := h.integrationService.GetPrometheusService()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Prometheus integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Prometheus integration not configured"))
 		return
 	}
 
 	result, err := prometheusService.GetRules()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus rules", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Prometheus rules", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	h.Success(c, result)
 }
 
 func (h *PrometheusHandler) GetLabelValues(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	prometheusService, err := h.integrationService.GetPrometheusService()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Prometheus integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Prometheus integration not configured"))
 		return
 	}
 
 	labelName := c.Param("label")
 	if labelName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Label name is required",
-		})
+		h.BadRequest(c, "Label name is required")
 		return
 	}
 
 	result, err := prometheusService.GetLabelValues(labelName)
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus label values", "error", err, "label", labelName)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Prometheus label values", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	h.Success(c, result)
 }
 
 func (h *PrometheusHandler) GetSeries(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	prometheusService, err := h.integrationService.GetPrometheusService()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Prometheus integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Prometheus integration not configured"))
 		return
 	}
 
 	matches := c.QueryArray("match[]")
 	if len(matches) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "At least one match[] parameter is required",
-		})
+		h.BadRequest(c, "At least one match[] parameter is required")
 		return
 	}
 
@@ -262,9 +208,7 @@ func (h *PrometheusHandler) GetSeries(c *gin.Context) {
 	if startStr != "" {
 		t, err := time.Parse(time.RFC3339, startStr)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid start time format, use RFC3339",
-			})
+			h.BadRequest(c, "Invalid start time format, use RFC3339")
 			return
 		}
 		start = &t
@@ -274,9 +218,7 @@ func (h *PrometheusHandler) GetSeries(c *gin.Context) {
 	if endStr != "" {
 		t, err := time.Parse(time.RFC3339, endStr)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid end time format, use RFC3339",
-			})
+			h.BadRequest(c, "Invalid end time format, use RFC3339")
 			return
 		}
 		end = &t
@@ -284,23 +226,17 @@ func (h *PrometheusHandler) GetSeries(c *gin.Context) {
 
 	result, err := prometheusService.GetSeries(matches, start, end)
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus series", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Prometheus series", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	h.Success(c, result)
 }
 
 func (h *PrometheusHandler) GetMetadata(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	prometheusService, err := h.integrationService.GetPrometheusService()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Prometheus integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Prometheus integration not configured"))
 		return
 	}
 
@@ -308,34 +244,25 @@ func (h *PrometheusHandler) GetMetadata(c *gin.Context) {
 
 	result, err := prometheusService.GetMetadata(metric)
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus metadata", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Prometheus metadata", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	h.Success(c, result)
 }
 
 func (h *PrometheusHandler) GetBuildInfo(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	prometheusService, err := h.integrationService.GetPrometheusService()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Prometheus integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Prometheus integration not configured"))
 		return
 	}
 
 	result, err := prometheusService.GetBuildInfo()
 	if err != nil {
-		h.log.Errorw("Failed to get Prometheus build info", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Prometheus build info", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	h.Success(c, result)
 }

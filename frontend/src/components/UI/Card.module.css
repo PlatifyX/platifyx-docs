@@ -1,0 +1,50 @@
+.card {
+  background: var(--deep-sea-space-blue);
+  border-radius: 12px;
+  border: 1px solid var(--deep-sea-blue-slate);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card.hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border-color: var(--deep-sea-dusty-denim);
+}
+
+/* Padding Options */
+.padding-sm {
+  padding: 1rem;
+}
+
+.padding-md {
+  padding: 1.5rem;
+}
+
+.padding-lg {
+  padding: 2rem;
+}
+
+.cardTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--deep-sea-eggshell);
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--deep-sea-blue-slate);
+}
+
+.cardContent {
+  /* Content container */
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .padding-md {
+    padding: 1rem;
+  }
+
+  .padding-lg {
+    padding: 1.5rem;
+  }
+}

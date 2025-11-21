@@ -1,20 +1,29 @@
 package handler
 
 import (
-	"net/http"
 	"time"
 
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
+	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
-type HealthHandler struct{}
+type HealthHandler struct {
+	*base.BaseHandler
+}
 
-func NewHealthHandler() *HealthHandler {
-	return &HealthHandler{}
+func NewHealthHandler(
+	cache *service.CacheService,
+	log *logger.Logger,
+) *HealthHandler {
+	return &HealthHandler{
+		BaseHandler: base.NewBaseHandler(cache, log),
+	}
 }
 
 func (h *HealthHandler) Check(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"status":    "ok",
 		"timestamp": time.Now().Format(time.RFC3339),
 		"service":   "platifyx-core",
@@ -23,9 +32,9 @@ func (h *HealthHandler) Check(c *gin.Context) {
 }
 
 func (h *HealthHandler) Ready(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"status": "ready",
-		"checks": gin.H{
+		"checks": map[string]interface{}{
 			"database": "ok",
 			"cache":    "ok",
 		},

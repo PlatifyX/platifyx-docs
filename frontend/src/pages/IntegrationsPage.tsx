@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { Plug, CheckCircle, XCircle, Plus } from 'lucide-react'
 import IntegrationCard from '../components/Integrations/IntegrationCard'
 import { IntegrationApi, type Integration } from '../utils/integrationApi'
+import PageContainer from '../components/Layout/PageContainer'
+import PageHeader from '../components/Layout/PageHeader'
+import Section from '../components/Layout/Section'
 import AzureDevOpsModal from '../components/Integrations/AzureDevOpsModal'
 import SonarQubeModal from '../components/Integrations/SonarQubeModal'
 import AzureCloudModal from '../components/Integrations/AzureCloudModal'
@@ -120,27 +123,25 @@ function IntegrationsPage() {
 
   if (loading) {
     return (
-      <div className={styles.container}>
+      <PageContainer>
         <div className={styles.loading}>Carregando integrações...</div>
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Plug size={32} className={styles.headerIcon} />
-          <div>
-            <h1 className={styles.title}>Integrações</h1>
-            <p className={styles.subtitle}>Configure as integrações com ferramentas externas</p>
-          </div>
-        </div>
-        <button className={styles.addButton} onClick={handleCreateNew}>
-          <Plus size={20} />
-          <span>Nova Integração</span>
-        </button>
-      </div>
+    <PageContainer maxWidth="xl">
+      <PageHeader
+        icon={Plug}
+        title="Integrações"
+        subtitle="Configure as integrações com ferramentas externas"
+        actions={
+          <button className={styles.addButton} onClick={handleCreateNew}>
+            <Plus size={20} />
+            <span>Nova Integração</span>
+          </button>
+        }
+      />
 
       <div className={styles.stats}>
         <div className={styles.statItem}>
@@ -153,17 +154,19 @@ function IntegrationsPage() {
         </div>
       </div>
 
-      <div className={styles.grid}>
-        {integrations.map((integration) => (
-          <IntegrationCard
-            key={integration.id}
-            integration={integration}
-            onConfigure={() => handleConfigure(integration)}
-            onToggle={() => handleToggle(integration)}
-            onDelete={() => handleDelete(integration)}
-          />
-        ))}
-      </div>
+      <Section spacing="lg">
+        <div className={styles.grid}>
+          {integrations.map((integration) => (
+            <IntegrationCard
+              key={integration.id}
+              integration={integration}
+              onConfigure={() => handleConfigure(integration)}
+              onToggle={() => handleToggle(integration)}
+              onDelete={() => handleDelete(integration)}
+            />
+          ))}
+        </div>
+      </Section>
 
       {showTypeSelector && (
         <IntegrationTypeSelector
@@ -437,7 +440,7 @@ function IntegrationsPage() {
           }}
         />
       )}
-    </div>
+    </PageContainer>
   )
 }
 

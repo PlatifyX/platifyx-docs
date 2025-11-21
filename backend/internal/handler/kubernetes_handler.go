@@ -1,66 +1,59 @@
 package handler
 
 import (
-	"net/http"
-
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type KubernetesHandler struct {
-	service *service.KubernetesService
-	log     *logger.Logger
+	*base.BaseHandler
+	kubernetesService *service.KubernetesService
 }
 
-func NewKubernetesHandler(svc *service.KubernetesService, log *logger.Logger) *KubernetesHandler {
+func NewKubernetesHandler(
+	svc *service.KubernetesService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *KubernetesHandler {
 	return &KubernetesHandler{
-		service: svc,
-		log:     log,
+		BaseHandler:       base.NewBaseHandler(cache, log),
+		kubernetesService: svc,
 	}
 }
 
 func (h *KubernetesHandler) GetClusterInfo(c *gin.Context) {
-	if h.service == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Kubernetes integration not configured",
-		})
+	if h.kubernetesService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("Kubernetes integration not configured"))
 		return
 	}
 
-	cluster, err := h.service.GetClusterInfo()
+	cluster, err := h.kubernetesService.GetClusterInfo()
 	if err != nil {
-		h.log.Errorw("Failed to get cluster info", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get cluster info", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, cluster)
+	h.Success(c, cluster)
 }
 
 func (h *KubernetesHandler) ListPods(c *gin.Context) {
-	if h.service == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Kubernetes integration not configured",
-		})
+	if h.kubernetesService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("Kubernetes integration not configured"))
 		return
 	}
 
 	namespace := c.Query("namespace")
-	// If namespace is empty, it will list pods from all namespaces
 
-	pods, err := h.service.GetPods(namespace)
+	pods, err := h.kubernetesService.GetPods(namespace)
 	if err != nil {
-		h.log.Errorw("Failed to list pods", "error", err, "namespace", namespace)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to list pods", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"namespace": namespace,
 		"pods":      pods,
 		"total":     len(pods),
@@ -68,26 +61,20 @@ func (h *KubernetesHandler) ListPods(c *gin.Context) {
 }
 
 func (h *KubernetesHandler) ListDeployments(c *gin.Context) {
-	if h.service == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Kubernetes integration not configured",
-		})
+	if h.kubernetesService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("Kubernetes integration not configured"))
 		return
 	}
 
 	namespace := c.Query("namespace")
-	// If namespace is empty, it will list deployments from all namespaces
 
-	deployments, err := h.service.GetDeployments(namespace)
+	deployments, err := h.kubernetesService.GetDeployments(namespace)
 	if err != nil {
-		h.log.Errorw("Failed to list deployments", "error", err, "namespace", namespace)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to list deployments", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"namespace":   namespace,
 		"deployments": deployments,
 		"total":       len(deployments),
@@ -95,26 +82,20 @@ func (h *KubernetesHandler) ListDeployments(c *gin.Context) {
 }
 
 func (h *KubernetesHandler) ListServices(c *gin.Context) {
-	if h.service == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Kubernetes integration not configured",
-		})
+	if h.kubernetesService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("Kubernetes integration not configured"))
 		return
 	}
 
 	namespace := c.Query("namespace")
-	// If namespace is empty, it will list services from all namespaces
 
-	services, err := h.service.GetServices(namespace)
+	services, err := h.kubernetesService.GetServices(namespace)
 	if err != nil {
-		h.log.Errorw("Failed to list services", "error", err, "namespace", namespace)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to list services", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"namespace": namespace,
 		"services":  services,
 		"total":     len(services),
@@ -122,46 +103,36 @@ func (h *KubernetesHandler) ListServices(c *gin.Context) {
 }
 
 func (h *KubernetesHandler) ListNamespaces(c *gin.Context) {
-	if h.service == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Kubernetes integration not configured",
-		})
+	if h.kubernetesService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("Kubernetes integration not configured"))
 		return
 	}
 
-	namespaces, err := h.service.GetNamespaces()
+	namespaces, err := h.kubernetesService.GetNamespaces()
 	if err != nil {
-		h.log.Errorw("Failed to list namespaces", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to list namespaces", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"namespaces": namespaces,
 		"total":      len(namespaces),
 	})
 }
 
 func (h *KubernetesHandler) ListNodes(c *gin.Context) {
-	if h.service == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Kubernetes integration not configured",
-		})
+	if h.kubernetesService == nil {
+		h.HandleError(c, httperr.ServiceUnavailable("Kubernetes integration not configured"))
 		return
 	}
 
-	nodes, err := h.service.GetNodes()
+	nodes, err := h.kubernetesService.GetNodes()
 	if err != nil {
-		h.log.Errorw("Failed to list nodes", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to list nodes", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"nodes": nodes,
 		"total": len(nodes),
 	})

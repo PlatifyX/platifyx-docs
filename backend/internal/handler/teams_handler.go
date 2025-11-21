@@ -1,23 +1,27 @@
 package handler
 
 import (
-	"net/http"
-
 	"github.com/PlatifyX/platifyx-core/internal/domain"
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type TeamsHandler struct {
-	service *service.IntegrationService
-	log     *logger.Logger
+	*base.BaseHandler
+	integrationService *service.IntegrationService
 }
 
-func NewTeamsHandler(svc *service.IntegrationService, log *logger.Logger) *TeamsHandler {
+func NewTeamsHandler(
+	svc *service.IntegrationService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *TeamsHandler {
 	return &TeamsHandler{
-		service: svc,
-		log:     log,
+		BaseHandler:        base.NewBaseHandler(cache, log),
+		integrationService: svc,
 	}
 }
 
@@ -25,30 +29,22 @@ func (h *TeamsHandler) SendMessage(c *gin.Context) {
 	var input domain.TeamsMessage
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	teamsService, err := h.service.GetTeamsService()
+	teamsService, err := h.integrationService.GetTeamsService()
 	if err != nil {
-		h.log.Errorw("Failed to get Teams service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Teams integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Teams integration not configured"))
 		return
 	}
 
 	if err := teamsService.SendMessage(input); err != nil {
-		h.log.Errorw("Failed to send Teams message", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to send Teams message", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"message": "Message sent successfully",
 	})
 }
@@ -60,30 +56,22 @@ func (h *TeamsHandler) SendSimpleMessage(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	teamsService, err := h.service.GetTeamsService()
+	teamsService, err := h.integrationService.GetTeamsService()
 	if err != nil {
-		h.log.Errorw("Failed to get Teams service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Teams integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Teams integration not configured"))
 		return
 	}
 
 	if err := teamsService.SendSimpleMessage(input.Title, input.Text); err != nil {
-		h.log.Errorw("Failed to send simple Teams message", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to send simple Teams message", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"message": "Message sent successfully",
 	})
 }
@@ -96,18 +84,13 @@ func (h *TeamsHandler) SendAlert(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	teamsService, err := h.service.GetTeamsService()
+	teamsService, err := h.integrationService.GetTeamsService()
 	if err != nil {
-		h.log.Errorw("Failed to get Teams service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Teams integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Teams integration not configured"))
 		return
 	}
 
@@ -117,14 +100,11 @@ func (h *TeamsHandler) SendAlert(c *gin.Context) {
 	}
 
 	if err := teamsService.SendAlert(input.Title, input.Text, color); err != nil {
-		h.log.Errorw("Failed to send Teams alert", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to send Teams alert", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"message": "Alert sent successfully",
 	})
 }

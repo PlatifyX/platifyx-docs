@@ -1,76 +1,67 @@
 package handler
 
 import (
-	"net/http"
-
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type VaultHandler struct {
-	service *service.IntegrationService
-	log     *logger.Logger
+	*base.BaseHandler
+	integrationService *service.IntegrationService
 }
 
-func NewVaultHandler(svc *service.IntegrationService, log *logger.Logger) *VaultHandler {
+func NewVaultHandler(
+	svc *service.IntegrationService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *VaultHandler {
 	return &VaultHandler{
-		service: svc,
-		log:     log,
+		BaseHandler:        base.NewBaseHandler(cache, log),
+		integrationService: svc,
 	}
 }
 
 func (h *VaultHandler) GetStats(c *gin.Context) {
-	vaultService, err := h.service.GetVaultService()
-	if err != nil {
-		h.log.Errorw("Failed to get Vault service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Vault integration not configured",
-		})
-		return
-	}
+	cacheKey := service.BuildKey("vault", "stats")
 
-	stats, err := vaultService.GetStats()
-	if err != nil {
-		h.log.Errorw("Failed to get Vault stats", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	h.WithCache(c, cacheKey, service.CacheDuration5Minutes, func() (interface{}, error) {
+		vaultService, err := h.integrationService.GetVaultService()
+		if err != nil {
+			return nil, httperr.ServiceUnavailable("Vault integration not configured")
+		}
 
-	c.JSON(http.StatusOK, stats)
+		stats, err := vaultService.GetStats()
+		if err != nil {
+			return nil, httperr.InternalErrorWrap("Failed to get Vault stats", err)
+		}
+
+		return stats, nil
+	})
 }
 
 func (h *VaultHandler) GetHealth(c *gin.Context) {
-	vaultService, err := h.service.GetVaultService()
+	vaultService, err := h.integrationService.GetVaultService()
 	if err != nil {
-		h.log.Errorw("Failed to get Vault service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Vault integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Vault integration not configured"))
 		return
 	}
 
 	health, err := vaultService.GetHealth()
 	if err != nil {
-		h.log.Errorw("Failed to get Vault health", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to get Vault health", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, health)
+	h.Success(c, health)
 }
 
 func (h *VaultHandler) ReadKVSecret(c *gin.Context) {
-	vaultService, err := h.service.GetVaultService()
+	vaultService, err := h.integrationService.GetVaultService()
 	if err != nil {
-		h.log.Errorw("Failed to get Vault service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Vault integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Vault integration not configured"))
 		return
 	}
 
@@ -78,31 +69,23 @@ func (h *VaultHandler) ReadKVSecret(c *gin.Context) {
 	secretPath := c.Query("path")
 
 	if mountPath == "" || secretPath == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "mount and path query parameters are required",
-		})
+		h.BadRequest(c, "mount and path query parameters are required")
 		return
 	}
 
 	secret, err := vaultService.ReadKVSecret(mountPath, secretPath)
 	if err != nil {
-		h.log.Errorw("Failed to read KV secret", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to read KV secret", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, secret)
+	h.Success(c, secret)
 }
 
 func (h *VaultHandler) ListKVSecrets(c *gin.Context) {
-	vaultService, err := h.service.GetVaultService()
+	vaultService, err := h.integrationService.GetVaultService()
 	if err != nil {
-		h.log.Errorw("Failed to get Vault service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Vault integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Vault integration not configured"))
 		return
 	}
 
@@ -110,33 +93,25 @@ func (h *VaultHandler) ListKVSecrets(c *gin.Context) {
 	secretPath := c.DefaultQuery("path", "")
 
 	if mountPath == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "mount query parameter is required",
-		})
+		h.BadRequest(c, "mount query parameter is required")
 		return
 	}
 
 	secrets, err := vaultService.ListKVSecrets(mountPath, secretPath)
 	if err != nil {
-		h.log.Errorw("Failed to list KV secrets", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to list KV secrets", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"keys": secrets,
 	})
 }
 
 func (h *VaultHandler) WriteKVSecret(c *gin.Context) {
-	vaultService, err := h.service.GetVaultService()
+	vaultService, err := h.integrationService.GetVaultService()
 	if err != nil {
-		h.log.Errorw("Failed to get Vault service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Vault integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Vault integration not configured"))
 		return
 	}
 
@@ -147,39 +122,29 @@ func (h *VaultHandler) WriteKVSecret(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request body",
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
 	if req.MountPath == "" || req.SecretPath == "" || req.Data == nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "mountPath, secretPath, and data are required",
-		})
+		h.BadRequest(c, "mountPath, secretPath, and data are required")
 		return
 	}
 
 	if err := vaultService.WriteKVSecret(req.MountPath, req.SecretPath, req.Data); err != nil {
-		h.log.Errorw("Failed to write KV secret", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to write KV secret", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"message": "Secret written successfully",
 	})
 }
 
 func (h *VaultHandler) DeleteKVSecret(c *gin.Context) {
-	vaultService, err := h.service.GetVaultService()
+	vaultService, err := h.integrationService.GetVaultService()
 	if err != nil {
-		h.log.Errorw("Failed to get Vault service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Vault integration not configured",
-		})
+		h.HandleError(c, httperr.ServiceUnavailable("Vault integration not configured"))
 		return
 	}
 
@@ -187,21 +152,16 @@ func (h *VaultHandler) DeleteKVSecret(c *gin.Context) {
 	secretPath := c.Query("path")
 
 	if mountPath == "" || secretPath == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "mount and path query parameters are required",
-		})
+		h.BadRequest(c, "mount and path query parameters are required")
 		return
 	}
 
 	if err := vaultService.DeleteKVSecret(mountPath, secretPath); err != nil {
-		h.log.Errorw("Failed to delete KV secret", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to delete KV secret", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"message": "Secret deleted successfully",
 	})
 }

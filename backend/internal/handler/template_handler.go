@@ -1,39 +1,42 @@
 package handler
 
 import (
-	"net/http"
-
 	"github.com/PlatifyX/platifyx-core/internal/domain"
+	"github.com/PlatifyX/platifyx-core/internal/handler/base"
 	"github.com/PlatifyX/platifyx-core/internal/service"
+	"github.com/PlatifyX/platifyx-core/pkg/httperr"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type TemplateHandler struct {
-	service *service.TemplateService
-	log     *logger.Logger
+	*base.BaseHandler
+	templateService *service.TemplateService
 }
 
-func NewTemplateHandler(svc *service.TemplateService, log *logger.Logger) *TemplateHandler {
+func NewTemplateHandler(
+	svc *service.TemplateService,
+	cache *service.CacheService,
+	log *logger.Logger,
+) *TemplateHandler {
 	return &TemplateHandler{
-		service: svc,
-		log:     log,
+		BaseHandler:     base.NewBaseHandler(cache, log),
+		templateService: svc,
 	}
 }
 
 // ListTemplates returns available template types
 // GET /api/templates
 func (h *TemplateHandler) ListTemplates(c *gin.Context) {
-	templates, err := h.service.ListTemplates()
-	if err != nil {
-		h.log.Errorw("Failed to list templates", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	cacheKey := service.BuildKey("templates", "list")
 
-	c.JSON(http.StatusOK, templates)
+	h.WithCache(c, cacheKey, service.CacheDuration15Minutes, func() (interface{}, error) {
+		templates, err := h.templateService.ListTemplates()
+		if err != nil {
+			return nil, httperr.InternalErrorWrap("Failed to list templates", err)
+		}
+		return templates, nil
+	})
 }
 
 // GenerateTemplate generates a new service from template
@@ -42,26 +45,20 @@ func (h *TemplateHandler) GenerateTemplate(c *gin.Context) {
 	var req domain.CreateTemplateRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.log.Errorw("Invalid request", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	h.log.Infow("Generating template", "squad", req.Squad, "app", req.AppName, "type", req.TemplateType)
+	h.GetLogger().Infow("Generating template", "squad", req.Squad, "app", req.AppName, "type", req.TemplateType)
 
-	response, err := h.service.GenerateTemplate(req)
+	response, err := h.templateService.GenerateTemplate(req)
 	if err != nil {
-		h.log.Errorw("Failed to generate template", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to generate template", err))
 		return
 	}
 
-	h.log.Infow("Template generated successfully", "repository", response.RepositoryName, "files", len(response.Files))
-	c.JSON(http.StatusOK, response)
+	h.GetLogger().Infow("Template generated successfully", "repository", response.RepositoryName, "files", len(response.Files))
+	h.Success(c, response)
 }
 
 // PreviewTemplate generates template preview without saving
@@ -70,24 +67,18 @@ func (h *TemplateHandler) PreviewTemplate(c *gin.Context) {
 	var req domain.CreateTemplateRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.log.Errorw("Invalid request", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		h.BadRequest(c, "Invalid request body")
 		return
 	}
 
-	response, err := h.service.GenerateTemplate(req)
+	response, err := h.templateService.GenerateTemplate(req)
 	if err != nil {
-		h.log.Errorw("Failed to preview template", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.HandleError(c, httperr.InternalErrorWrap("Failed to preview template", err))
 		return
 	}
 
 	// Return just file list and instructions for preview
-	c.JSON(http.StatusOK, gin.H{
+	h.Success(c, map[string]interface{}{
 		"repositoryName": response.RepositoryName,
 		"fileCount":      len(response.Files),
 		"files":          getFileList(response.Files),
