@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { DollarSign, TrendingUp, TrendingDown, Server, Activity, Package, Filter } from 'lucide-react'
 import styles from './FinOpsPage.module.css'
 import { buildApiUrl } from '../config/api'
+import Loader from '../components/Loader/Loader'
 
 interface FinOpsStats {
   totalCost: number
@@ -150,7 +151,11 @@ function FinOpsPage() {
   }
 
   if (loading) {
-    return <div className={styles.loading}>Loading...</div>
+    return (
+      <div className={styles.container}>
+        <Loader size="large" message="Carregando dados FinOps..." />
+      </div>
+    )
   }
 
   return (
