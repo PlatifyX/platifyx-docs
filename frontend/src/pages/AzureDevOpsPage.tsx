@@ -56,7 +56,7 @@ function AzureDevOpsPage() {
       const response = await fetch(buildApiUrl(`ci/stats?${params.toString()}`))
       if (!response.ok) throw new Error('Failed to fetch stats')
       const data = await response.json()
-      setStats(data)
+      setStats(data.data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load stats')
     } finally {

@@ -73,7 +73,7 @@ function ReleasesTab({ filters }: ReleasesTabProps) {
       const response = await fetch(buildApiUrl(`ci/releases?${params.toString()}`))
       if (!response.ok) throw new Error('Failed to fetch releases')
       const data = await response.json()
-      setReleases(data.releases || [])
+      setReleases(data.data?.releases || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load releases')
     } finally {
@@ -209,8 +209,6 @@ function ReleasesTab({ filters }: ReleasesTabProps) {
 
   return (
     <>
-      <CIFilters onFilterChange={handleFilterChange} initialFilters={filters} />
-
       <div className={styles.list}>
       {releases.map((release) => (
         <div key={release.id} className={styles.listItem}>

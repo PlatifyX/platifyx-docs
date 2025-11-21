@@ -40,7 +40,7 @@ function PipelinesTab({ filters }: PipelinesTabProps) {
       const response = await fetch(buildApiUrl(`ci/pipelines?${params.toString()}`))
       if (!response.ok) throw new Error('Failed to fetch pipelines')
       const data = await response.json()
-      setPipelines(data.pipelines || [])
+      setPipelines(data.data?.pipelines || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load pipelines')
     } finally {

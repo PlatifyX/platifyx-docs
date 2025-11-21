@@ -51,7 +51,7 @@ function BuildsTab({ filters }: BuildsTabProps) {
       const response = await fetch(buildApiUrl(`ci/builds?${params.toString()}`))
       if (!response.ok) throw new Error('Failed to fetch builds')
       const data = await response.json()
-      setBuilds(data.builds || [])
+      setBuilds(data.data?.builds || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load builds')
     } finally {
