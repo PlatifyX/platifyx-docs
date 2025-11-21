@@ -98,7 +98,10 @@ function ServicesPage() {
       }
 
       const data = await response.json()
+      console.log('Services API response:', data)
+      console.log('Services data structure:', data.data)
       const fetchedServices = data.data?.services || []
+      console.log('Fetched services:', fetchedServices.length, 'services', fetchedServices)
       setServices(fetchedServices)
 
       // Fetch metrics for all services
@@ -187,6 +190,15 @@ function ServicesPage() {
     const matchesSquad = squadFilter === 'all' || service.squad === squadFilter
 
     return matchesSearch && matchesSquad
+  })
+
+  console.log('ServicesPage render:', {
+    totalServices: services.length,
+    filteredServices: filteredServices.length,
+    filter,
+    squadFilter,
+    loading,
+    error
   })
 
   return (
