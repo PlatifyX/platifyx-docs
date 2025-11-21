@@ -42,7 +42,7 @@ const SSOTab: React.FC = () => {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-1">Configuração de SSO</h2>
+        <h2 className="text-2xl font-bold mb-1 text-white">Configuração de SSO</h2>
         <p className="text-gray-400">
           Configure provedores de Single Sign-On para autenticação
         </p>
@@ -62,7 +62,7 @@ const SSOTab: React.FC = () => {
                     {info.icon}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">{info.name}</h3>
+                    <h3 className="font-semibold text-lg text-white">{info.name}</h3>
                     <div className="flex items-center space-x-1">
                       {config.enabled ? (
                         <span className="flex items-center text-green-500 text-sm">
@@ -94,14 +94,14 @@ const SSOTab: React.FC = () => {
                   <label className="text-xs text-gray-400 block mb-1">Client ID</label>
                   <div className="flex items-center space-x-2 bg-[#1E1E1E] border border-gray-700 rounded p-2">
                     <Key className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-400">{config.client_id}</span>
+                    <span className="text-sm text-gray-300">{config.client_id}</span>
                   </div>
                 </div>
 
                 <div>
                   <label className="text-xs text-gray-400 block mb-1">Redirect URI</label>
                   <div className="bg-[#1E1E1E] border border-gray-700 rounded p-2">
-                    <span className="text-sm text-gray-300">{config.redirect_uri}</span>
+                    <span className="text-sm text-gray-300 break-all">{config.redirect_uri}</span>
                   </div>
                 </div>
 

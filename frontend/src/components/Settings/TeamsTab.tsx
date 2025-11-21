@@ -232,7 +232,7 @@ const TeamsTab: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold mb-1" style={{ color: '#FFFFFF' }}>Gerenciamento de Equipes</h2>
+          <h2 className="text-2xl font-bold mb-1 text-white">Gerenciamento de Equipes</h2>
           <p className="text-gray-400">
             {teams.length} equipes • {teams.reduce((acc, t) => acc + (t.members?.length || 0), 0)} membros no total
           </p>
@@ -276,7 +276,7 @@ const TeamsTab: React.FC = () => {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg truncate" style={{ color: '#FFFFFF' }}>
+                    <h3 className="font-semibold text-lg truncate text-white">
                       {team.display_name}
                     </h3>
                     <p className="text-sm text-gray-400 truncate">{team.description || 'Sem descrição'}</p>
@@ -320,7 +320,7 @@ const TeamsTab: React.FC = () => {
                     team.members.slice(0, 3).map((member, idx) => (
                       <div key={idx} className="flex items-center justify-between py-2 px-3 bg-[#1E1E1E] rounded">
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate" style={{ color: '#FFFFFF' }}>
+                          <div className="text-sm font-medium truncate text-white">
                             {member.user?.name}
                           </div>
                           <div className="text-xs text-gray-400 truncate">{member.user?.email}</div>
@@ -364,7 +364,7 @@ const TeamsTab: React.FC = () => {
           <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold" style={{ color: '#FFFFFF' }}>
+                <h3 className="text-xl font-bold text-white">
                   {selectedTeam ? 'Editar Equipe' : 'Nova Equipe'}
                 </h3>
                 <button
@@ -386,7 +386,7 @@ const TeamsTab: React.FC = () => {
                   {/* Name (apenas na criação) */}
                   {!selectedTeam && (
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                      <label className="block text-sm font-medium mb-2 text-white">
                         Nome Interno (slug) *
                       </label>
                       <input
@@ -395,7 +395,6 @@ const TeamsTab: React.FC = () => {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
                         className="w-full px-3 py-2 bg-[#2A2A2A] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B]"
-                        style={{ color: '#FFFFFF' }}
                         placeholder="ex: backend_team"
                       />
                       <p className="text-xs text-gray-400 mt-1">Usado internamente. Use apenas letras minúsculas e underscores.</p>
@@ -404,7 +403,7 @@ const TeamsTab: React.FC = () => {
 
                   {/* Display Name */}
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                    <label className="block text-sm font-medium mb-2 text-white">
                       Nome de Exibição *
                     </label>
                     <input
@@ -413,14 +412,13 @@ const TeamsTab: React.FC = () => {
                       value={formData.display_name}
                       onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
                       className="w-full px-3 py-2 bg-[#2A2A2A] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B]"
-                      style={{ color: '#FFFFFF' }}
                       placeholder="ex: Equipe de Backend"
                     />
                   </div>
 
                   {/* Description */}
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                    <label className="block text-sm font-medium mb-2 text-white">
                       Descrição
                     </label>
                     <textarea
@@ -428,14 +426,13 @@ const TeamsTab: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       rows={3}
                       className="w-full px-3 py-2 bg-[#2A2A2A] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B] resize-none"
-                      style={{ color: '#FFFFFF' }}
                       placeholder="Descreva o propósito desta equipe..."
                     />
                   </div>
 
                   {/* Avatar URL */}
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                    <label className="block text-sm font-medium mb-2 text-white">
                       URL do Avatar (opcional)
                     </label>
                     <input
@@ -443,7 +440,6 @@ const TeamsTab: React.FC = () => {
                       value={formData.avatar_url}
                       onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
                       className="w-full px-3 py-2 bg-[#2A2A2A] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B]"
-                      style={{ color: '#FFFFFF' }}
                       placeholder="https://exemplo.com/avatar.png"
                     />
                   </div>
@@ -451,7 +447,7 @@ const TeamsTab: React.FC = () => {
                   {/* Initial Members (apenas na criação) */}
                   {!selectedTeam && users.length > 0 && (
                     <div>
-                      <label className="block text-sm font-medium mb-3" style={{ color: '#FFFFFF' }}>
+                      <label className="block text-sm font-medium mb-3 text-white">
                         Membros Iniciais (opcional)
                       </label>
                       <div className="max-h-60 overflow-y-auto space-y-2 border border-gray-700 rounded-lg p-3">
@@ -467,7 +463,7 @@ const TeamsTab: React.FC = () => {
                               className="w-4 h-4 rounded border-gray-700 text-[#1B998B] focus:ring-[#1B998B]"
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium truncate" style={{ color: '#FFFFFF' }}>
+                              <div className="text-sm font-medium truncate text-white">
                                 {user.name}
                               </div>
                               <div className="text-xs text-gray-400 truncate">{user.email}</div>
@@ -513,7 +509,7 @@ const TeamsTab: React.FC = () => {
           <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold" style={{ color: '#FFFFFF' }}>
+                <h3 className="text-xl font-bold text-white">
                   Membros: {selectedTeam.display_name}
                 </h3>
                 <button
@@ -527,7 +523,7 @@ const TeamsTab: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Current Members */}
                 <div>
-                  <h4 className="text-sm font-semibold mb-3" style={{ color: '#FFFFFF' }}>
+                  <h4 className="text-sm font-semibold mb-3 text-white">
                     Membros Atuais ({selectedTeam.members?.length || 0})
                   </h4>
                   <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -535,7 +531,7 @@ const TeamsTab: React.FC = () => {
                       selectedTeam.members.map((member, idx) => (
                         <div key={idx} className="flex items-center justify-between p-3 bg-[#2A2A2A] rounded-lg border border-gray-700">
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium truncate" style={{ color: '#FFFFFF' }}>
+                            <div className="text-sm font-medium truncate text-white">
                               {member.user?.name}
                             </div>
                             <div className="text-xs text-gray-400 truncate">{member.user?.email}</div>
@@ -567,7 +563,7 @@ const TeamsTab: React.FC = () => {
 
                 {/* Available Users */}
                 <div>
-                  <h4 className="text-sm font-semibold mb-3" style={{ color: '#FFFFFF' }}>
+                  <h4 className="text-sm font-semibold mb-3 text-white">
                     Adicionar Membros ({getAvailableUsers().length} disponíveis)
                   </h4>
                   <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -575,7 +571,7 @@ const TeamsTab: React.FC = () => {
                       getAvailableUsers().map(user => (
                         <div key={user.id} className="flex items-center justify-between p-3 bg-[#2A2A2A] rounded-lg border border-gray-700">
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium truncate" style={{ color: '#FFFFFF' }}>
+                            <div className="text-sm font-medium truncate text-white">
                               {user.name}
                             </div>
                             <div className="text-xs text-gray-400 truncate">{user.email}</div>

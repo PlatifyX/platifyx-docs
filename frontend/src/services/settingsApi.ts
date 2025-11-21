@@ -28,6 +28,8 @@ export interface Permission {
   id: string;
   resource: string;
   action: string;
+  name?: string; // Adicionado para compatibilidade
+  display_name?: string; // Nome amigável para exibição
   description?: string;
 }
 
@@ -332,4 +334,21 @@ export const fetchAuditStats = async (params?: {
 // Helper to build SSO redirect URI
 export const buildSSORedirectUri = (provider: string): string => {
   return `${API_CONFIG.APP_URL}/auth/callback/${provider}`;
+};
+
+// Convenience aliases for consistency
+export const getUsers = fetchUsers;
+export const getUserById = fetchUserById;
+export const getRoles = fetchRoles;
+export const getRoleById = fetchRoleById;
+export const getPermissions = fetchPermissions;
+export const getTeams = fetchTeams;
+export const getTeamById = fetchTeamById;
+export const getSSOConfigs = fetchSSOConfigs;
+export const getSSOConfig = fetchSSOConfig;
+export const getAuditLogs = fetchAuditLogs;
+export const getAuditStats = fetchAuditStats;
+export const getUserStats = async (): Promise<any> => {
+  const response = await apiFetch('settings/users/stats');
+  return response.json();
 };
