@@ -206,7 +206,7 @@ const RolesTab: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold mb-1" style={{ color: '#FFFFFF' }}>Roles & Permissões</h2>
+          <h2 className="text-2xl font-bold mb-1 text-white">Roles & Permissões</h2>
           <p className="text-gray-400">
             {roles.length} roles • {permissions.length} permissões disponíveis
           </p>
@@ -250,7 +250,7 @@ const RolesTab: React.FC = () => {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Roles List */}
           <div>
-            <h3 className="text-lg font-semibold mb-4" style={{ color: '#FFFFFF' }}>Roles</h3>
+            <h3 className="text-lg font-semibold mb-4 text-white">Roles</h3>
             <div className="space-y-3">
               {filteredRoles.map((role) => {
                 const stats = getRoleStats(role);
@@ -263,7 +263,7 @@ const RolesTab: React.FC = () => {
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
                           <Shield className="w-5 h-5 text-[#1B998B]" />
-                          <h4 className="font-semibold" style={{ color: '#FFFFFF' }}>{role.display_name}</h4>
+                          <h4 className="font-semibold text-white">{role.display_name}</h4>
                           {role.is_system && (
                             <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs flex items-center">
                               <Lock className="w-3 h-3 mr-1" />
@@ -320,7 +320,7 @@ const RolesTab: React.FC = () => {
 
           {/* Permissions Overview */}
           <div>
-            <h3 className="text-lg font-semibold mb-4" style={{ color: '#FFFFFF' }}>Permissões por Recurso</h3>
+            <h3 className="text-lg font-semibold mb-4 text-white">Permissões por Recurso</h3>
             <div className="space-y-3">
               {Object.entries(groupPermissionsByResource()).map(([resource, perms]) => (
                 <div key={resource} className="bg-[#2A2A2A] border border-gray-700 rounded-lg p-4">
@@ -358,7 +358,7 @@ const RolesTab: React.FC = () => {
           <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold" style={{ color: '#FFFFFF' }}>
+                <h3 className="text-xl font-bold text-white">
                   {selectedRole ? `Editar Role: ${selectedRole.display_name}` : 'Novo Role'}
                 </h3>
                 <button
@@ -380,7 +380,7 @@ const RolesTab: React.FC = () => {
                   {/* Name (apenas na criação) */}
                   {!selectedRole && (
                     <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                      <label className="block text-sm font-medium mb-2 text-white">
                         Nome Interno (slug) *
                       </label>
                       <input
@@ -389,7 +389,6 @@ const RolesTab: React.FC = () => {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
                         className="w-full px-3 py-2 bg-[#2A2A2A] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B]"
-                        style={{ color: '#FFFFFF' }}
                         placeholder="ex: custom_role"
                       />
                       <p className="text-xs text-gray-400 mt-1">Usado internamente. Use apenas letras minúsculas e underscores.</p>
@@ -398,7 +397,7 @@ const RolesTab: React.FC = () => {
 
                   {/* Display Name */}
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                    <label className="block text-sm font-medium mb-2 text-white">
                       Nome de Exibição *
                     </label>
                     <input
@@ -407,14 +406,13 @@ const RolesTab: React.FC = () => {
                       value={formData.display_name}
                       onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
                       className="w-full px-3 py-2 bg-[#2A2A2A] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B]"
-                      style={{ color: '#FFFFFF' }}
                       placeholder="ex: Gerente de Projetos"
                     />
                   </div>
 
                   {/* Description */}
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                    <label className="block text-sm font-medium mb-2 text-white">
                       Descrição
                     </label>
                     <textarea
@@ -422,14 +420,13 @@ const RolesTab: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       rows={2}
                       className="w-full px-3 py-2 bg-[#2A2A2A] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B] resize-none"
-                      style={{ color: '#FFFFFF' }}
                       placeholder="Descreva as responsabilidades deste role..."
                     />
                   </div>
 
                   {/* Permissions */}
                   <div>
-                    <label className="block text-sm font-medium mb-3" style={{ color: '#FFFFFF' }}>
+                    <label className="block text-sm font-medium mb-3 text-white">
                       Permissões ({formData.permission_ids.length} selecionadas)
                     </label>
 
@@ -474,7 +471,7 @@ const RolesTab: React.FC = () => {
                                     className="w-4 h-4 mt-0.5 rounded border-gray-700 text-[#1B998B] focus:ring-[#1B998B]"
                                   />
                                   <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-medium" style={{ color: '#FFFFFF' }}>
+                                    <div className="text-sm font-medium text-white">
                                       {getPermissionDisplay(perm)}
                                     </div>
                                     {perm.description && (

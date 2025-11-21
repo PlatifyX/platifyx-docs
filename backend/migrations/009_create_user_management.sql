@@ -200,7 +200,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_composite ON audit_logs(resource, acti
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
-CREATE INDEX IF NOT EXISTS idx_sessions_active ON sessions(user_id, expires_at) WHERE expires_at > CURRENT_TIMESTAMP;
+CREATE INDEX IF NOT EXISTS idx_sessions_active ON sessions(user_id, expires_at);
 
 -- Adicionar check constraints para validações
 ALTER TABLE users ADD CONSTRAINT check_email_format

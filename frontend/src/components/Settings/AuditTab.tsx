@@ -121,7 +121,7 @@ const AuditTab: React.FC = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold mb-1">Log de Auditoria</h2>
+          <h2 className="text-2xl font-bold mb-1 text-white">Log de Auditoria</h2>
           <p className="text-gray-400">
             Histórico de ações e atividades do sistema
           </p>
