@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LogIn, CheckCircle, XCircle, Settings, Key } from 'lucide-react';
+import { buildSSORedirectUri } from '../../services/settingsApi';
 
 interface SSOConfig {
   provider: string;
@@ -15,14 +16,14 @@ const SSOTab: React.FC = () => {
       provider: 'google',
       enabled: true,
       client_id: '***',
-      redirect_uri: 'http://localhost:7000/auth/callback/google',
+      redirect_uri: buildSSORedirectUri('google'),
       allowed_domains: ['platifyx.com', 'example.com'],
     },
     {
       provider: 'microsoft',
       enabled: false,
       client_id: '***',
-      redirect_uri: 'http://localhost:7000/auth/callback/microsoft',
+      redirect_uri: buildSSORedirectUri('microsoft'),
       allowed_domains: [],
     },
   ]);

@@ -36,6 +36,10 @@ type Config struct {
 
 	// External URLs (for documentation/reference)
 	DocsBaseURL string
+
+	// Authentication
+	JWTSecret      string
+	SessionTimeout int // seconds
 }
 
 func Load() *Config {
@@ -73,6 +77,10 @@ func Load() *Config {
 
 		// External URLs
 		DocsBaseURL: getEnv("DOCS_BASE_URL", ""),
+
+		// Authentication
+		JWTSecret:      getEnv("JWT_SECRET", "your-secret-key-change-in-production"),
+		SessionTimeout: getEnvInt("SESSION_TIMEOUT", 86400), // 24 hours default
 	}
 }
 
