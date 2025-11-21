@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, TrendingDown, Cloud, AlertTriangle, Calendar, Filter } from 'lucide-react'
+import { DollarSign, TrendingUp, TrendingDown, Cloud, AlertTriangle, Calendar, Filter, Lightbulb } from 'lucide-react'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart
 } from 'recharts'
 import styles from './FinOpsPage.module.css'
 import { buildApiUrl } from '../config/api'
+import Loader from '../components/Loader/Loader'
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
@@ -19,12 +20,34 @@ interface ServiceCost {
   cost: number
 }
 
+interface CostOptimizationRecommendation {
+  provider: string
+  integration: string
+  resourceId: string
+  resourceType: string
+  recommendedAction: string
+  currentConfiguration: string
+  recommendedConfiguration: string
+  estimatedMonthlySavings: number
+  estimatedSavingsPercent: number
+  currentMonthlyCost: number
+  implementationEffort: string
+  requiresRestart: boolean
+  rollbackPossible: boolean
+  accountName: string
+  accountId: string
+  region: string
+  tags?: { [key: string]: string }
+  currency: string
+}
+
 function FinOpsPageEnhanced() {
   const [loading, setLoading] = useState(true)
   const [monthlyCosts, setMonthlyCosts] = useState<MonthlyCost[]>([])
   const [serviceCosts, setServiceCosts] = useState<ServiceCost[]>([])
   const [forecast, setForecast] = useState<any[]>([])
   const [spUtilization, setSpUtilization] = useState<any>(null)
+  const [recommendations, setRecommendations] = useState<CostOptimizationRecommendation[]>([])
 
   // Date filters
   const [monthsToShow, setMonthsToShow] = useState(1)
@@ -33,26 +56,30 @@ function FinOpsPageEnhanced() {
     setLoading(true)
     try {
       // Fetch all data in parallel
-      const [monthlyRes, serviceRes, forecastRes, spRes] = await Promise.all([
+      const [monthlyRes, serviceRes, forecastRes, spRes, recommendationsRes] = await Promise.all([
         fetch(buildApiUrl('finops/aws/monthly')),
         fetch(buildApiUrl(`finops/aws/by-service?months=${monthsToShow}`)),
         fetch(buildApiUrl('finops/aws/forecast')),
         fetch(buildApiUrl('finops/aws/savings-plans-utilization')),
+        fetch(buildApiUrl('finops/recommendations?provider=aws')),
       ])
 
       const monthlyData = await monthlyRes.json()
       const serviceData = await serviceRes.json()
       const forecastData = await forecastRes.json()
       const spData = await spRes.json()
+      const recommendationsData = await recommendationsRes.json()
 
       console.log('Monthly Data:', monthlyData)
       console.log('Service Data:', serviceData)
       console.log('SP Data:', spData)
+      console.log('Recommendations Data:', recommendationsData)
 
       setMonthlyCosts(monthlyData || [])
       setServiceCosts((serviceData || []).sort((a: ServiceCost, b: ServiceCost) => b.cost - a.cost).slice(0, 10))
       setForecast(forecastData || [])
       setSpUtilization(spData || null)
+      setRecommendations(recommendationsData || [])
     } catch (error) {
       console.error('Error fetching FinOps data:', error)
     } finally {
@@ -93,7 +120,7 @@ function FinOpsPageEnhanced() {
   if (loading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>Carregando dados FinOps...</div>
+        <Loader size="large" message="Carregando dados FinOps..." />
       </div>
     )
   }
@@ -306,6 +333,94 @@ function FinOpsPageEnhanced() {
             </div>
           ) : (
             <p className={styles.noData}>Nenhum Savings Plan encontrado</p>
+          )}
+        </div>
+      </section>
+
+      {/* 💡 RECOMENDAÇÕES DE OTIMIZAÇÃO */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>💡 Recursos com Economia Estimada</h2>
+
+        <div className={styles.chartCard}>
+          <div className={styles.recommendationsHeader}>
+            <h3>Recomendações de Otimização de Custos</h3>
+            <p style={{ color: 'var(--color-success)', fontWeight: 600, fontSize: '1.1rem', marginTop: '0.5rem' }}>
+              Total de economia potencial: {formatCurrency(recommendations.reduce((sum, r) => sum + r.estimatedMonthlySavings, 0))}/mês
+            </p>
+          </div>
+
+          {recommendations.length === 0 ? (
+            <div className={styles.noData}>
+              <Lightbulb size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+              <p>Nenhuma recomendação disponível no momento.</p>
+              <p style={{ fontSize: '0.875rem', opacity: 0.7, marginTop: '0.5rem' }}>
+                Configure suas credenciais AWS com permissões do Compute Optimizer para ver recomendações.
+              </p>
+            </div>
+          ) : (
+            <div className={styles.tableContainer}>
+              <table className={styles.recommendationsTable}>
+                <thead>
+                  <tr>
+                    <th>Economia mensal estimada</th>
+                    <th>Tipo de recurso</th>
+                    <th>ID do recurso</th>
+                    <th>Ação mais recomendada</th>
+                    <th>Resumo do recurso atual</th>
+                    <th>Resumo do recurso recomendado</th>
+                    <th>Porcentagem estimada de economia</th>
+                    <th>Custo mensal estimado</th>
+                    <th>Esforço de implementação</th>
+                    <th>É necessário reiniciar o recurso</th>
+                    <th>A reversão é possível?</th>
+                    <th>Nome e ID da conta</th>
+                    <th>Região</th>
+                    <th>Tags</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recommendations.map((rec, index) => (
+                    <tr key={index}>
+                      <td className={styles.savingsCell}>{formatCurrency(rec.estimatedMonthlySavings)}</td>
+                      <td>{rec.resourceType}</td>
+                      <td className={styles.resourceIdCell}>{rec.resourceId}</td>
+                      <td className={styles.actionCell}>{rec.recommendedAction}</td>
+                      <td>{rec.currentConfiguration}</td>
+                      <td>{rec.recommendedConfiguration}</td>
+                      <td className={styles.percentCell}>{rec.estimatedSavingsPercent.toFixed(0)}%</td>
+                      <td>{formatCurrency(rec.currentMonthlyCost)}</td>
+                      <td>
+                        <span className={`${styles.effortBadge} ${styles[`effort${rec.implementationEffort.replace(/\s/g, '')}`]}`}>
+                          {rec.implementationEffort}
+                        </span>
+                      </td>
+                      <td className={styles.boolCell}>{rec.requiresRestart ? 'Sim' : 'Não'}</td>
+                      <td className={styles.boolCell}>{rec.rollbackPossible ? 'Sim' : 'Não'}</td>
+                      <td>
+                        <div className={styles.accountCell}>
+                          <div>{rec.accountName}</div>
+                          <div className={styles.accountId}>({rec.accountId})</div>
+                        </div>
+                      </td>
+                      <td>{rec.region}</td>
+                      <td>
+                        {rec.tags && Object.keys(rec.tags).length > 0 ? (
+                          <div className={styles.tagsCell}>
+                            {Object.entries(rec.tags).map(([key, value]) => (
+                              <div key={key} className={styles.tagItem}>
+                                {key}:{value}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </section>
