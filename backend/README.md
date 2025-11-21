@@ -1,167 +1,119 @@
-# PlatifyX Core API
+# PlatifyX Backend
 
-Backend do PlatifyX - Developer Portal & Platform Engineering Hub
+Backend da plataforma PlatifyX - Platform Engineering & Developer Portal.
 
-![PlatifyX](https://raw.githubusercontent.com/robertasolimandonofreo/assets/refs/heads/main/PlatifyX/1.png)
-
-## 🚀 Tecnologias
-
-- **Go 1.22+** - Linguagem de programação
-- **Gin** - Framework HTTP
-- **Clean Architecture** - Arquitetura de software
-- **Zap** - Logger estruturado
-- **OpenTelemetry** - Observabilidade (traces, metrics, logs)
-- **Docker** - Containerização
-
-## 📦 Instalação
-
-```bash
-go mod download
-```
-
-## 🛠️ Desenvolvimento
-
-### Executar localmente
-
-```bash
-make run
-```
-
-ou
-
-```bash
-go run cmd/api/main.go
-```
-
-Acesse: http://localhost:8060
-
-### Build
-
-```bash
-make build
-```
-
-### Executar build
-
-```bash
-./bin/api
-```
-
-## 🐳 Docker
-
-### Build da imagem
-
-```bash
-make docker-build
-```
-
-ou
-
-```bash
-docker build -t platifyx-core:latest .
-```
-
-### Executar container
-
-```bash
-make docker-run
-```
-
-ou
-
-```bash
-docker run -p 8060:8060 platifyx-core:latest
-```
-
-## 📁 Estrutura do Projeto
+## 🏗️ Arquitetura
 
 ```
 backend/
-├── cmd/
-│   └── api/
-│       └── main.go              # Entry point
-├── internal/
-│   ├── config/                  # Configurações
-│   ├── domain/                  # Entidades de domínio
-│   ├── handler/                 # HTTP handlers
-│   ├── middleware/              # Middlewares HTTP
-│   └── service/                 # Lógica de negócio
-├── pkg/
-│   └── logger/                  # Logger customizado
-├── Dockerfile                   # Multi-stage build
-├── Makefile                     # Comandos úteis
-└── go.mod                       # Dependências
+├── cmd/api/              # Entry point
+├── internal/             # Código interno (não exportável)
+│   ├── config/           # Configurações
+│   ├── domain/           # Modelos de domínio
+│   ├── handler/          # HTTP handlers
+│   │   └── base/         # Base handler reutilizável ⭐
+│   ├── middleware/       # Middlewares HTTP
+│   ├── repository/       # Camada de dados
+│   └── service/          # Lógica de negócio
+├── pkg/                  # Código reutilizável (exportável)
+│   ├── response/         # Response builders padronizados ⭐
+│   ├── httperr/          # Tratamento de erros HTTP ⭐
+│   ├── logger/           # Logger estruturado
+│   ├── cache/            # Cache (Redis)
+│   └── */                # Clients externos (AWS, GitHub, etc)
+└── migrations/           # Migrações de banco
 ```
 
-## 🔌 Endpoints da API
+## 📚 Documentação Completa
 
-### Health & Readiness
+**[📖 BACKEND_PATTERNS.md](./BACKEND_PATTERNS.md)** - LEIA ANTES DE CODAR!
 
-- `GET /api/v1/health` - Health check
-- `GET /api/v1/ready` - Readiness check
+Este documento contém TODOS os padrões obrigatórios para o backend.
 
-### Serviços
+## 🎯 Redução de Código Duplicado
 
-- `GET /api/v1/services` - Listar todos os serviços
-- `GET /api/v1/services/:id` - Obter serviço por ID
-- `POST /api/v1/services` - Criar novo serviço
+Com os novos padrões, **eliminamos ~40% de código repetido**:
 
-### Métricas
+- ✅ FinOpsHandler: 254 → 158 linhas (-96 linhas, -38%)
+- ✅ GitHubHandler: 401 → 249 linhas (-152 linhas, -38%)
+- ✅ Cache logic: De ~20 linhas por endpoint para 3 linhas
+- ✅ Error handling: Consistente em todos handlers
 
-- `GET /api/v1/metrics/dashboard` - Métricas do dashboard
-- `GET /api/v1/metrics/dora` - DORA Metrics
+## ⭐ Componentes Principais
 
-### Kubernetes
+### 1. Response Builders (`pkg/response`)
 
-- `GET /api/v1/kubernetes/clusters` - Listar clusters
-- `GET /api/v1/kubernetes/pods?namespace=default` - Listar pods
-
-## ⚙️ Variáveis de Ambiente
-
-Copie o arquivo `.env.example` para `.env` e configure:
-
-```bash
-ENVIRONMENT=development
-PORT=8060
-VERSION=0.1.0
-
-DATABASE_URL=postgres://user:password@localhost:5432/platifyx
-REDIS_URL=redis://localhost:6379
-
-OTEL_ENDPOINT=localhost:4317
+```go
+response.Success(c, data)
+response.BadRequest(c, "message")
+response.NotFound(c, "message")
 ```
 
-## 🎨 Features Implementadas
+### 2. Error Handling (`pkg/httperr`)
 
-- ✅ Clean Architecture (handler → service → domain)
-- ✅ Graceful shutdown
-- ✅ Health checks e readiness probes
-- ✅ Structured logging com Zap
-- ✅ CORS configurado
-- ✅ Recovery middleware
-- ✅ Request logging middleware
-- ✅ Endpoints REST para serviços, métricas e Kubernetes
-- ✅ Dockerfile multi-stage otimizado
-- ✅ Makefile com comandos úteis
-
-## 🧪 Testes
-
-```bash
-make test
+```go
+httperr.BadRequest("message")
+httperr.InternalErrorWrap("message", err)
 ```
 
-## 🎯 Próximas Features
+### 3. Base Handler (`internal/handler/base`)
 
-- [ ] Integração com PostgreSQL
-- [ ] Integração com Redis
-- [ ] OpenTelemetry completo (traces distribuídos)
-- [ ] Autenticação JWT
-- [ ] RBAC (Role-Based Access Control)
-- [ ] Integração com Kubernetes API
-- [ ] Integração com Grafana Stack
-- [ ] Integração com Cloud Providers (AWS, GCP, Azure)
-- [ ] Workers (Kafka, RabbitMQ)
+```go
+type MyHandler struct {
+    *base.BaseHandler  // SEMPRE embedar!
+}
 
-## 📄 Licença
+h.WithCache(c, key, ttl, func() (interface{}, error) {
+    return h.service.GetData()
+})
+```
 
-Baseado em Backstage (Apache 2.0)
+## 📝 Template de Handler
+
+```go
+package handler
+
+import (
+    "github.com/PlatifyX/platifyx-core/internal/handler/base"
+    "github.com/PlatifyX/platifyx-core/internal/service"
+    "github.com/PlatifyX/platifyx-core/pkg/logger"
+    "github.com/gin-gonic/gin"
+)
+
+type MyHandler struct {
+    *base.BaseHandler
+    myService *service.MyService
+}
+
+func NewMyHandler(
+    myService *service.MyService,
+    cache *service.CacheService,
+    log *logger.Logger,
+) *MyHandler {
+    return &MyHandler{
+        BaseHandler: base.NewBaseHandler(cache, log),
+        myService:   myService,
+    }
+}
+
+func (h *MyHandler) GetStats(c *gin.Context) {
+    cacheKey := service.BuildKey("my", "stats")
+    h.WithCache(c, cacheKey, service.CacheDuration5Minutes, func() (interface{}, error) {
+        return h.myService.GetStats()
+    })
+}
+```
+
+## ✅ Checklist
+
+Antes de fazer PR:
+
+- [ ] Handler embeda `base.BaseHandler`
+- [ ] Usa `WithCache` quando apropriado
+- [ ] Usa `response.*` para respostas
+- [ ] Usa `httperr.*` para erros
+- [ ] Service retorna erros estruturados
+- [ ] Logging com contexto
+- [ ] Testes adicionados
+
+**Consulte [BACKEND_PATTERNS.md](./BACKEND_PATTERNS.md) para detalhes completos!**
