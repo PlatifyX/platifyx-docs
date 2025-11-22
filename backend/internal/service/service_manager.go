@@ -91,20 +91,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		sonarQubeService = NewSonarQubeService(*sonarQubeConfig, log)
 	}
 
-	// Initialize ServiceCatalog service
-	var serviceCatalogService *ServiceCatalogService
-	if kubernetesService != nil {
-		serviceCatalogService = NewServiceCatalogService(serviceRepo, integrationRepo, kubernetesService, azureDevOpsService, githubService, log)
-	}
-
-	// Initialize FinOps service
-	finOpsService := NewFinOpsService(integrationService, log)
-
-	// Initialize AI services
-	aiService := NewAIService(integrationService, log)
-	diagramService := NewDiagramService(aiService, log)
-
-	// Initialize Cache Service (Redis)
+	// Initialize Cache Service (Redis) - must be before ServiceCatalog
 	var cacheService *CacheService
 	var redisClient *cache.RedisClient
 	if cfg.RedisEnabled && cfg.CacheEnabled {
@@ -133,6 +120,19 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 			"cacheEnabled", cfg.CacheEnabled,
 		)
 	}
+
+	// Initialize ServiceCatalog service (with cache support)
+	var serviceCatalogService *ServiceCatalogService
+	if kubernetesService != nil {
+		serviceCatalogService = NewServiceCatalogService(serviceRepo, integrationRepo, kubernetesService, azureDevOpsService, githubService, redisClient, log)
+	}
+
+	// Initialize FinOps service
+	finOpsService := NewFinOpsService(integrationService, log)
+
+	// Initialize AI services
+	aiService := NewAIService(integrationService, log)
+	diagramService := NewDiagramService(aiService, log)
 
 	techDocsService := NewTechDocsService("docs", aiService, diagramService, githubService, redisClient, log)
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/repository"
+	"github.com/PlatifyX/platifyx-core/pkg/cache"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,6 +21,7 @@ type ServiceCatalogService struct {
 	kubeService        *KubernetesService
 	azureDevOpsService *AzureDevOpsService
 	githubService      *GitHubService
+	cacheClient        *cache.RedisClient
 	log                *logger.Logger
 }
 
@@ -29,6 +31,7 @@ func NewServiceCatalogService(
 	kubeService *KubernetesService,
 	azureDevOpsService *AzureDevOpsService,
 	githubService *GitHubService,
+	cacheClient *cache.RedisClient,
 	log *logger.Logger,
 ) *ServiceCatalogService {
 	return &ServiceCatalogService{
@@ -37,6 +40,7 @@ func NewServiceCatalogService(
 		kubeService:        kubeService,
 		azureDevOpsService: azureDevOpsService,
 		githubService:      githubService,
+		cacheClient:        cacheClient,
 		log:                log,
 	}
 }
@@ -144,6 +148,15 @@ func (s *ServiceCatalogService) SyncFromKubernetes() error {
 	}
 
 	s.log.Infow("Service sync completed", "synced", len(servicesMap))
+
+	// Clear cache after sync
+	if s.cacheClient != nil {
+		s.log.Info("Clearing service catalog cache after sync")
+		s.cacheClient.Delete("service-catalog:all")
+		s.cacheClient.Delete("service-catalog:metrics:*")
+		s.cacheClient.Delete("service-catalog:status:*")
+	}
+
 	return nil
 }
 
@@ -298,9 +311,38 @@ func (s *ServiceCatalogService) fetchServiceMetadata(squad, application, namespa
 	return service, nil
 }
 
-// GetAll returns all services
+// GetAll returns all services (with cache)
 func (s *ServiceCatalogService) GetAll() ([]domain.Service, error) {
-	return s.serviceRepo.GetAll()
+	cacheKey := "service-catalog:all"
+
+	// Try to get from cache first
+	if s.cacheClient != nil {
+		var cachedServices []domain.Service
+		err := s.cacheClient.GetJSON(cacheKey, &cachedServices)
+		if err == nil {
+			s.log.Info("Returning services from cache")
+			return cachedServices, nil
+		}
+		s.log.Debugw("Cache miss for services", "error", err)
+	}
+
+	// Cache miss or cache not available, fetch from database
+	services, err := s.serviceRepo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	// Store in cache (5 minutes TTL)
+	if s.cacheClient != nil {
+		err = s.cacheClient.Set(cacheKey, services, 5*time.Minute)
+		if err != nil {
+			s.log.Warnw("Failed to cache services", "error", err)
+		} else {
+			s.log.Info("Cached services list")
+		}
+	}
+
+	return services, nil
 }
 
 // GetByName returns a service by name
@@ -308,8 +350,20 @@ func (s *ServiceCatalogService) GetByName(name string) (*domain.Service, error) 
 	return s.serviceRepo.GetByName(name)
 }
 
-// GetServiceStatus returns runtime status for a service
+// GetServiceStatus returns runtime status for a service (with cache)
 func (s *ServiceCatalogService) GetServiceStatus(serviceName string) (*domain.ServiceStatus, error) {
+	cacheKey := fmt.Sprintf("service-catalog:status:%s", serviceName)
+
+	// Try to get from cache first
+	if s.cacheClient != nil {
+		var cachedStatus domain.ServiceStatus
+		err := s.cacheClient.GetJSON(cacheKey, &cachedStatus)
+		if err == nil {
+			s.log.Debugw("Returning service status from cache", "service", serviceName)
+			return &cachedStatus, nil
+		}
+	}
+
 	status := &domain.ServiceStatus{
 		ServiceName: serviceName,
 	}
@@ -329,6 +383,14 @@ func (s *ServiceCatalogService) GetServiceStatus(serviceName string) (*domain.Se
 	prodDeploymentName := fmt.Sprintf("%s-prod", serviceName)
 	prodStatus, _ := s.getDeploymentStatus(clientset, prodDeploymentName, "prod")
 	status.ProdStatus = prodStatus
+
+	// Store in cache (30 seconds TTL - status changes frequently)
+	if s.cacheClient != nil {
+		err := s.cacheClient.Set(cacheKey, status, 30*time.Second)
+		if err != nil {
+			s.log.Warnw("Failed to cache service status", "service", serviceName, "error", err)
+		}
+	}
 
 	return status, nil
 }
@@ -438,8 +500,20 @@ func formatDuration(d time.Duration) string {
 	return fmt.Sprintf("%ds", int(d.Seconds()))
 }
 
-// GetServiceMetrics returns aggregated metrics from SonarQube and last build from Azure DevOps
+// GetServiceMetrics returns aggregated metrics from SonarQube and last build from Azure DevOps (with cache)
 func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeService *SonarQubeService, azureDevOpsServices []*AzureDevOpsService) map[string]interface{} {
+	cacheKey := fmt.Sprintf("service-catalog:metrics:%s", serviceName)
+
+	// Try to get from cache first
+	if s.cacheClient != nil {
+		var cachedMetrics map[string]interface{}
+		err := s.cacheClient.GetJSON(cacheKey, &cachedMetrics)
+		if err == nil {
+			s.log.Debugw("Returning service metrics from cache", "service", serviceName)
+			return cachedMetrics
+		}
+	}
+
 	metrics := make(map[string]interface{})
 	metrics["serviceName"] = serviceName
 
@@ -624,6 +698,14 @@ func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeS
 		}
 	} else {
 		s.log.Warnw("No Azure DevOps services available", "serviceName", serviceName)
+	}
+
+	// Store in cache (3 minutes TTL)
+	if s.cacheClient != nil {
+		err := s.cacheClient.Set(cacheKey, metrics, 3*time.Minute)
+		if err != nil {
+			s.log.Warnw("Failed to cache service metrics", "service", serviceName, "error", err)
+		}
 	}
 
 	return metrics
