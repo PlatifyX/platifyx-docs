@@ -452,7 +452,10 @@ func (s *IntegrationService) GetGitHubConfigByName(name string) (*domain.GitHubC
 		return nil, err
 	}
 
+	s.log.Infow("Searching for GitHub integration", "requested_name", name, "total_integrations", len(integrations))
+
 	for _, integration := range integrations {
+		s.log.Debugw("Checking integration", "name", integration.Name, "enabled", integration.Enabled, "matches", integration.Name == name)
 		if integration.Name == name && integration.Enabled {
 			var config domain.GitHubIntegrationConfig
 			if err := json.Unmarshal(integration.Config, &config); err != nil {
@@ -460,6 +463,7 @@ func (s *IntegrationService) GetGitHubConfigByName(name string) (*domain.GitHubC
 				return nil, err
 			}
 
+			s.log.Infow("Found matching GitHub integration", "name", name)
 			return &domain.GitHubConfig{
 				Token:        config.Token,
 				Organization: config.Organization,
@@ -468,6 +472,7 @@ func (s *IntegrationService) GetGitHubConfigByName(name string) (*domain.GitHubC
 	}
 
 	// Integration with this name not found
+	s.log.Warnw("GitHub integration not found", "requested_name", name, "available_count", len(integrations))
 	return nil, nil
 }
 
