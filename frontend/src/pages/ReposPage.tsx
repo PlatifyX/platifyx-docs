@@ -43,19 +43,22 @@ const providerInfo = {
     name: 'GitHub',
     icon: Github,
     integrationType: 'github',
-    color: '#6366f1'
+    color: '#6366f1',
+    available: true
   },
   gitlab: {
     name: 'GitLab',
     icon: GitBranch,
     integrationType: 'gitlab',
-    color: '#FC6D26'
+    color: '#FC6D26',
+    available: false
   },
   'azure-repos': {
     name: 'Azure Repos',
     icon: GitBranch,
     integrationType: 'azure-devops',
-    color: '#0078D4'
+    color: '#0078D4',
+    available: false
   }
 }
 
@@ -307,15 +310,23 @@ function ReposPage() {
             return (
               <button
                 key={p}
-                onClick={() => setProvider(p)}
-                className={`flex items-center gap-2 py-2 px-4 border rounded-lg text-sm font-medium transition-all duration-200 ${
+                onClick={() => info.available && setProvider(p)}
+                disabled={!info.available}
+                className={`flex items-center gap-2 py-2 px-4 border rounded-lg text-sm font-medium transition-all duration-200 relative ${
                   provider === p
                     ? 'bg-primary text-white border-primary'
-                    : 'bg-surface text-text-secondary border-border hover:border-primary hover:text-text'
+                    : info.available
+                    ? 'bg-surface text-text-secondary border-border hover:border-primary hover:text-text'
+                    : 'bg-surface text-text-secondary border-border opacity-50 cursor-not-allowed'
                 }`}
               >
                 <Icon size={18} />
                 <span>{info.name}</span>
+                {!info.available && (
+                  <span className="ml-2 py-0.5 px-2 bg-warning/20 text-warning rounded text-xs font-semibold">
+                    Em breve
+                  </span>
+                )}
               </button>
             )
           })}
