@@ -42,8 +42,8 @@ function IntegrationSelector({ integrationType, selectedIntegration, onIntegrati
     }
   }
 
-  if (loading || integrations.length <= 1) {
-    return null // Don't show selector if only one or no integrations
+  if (loading || integrations.length === 0) {
+    return null // Only hide if no integrations
   }
 
   return (
