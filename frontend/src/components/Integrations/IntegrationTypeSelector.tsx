@@ -1,5 +1,4 @@
 import { X } from 'lucide-react'
-import styles from './IntegrationTypeSelector.module.css'
 
 interface IntegrationTypeSelectorProps {
   onSelect: (type: string) => void
@@ -139,30 +138,37 @@ const integrationTypes = [
 
 function IntegrationTypeSelector({ onSelect, onClose }: IntegrationTypeSelectorProps) {
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2 className={styles.title}>Selecione o Tipo de Integração</h2>
-          <button className={styles.closeButton} onClick={onClose}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900">Selecione o Tipo de Integração</h2>
+          <button
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            onClick={onClose}
+          >
             <X size={20} />
           </button>
         </div>
 
-        <div className={styles.content}>
-          <div className={styles.grid}>
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-88px)]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {integrationTypes.map((type) => (
               <button
                 key={type.id}
-                className={`${styles.typeCard} ${type.disabled ? styles.disabled : ''}`}
+                className={`flex items-start gap-3 p-4 rounded-lg border text-left transition-all ${
+                  type.disabled
+                    ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                    : 'border-gray-200 hover:border-blue-500 hover:shadow-md'
+                }`}
                 onClick={() => !type.disabled && onSelect(type.id)}
                 disabled={type.disabled}
               >
-                <div className={styles.typeIcon}>
-                  <img src={type.logo} alt={type.name} />
+                <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-gray-50 rounded-lg">
+                  <img src={type.logo} alt={type.name} className="w-6 h-6 object-contain" />
                 </div>
-                <div className={styles.typeInfo}>
-                  <h3 className={styles.typeName}>{type.name}</h3>
-                  <p className={styles.typeDescription}>{type.description}</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-gray-900 mb-1">{type.name}</h3>
+                  <p className="text-xs text-gray-600">{type.description}</p>
                 </div>
               </button>
             ))}

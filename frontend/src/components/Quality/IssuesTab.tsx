@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AlertCircle, Bug, Shield, Code } from 'lucide-react'
 import { QualityFilterValues } from './QualityFilters'
-import styles from './QualityTabs.module.css'
 import { buildApiUrl } from '../../config/api'
 
 interface Issue {
@@ -55,18 +54,18 @@ function IssuesTab({ filters }: IssuesTabProps) {
     }
   }
 
-  const getSeverityColor = (severity: string) => {
+  const getSeverityColorClass = (severity: string) => {
     switch (severity.toUpperCase()) {
       case 'BLOCKER':
       case 'CRITICAL':
-        return 'var(--color-error)'
+        return 'text-red-500'
       case 'MAJOR':
-        return 'var(--color-warning)'
+        return 'text-yellow-500'
       case 'MINOR':
       case 'INFO':
-        return 'var(--color-info)'
+        return 'text-blue-500'
       default:
-        return 'var(--color-text-secondary)'
+        return 'text-gray-400'
     }
   }
 
@@ -89,18 +88,18 @@ function IssuesTab({ filters }: IssuesTabProps) {
   }
 
   if (loading) {
-    return <div className={styles.loading}>Carregando issues...</div>
+    return <div className="text-center py-8 text-gray-400">Carregando issues...</div>
   }
 
   if (error) {
-    return <div className={styles.error}>Erro: {error}</div>
+    return <div className="text-center py-8 text-red-500">Erro: {error}</div>
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.filters}>
+    <div>
+      <div className="flex gap-4 mb-6">
         <select
-          className={styles.filterSelect}
+          className="input-base flex-1"
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
         >
@@ -111,7 +110,7 @@ function IssuesTab({ filters }: IssuesTabProps) {
         </select>
 
         <select
-          className={styles.filterSelect}
+          className="input-base flex-1"
           value={filterSeverity}
           onChange={(e) => setFilterSeverity(e.target.value)}
         >
@@ -125,42 +124,39 @@ function IssuesTab({ filters }: IssuesTabProps) {
       </div>
 
       {issues.length === 0 ? (
-        <div className={styles.empty}>
-          <AlertCircle size={48} />
+        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+          <AlertCircle size={48} className="mb-4" />
           <p>Nenhuma issue encontrada</p>
         </div>
       ) : (
-        <div className={styles.issuesList}>
+        <div className="space-y-4">
           {issues.map((issue) => (
-            <div key={issue.key} className={styles.issueCard}>
-              <div className={styles.issueHeader}>
-                <div className={styles.issueType}>
+            <div key={issue.key} className="card-base">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-gray-300">
                   {getTypeIcon(issue.type)}
-                  <span>{issue.type}</span>
+                  <span className="font-medium">{issue.type}</span>
                 </div>
-                <div
-                  className={styles.issueSeverity}
-                  style={{ color: getSeverityColor(issue.severity) }}
-                >
+                <div className={`font-semibold ${getSeverityColorClass(issue.severity)}`}>
                   {issue.severity}
                 </div>
               </div>
 
-              <div className={styles.issueMessage}>{issue.message}</div>
+              <div className="text-white mb-3">{issue.message}</div>
 
-              <div className={styles.issueMeta}>
-                <span className={styles.issueComponent}>
+              <div className="flex items-center justify-between text-sm text-gray-400 mb-3">
+                <span className="font-mono">
                   {issue.component}
                   {issue.line && `:${issue.line}`}
                 </span>
-                <span className={styles.issueStatus}>{issue.status}</span>
+                <span className="px-2 py-1 bg-gray-700 rounded text-xs">{issue.status}</span>
               </div>
 
-              <div className={styles.issueFooter}>
+              <div className="flex items-center justify-between text-sm text-gray-400">
                 {issue.integration && (
-                  <span className={styles.integration}>Integração: {issue.integration}</span>
+                  <span className="text-blue-400">Integração: {issue.integration}</span>
                 )}
-                <span className={styles.issueDate}>
+                <span>
                   Criado em: {formatDate(issue.creationDate)}
                 </span>
               </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { DollarSign, TrendingUp, TrendingDown, Server, Activity, Package, Filter } from 'lucide-react'
-import styles from './FinOpsPage.module.css'
 import { buildApiUrl } from '../config/api'
+import IntegrationSelector from '../components/Common/IntegrationSelector'
 
 interface FinOpsStats {
   totalCost: number
@@ -36,17 +36,19 @@ function FinOpsPage() {
   const [resources, setResources] = useState<CloudResource[]>([])
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [providerFilter, setProviderFilter] = useState('')
+  const [selectedIntegration, setSelectedIntegration] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchStats()
     fetchResources()
-  }, [providerFilter])
+  }, [providerFilter, selectedIntegration])
 
   const fetchStats = async () => {
     try {
       const queryParams = new URLSearchParams()
       if (providerFilter) queryParams.append('provider', providerFilter)
+      if (selectedIntegration) queryParams.append('integration', selectedIntegration)
 
       console.log('Fetching stats from:', buildApiUrl(`finops/stats?${queryParams}`))
       const response = await fetch(buildApiUrl(`finops/stats?${queryParams}`))
@@ -72,6 +74,7 @@ function FinOpsPage() {
     try {
       const queryParams = new URLSearchParams()
       if (providerFilter) queryParams.append('provider', providerFilter)
+      if (selectedIntegration) queryParams.append('integration', selectedIntegration)
 
       console.log('Fetching resources from:', buildApiUrl(`finops/resources?${queryParams}`))
       const response = await fetch(buildApiUrl(`finops/resources?${queryParams}`))
@@ -100,30 +103,32 @@ function FinOpsPage() {
   const getStatusColor = (status: string): string => {
     const lowerStatus = status.toLowerCase()
     if (lowerStatus.includes('running') || lowerStatus.includes('active') || lowerStatus.includes('available')) {
-      return styles.statusActive
+      return 'bg-green-500/20 text-green-400'
     }
-    return styles.statusInactive
+    return 'bg-gray-500/20 text-gray-400'
   }
 
   if (loading) {
-    return <div className={styles.loading}>Loading...</div>
+    return <div className="flex items-center justify-center min-h-screen text-gray-400">Loading...</div>
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <DollarSign size={40} className={styles.headerIcon} />
+    <div className="p-4 md:p-6">
+      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+            <DollarSign className="w-6 h-6 text-green-400" />
+          </div>
           <div>
-            <h1 className={styles.title}>FinOps</h1>
-            <p className={styles.subtitle}>Gestão de custos e otimização de recursos cloud</p>
+            <h1 className="text-3xl font-bold">FinOps</h1>
+            <p className="text-gray-400 text-sm mt-1">Gestão de custos e otimização de recursos cloud</p>
           </div>
         </div>
-        <div className={styles.headerActions}>
-          <div className={styles.filterBox}>
-            <Filter size={18} />
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 bg-[#1E1E1E] border border-gray-700 rounded-lg px-3 py-2">
+            <Filter size={18} className="text-gray-400" />
             <select
-              className={styles.filterSelect}
+              className="bg-transparent text-gray-300 outline-none cursor-pointer"
               value={providerFilter}
               onChange={(e) => setProviderFilter(e.target.value)}
             >
@@ -136,110 +141,126 @@ function FinOpsPage() {
         </div>
       </div>
 
+      <IntegrationSelector
+        integrationType="aws"
+        selectedIntegration={selectedIntegration}
+        onIntegrationChange={setSelectedIntegration}
+      />
+
       {stats && (
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <div className={styles.statIconWrapper} style={{ backgroundColor: '#10b98115' }}>
-              <DollarSign size={24} style={{ color: '#10b981' }} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <DollarSign size={24} className="text-green-400" />
             </div>
-            <div className={styles.statContent}>
-              <div className={styles.statLabel}>Custo Mensal</div>
-              <div className={styles.statValue}>{formatCurrency(stats.monthlyCost)}</div>
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statIconWrapper} style={{ backgroundColor: '#3b82f615' }}>
-              <Activity size={24} style={{ color: '#3b82f6' }} />
-            </div>
-            <div className={styles.statContent}>
-              <div className={styles.statLabel}>Custo Diário</div>
-              <div className={styles.statValue}>{formatCurrency(stats.dailyCost)}</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm text-gray-400">Custo Mensal</div>
+              <div className="text-2xl font-bold truncate">{formatCurrency(stats.monthlyCost)}</div>
             </div>
           </div>
-          <div className={styles.statCard}>
-            <div className={styles.statIconWrapper} style={{ backgroundColor: stats.costTrend >= 0 ? '#10b98115' : '#ef444415' }}>
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Activity size={24} className="text-blue-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm text-gray-400">Custo Diário</div>
+              <div className="text-2xl font-bold truncate">{formatCurrency(stats.dailyCost)}</div>
+            </div>
+          </div>
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${stats.costTrend >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
               {stats.costTrend >= 0 ? (
-                <TrendingUp size={24} style={{ color: '#10b981' }} />
+                <TrendingUp size={24} className="text-green-400" />
               ) : (
-                <TrendingDown size={24} style={{ color: '#ef4444' }} />
+                <TrendingDown size={24} className="text-red-400" />
               )}
             </div>
-            <div className={styles.statContent}>
-              <div className={styles.statLabel}>Tendência</div>
-              <div className={`${styles.statValue} ${stats.costTrend >= 0 ? styles.trendUp : styles.trendDown}`}>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm text-gray-400">Tendência</div>
+              <div className={`text-2xl font-bold truncate ${stats.costTrend >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                 {stats.costTrend >= 0 ? '+' : ''}{stats.costTrend.toFixed(1)}%
               </div>
             </div>
           </div>
-          <div className={styles.statCard}>
-            <div className={styles.statIconWrapper} style={{ backgroundColor: '#8b5cf615' }}>
-              <Package size={24} style={{ color: '#8b5cf6' }} />
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
+            <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Package size={24} className="text-purple-400" />
             </div>
-            <div className={styles.statContent}>
-              <div className={styles.statLabel}>Total de Recursos</div>
-              <div className={styles.statValue}>{stats.totalResources}</div>
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statIconWrapper} style={{ backgroundColor: '#10b98115' }}>
-              <Server size={24} style={{ color: '#10b981' }} />
-            </div>
-            <div className={styles.statContent}>
-              <div className={styles.statLabel}>Recursos Ativos</div>
-              <div className={styles.statValue}>{stats.activeResources}</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm text-gray-400">Total de Recursos</div>
+              <div className="text-2xl font-bold truncate">{stats.totalResources}</div>
             </div>
           </div>
-          <div className={styles.statCard}>
-            <div className={styles.statIconWrapper} style={{ backgroundColor: '#64748b15' }}>
-              <Server size={24} style={{ color: '#64748b' }} />
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Server size={24} className="text-green-400" />
             </div>
-            <div className={styles.statContent}>
-              <div className={styles.statLabel}>Recursos Inativos</div>
-              <div className={styles.statValue}>{stats.inactiveResources}</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm text-gray-400">Recursos Ativos</div>
+              <div className="text-2xl font-bold truncate">{stats.activeResources}</div>
+            </div>
+          </div>
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
+            <div className="w-12 h-12 bg-gray-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Server size={24} className="text-gray-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm text-gray-400">Recursos Inativos</div>
+              <div className="text-2xl font-bold truncate">{stats.inactiveResources}</div>
             </div>
           </div>
         </div>
       )}
 
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === 'overview' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('overview')}
-        >
-          Visão Geral
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'resources' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('resources')}
-        >
-          Recursos ({resources.length})
-        </button>
+      <div className="border-b border-gray-700 mb-6">
+        <nav className="flex space-x-8">
+          <button
+            className={`py-4 px-2 border-b-2 transition-all ${
+              activeTab === 'overview'
+                ? 'border-[#1B998B] text-[#1B998B]'
+                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+            }`}
+            onClick={() => setActiveTab('overview')}
+          >
+            Visão Geral
+          </button>
+          <button
+            className={`py-4 px-2 border-b-2 transition-all ${
+              activeTab === 'resources'
+                ? 'border-[#1B998B] text-[#1B998B]'
+                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+            }`}
+            onClick={() => setActiveTab('resources')}
+          >
+            Recursos ({resources.length})
+          </button>
+        </nav>
       </div>
 
-      <div className={styles.content}>
+      <div>
         {activeTab === 'overview' && stats && (
-          <div className={styles.overview}>
-            <div className={styles.chartSection}>
-              <h3>Custo por Provedor</h3>
-              <div className={styles.providerList}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6">
+              <h3 className="text-xl font-bold mb-4">Custo por Provedor</h3>
+              <div className="space-y-3">
                 {Object.entries(stats.costByProvider).map(([provider, cost]) => (
-                  <div key={provider} className={styles.providerItem}>
-                    <span className={styles.providerName}>{provider.toUpperCase()}</span>
-                    <span className={styles.providerCost}>{formatCurrency(cost)}</span>
+                  <div key={provider} className="flex items-center justify-between py-2 border-b border-gray-700 last:border-0">
+                    <span className="text-gray-300 font-medium">{provider.toUpperCase()}</span>
+                    <span className="text-lg font-bold text-green-400">{formatCurrency(cost)}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className={styles.chartSection}>
-              <h3>Top Serviços por Custo</h3>
-              <div className={styles.serviceList}>
+            <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6">
+              <h3 className="text-xl font-bold mb-4">Top Serviços por Custo</h3>
+              <div className="space-y-3">
                 {Object.entries(stats.costByService)
                   .sort(([, a], [, b]) => b - a)
                   .slice(0, 5)
                   .map(([service, cost]) => (
-                    <div key={service} className={styles.serviceItem}>
-                      <span className={styles.serviceName}>{service}</span>
-                      <span className={styles.serviceCost}>{formatCurrency(cost)}</span>
+                    <div key={service} className="flex items-center justify-between py-2 border-b border-gray-700 last:border-0">
+                      <span className="text-gray-300 font-medium truncate mr-4">{service}</span>
+                      <span className="text-lg font-bold text-blue-400 flex-shrink-0">{formatCurrency(cost)}</span>
                     </div>
                   ))}
               </div>
@@ -248,41 +269,43 @@ function FinOpsPage() {
         )}
 
         {activeTab === 'resources' && (
-          <div className={styles.resourcesGrid}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {resources.map((resource, index) => (
-              <div key={index} className={styles.resourceCard}>
-                <div className={styles.resourceHeader}>
-                  <h4 className={styles.resourceName}>{resource.resourceName}</h4>
-                  <span className={`${styles.resourceStatus} ${getStatusColor(resource.status)}`}>
+              <div key={index} className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4">
+                <div className="flex items-start justify-between mb-4">
+                  <h4 className="text-lg font-bold truncate mr-2">{resource.resourceName}</h4>
+                  <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getStatusColor(resource.status)}`}>
                     {resource.status}
                   </span>
                 </div>
-                <div className={styles.resourceDetails}>
-                  <div className={styles.resourceDetail}>
-                    <span className={styles.detailLabel}>Provedor:</span>
-                    <span className={styles.detailValue}>{resource.provider.toUpperCase()}</span>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Provedor:</span>
+                    <span className="text-gray-200 font-medium">{resource.provider.toUpperCase()}</span>
                   </div>
-                  <div className={styles.resourceDetail}>
-                    <span className={styles.detailLabel}>Tipo:</span>
-                    <span className={styles.detailValue}>{resource.resourceType}</span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Tipo:</span>
+                    <span className="text-gray-200 font-medium truncate ml-2">{resource.resourceType}</span>
                   </div>
-                  <div className={styles.resourceDetail}>
-                    <span className={styles.detailLabel}>Região:</span>
-                    <span className={styles.detailValue}>{resource.region}</span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Região:</span>
+                    <span className="text-gray-200 font-medium">{resource.region}</span>
                   </div>
                   {resource.cost && (
-                    <div className={styles.resourceDetail}>
-                      <span className={styles.detailLabel}>Custo:</span>
-                      <span className={styles.detailValue}>{formatCurrency(resource.cost)}</span>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Custo:</span>
+                      <span className="text-green-400 font-bold">{formatCurrency(resource.cost)}</span>
                     </div>
                   )}
                   {resource.tags && Object.keys(resource.tags).length > 0 && (
-                    <div className={styles.resourceTags}>
-                      {Object.entries(resource.tags).map(([key, value]) => (
-                        <span key={key} className={styles.tag}>
-                          {key}: {value}
-                        </span>
-                      ))}
+                    <div className="mt-3 pt-3 border-t border-gray-700">
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(resource.tags).map(([key, value]) => (
+                          <span key={key} className="px-2 py-1 bg-gray-700 rounded text-xs text-gray-300">
+                            {key}: {value}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Rocket, CheckCircle, XCircle, Clock, UserCheck, Check, X } from 'lucide-react'
 import { FilterValues } from './CIFilters'
-import styles from './AzureDevOpsTabs.module.css'
 import { buildApiUrl } from '../../config/api'
 
 interface User {
@@ -82,15 +81,15 @@ function ReleasesTab({ filters }: ReleasesTabProps) {
   }
 
   const getEnvironmentIcon = (deploymentStatus: string) => {
-    if (deploymentStatus === 'succeeded') return <CheckCircle size={16} className={styles.iconSuccess} />
-    if (deploymentStatus === 'failed') return <XCircle size={16} className={styles.iconError} />
-    return <Clock size={16} className={styles.iconWarning} />
+    if (deploymentStatus === 'succeeded') return <CheckCircle size={16} className="text-success" />
+    if (deploymentStatus === 'failed') return <XCircle size={16} className="text-error" />
+    return <Clock size={16} className="text-warning" />
   }
 
   const getEnvironmentBadge = (deploymentStatus: string) => {
-    if (deploymentStatus === 'succeeded') return styles.badgeSuccess
-    if (deploymentStatus === 'failed') return styles.badgeError
-    return styles.badgeWarning
+    if (deploymentStatus === 'succeeded') return 'py-1 px-3 rounded-xl text-xs font-semibold bg-success/10 text-success'
+    if (deploymentStatus === 'failed') return 'py-1 px-3 rounded-xl text-xs font-semibold bg-error/10 text-error'
+    return 'py-1 px-3 rounded-xl text-xs font-semibold bg-warning/10 text-warning'
   }
 
   const formatDate = (dateString: string) => {
@@ -191,87 +190,84 @@ function ReleasesTab({ filters }: ReleasesTabProps) {
   }
 
   if (loading) {
-    return <div className={styles.loading}>Carregando releases...</div>
+    return <div className="text-center py-16 px-5 text-text-secondary text-base">Carregando releases...</div>
   }
 
   if (error) {
-    return <div className={styles.error}>Erro: {error}</div>
+    return <div className="text-center py-10 px-5 text-error bg-error/10 border border-error rounded-xl">Erro: {error}</div>
   }
 
   if (releases.length === 0) {
     return (
-      <div className={styles.empty}>
-        <Rocket size={48} />
+      <div className="text-center py-20 px-5 text-text-secondary">
+        <Rocket size={48} className="mb-4 opacity-50" />
         <p>Nenhuma release encontrada</p>
       </div>
     )
   }
 
   return (
-    <>
-      <CIFilters onFilterChange={handleFilterChange} initialFilters={filters} />
-
-      <div className={styles.list}>
+    <div className="flex flex-col gap-4">
       {releases.map((release) => (
-        <div key={release.id} className={styles.listItem}>
-          <div className={styles.listItemHeader}>
-            <div className={styles.listItemTitle}>
-              <Rocket size={18} className={styles.iconPrimary} />
+        <div key={release.id} className="bg-surface border border-border rounded-xl p-5 transition-all duration-200 hover:border-primary/50 hover:shadow-[0_4px_12px_rgba(99,102,241,0.15)]">
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-3 text-base font-semibold text-text">
+              <Rocket size={18} className="text-primary" />
               <span>{release.name}</span>
             </div>
-            <span className={styles.badgeDefault}>{release.status}</span>
+            <span className="py-1 px-3 rounded-xl text-xs font-semibold bg-surface-light text-text-secondary">{release.status}</span>
           </div>
 
-          <div className={styles.listItemContent}>
-            <div className={styles.listItemRow}>
-              <span className={styles.label}>Definition:</span>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <span className="font-semibold text-text-secondary">Definition:</span>
               <span>{release.releaseDefinition.name}</span>
             </div>
-            <div className={styles.listItemRow}>
-              <span className={styles.label}>Integração:</span>
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <span className="font-semibold text-text-secondary">Integração:</span>
               <span>{release.integration || 'N/A'}</span>
             </div>
-            <div className={styles.listItemRow}>
-              <span className={styles.label}>Created:</span>
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <span className="font-semibold text-text-secondary">Created:</span>
               <span>{formatDate(release.createdOn)}</span>
             </div>
-            <div className={styles.listItemRow}>
-              <span className={styles.label}>Created By:</span>
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <span className="font-semibold text-text-secondary">Created By:</span>
               <span>{release.createdBy?.displayName || 'N/A'}</span>
             </div>
 
             {release.environments && release.environments.length > 0 && (
-              <div className={styles.environments}>
-                <span className={styles.label}>Environments:</span>
-                <div className={styles.environmentsList}>
+              <div className="mt-3">
+                <span className="font-semibold text-text-secondary text-sm mb-2 block">Environments:</span>
+                <div className="flex flex-col gap-2">
                   {release.environments.map((env) => {
                     const approvedBy = getApprovedBy(env)
                     const pendingApproval = getPendingApproval(env)
                     return (
-                      <div key={env.id} className={styles.environment}>
+                      <div key={env.id} className="flex items-center gap-2 p-2 bg-surface-light rounded-lg border border-border">
                         {getEnvironmentIcon(env.deploymentStatus)}
-                        <span>{env.name}</span>
-                        <span className={`${styles.badge} ${getEnvironmentBadge(env.deploymentStatus)}`}>
+                        <span className="text-sm text-text">{env.name}</span>
+                        <span className={getEnvironmentBadge(env.deploymentStatus)}>
                           {env.deploymentStatus || env.status}
                         </span>
                         {approvedBy && (
-                          <span className={styles.approver}>
+                          <span className="flex items-center gap-1 text-xs text-success ml-auto">
                             <UserCheck size={14} />
                             <span>{approvedBy}</span>
                           </span>
                         )}
                         {pendingApproval && (
-                          <div className={styles.approvalActions}>
+                          <div className="flex gap-1 ml-auto">
                             <button
-                              className={styles.approveButton}
-                              onClick={() => handleApproveRelease(release, pendingApproval.id, release.project || '')}
+                              className="p-1.5 rounded-lg bg-success/10 text-success hover:bg-success/20 border-none cursor-pointer transition-colors"
+                              onClick={() => handleApproveRelease(release, pendingApproval.id, '')}
                               title="Aprovar"
                             >
                               <Check size={14} />
                             </button>
                             <button
-                              className={styles.rejectButton}
-                              onClick={() => handleRejectRelease(release, pendingApproval.id, release.project || '')}
+                              className="p-1.5 rounded-lg bg-error/10 text-error hover:bg-error/20 border-none cursor-pointer transition-colors"
+                              onClick={() => handleRejectRelease(release, pendingApproval.id, '')}
                               title="Rejeitar"
                             >
                               <X size={14} />
@@ -288,7 +284,6 @@ function ReleasesTab({ filters }: ReleasesTabProps) {
         </div>
       ))}
     </div>
-    </>
   )
 }
 

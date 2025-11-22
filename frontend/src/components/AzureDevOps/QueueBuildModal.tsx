@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { X, Rocket, GitBranch, FolderTree } from 'lucide-react'
-import styles from './QueueBuildModal.module.css'
 import { buildApiUrl } from '../../config/api'
 
 interface Pipeline {
@@ -92,33 +91,33 @@ function QueueBuildModal({ onClose, onSuccess }: QueueBuildModalProps) {
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <div className={styles.headerContent}>
-            <Rocket size={24} />
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-surface border border-border rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center p-5 border-b border-border">
+          <div className="flex items-center gap-3">
+            <Rocket size={24} className="text-primary" />
             <div>
-              <h2 className={styles.title}>Criar Novo Build</h2>
-              <p className={styles.subtitle}>Selecione o pipeline e a branch para executar</p>
+              <h2 className="text-lg font-semibold text-text">Criar Novo Build</h2>
+              <p className="text-sm text-text-secondary">Selecione o pipeline e a branch para executar</p>
             </div>
           </div>
-          <button className={styles.closeButton} onClick={onClose}>
+          <button className="p-2 rounded-lg bg-surface-light text-text-secondary hover:bg-error/10 hover:text-error border-none cursor-pointer transition-colors" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
 
-        <div className={styles.content}>
+        <div className="flex-1 overflow-auto p-5">
           {loading ? (
-            <div className={styles.loading}>Carregando pipelines...</div>
+            <div className="text-center py-16 px-5 text-text-secondary text-base">Carregando pipelines...</div>
           ) : (
-            <form onSubmit={handleSubmit}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-text">
                   <FolderTree size={16} />
                   Integração (Organização)
                 </label>
                 <select
-                  className={styles.select}
+                  className="w-full p-3 bg-surface-light border border-border rounded-lg text-text text-base cursor-pointer transition-colors hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={selectedIntegration}
                   onChange={(e) => {
                     setSelectedIntegration(e.target.value)
@@ -136,13 +135,13 @@ function QueueBuildModal({ onClose, onSuccess }: QueueBuildModalProps) {
                 </select>
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.label}>
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-text">
                   <FolderTree size={16} />
                   Projeto
                 </label>
                 <select
-                  className={styles.select}
+                  className="w-full p-3 bg-surface-light border border-border rounded-lg text-text text-base cursor-pointer transition-colors hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   value={selectedProject}
                   onChange={(e) => {
                     setSelectedProject(e.target.value)
@@ -160,13 +159,13 @@ function QueueBuildModal({ onClose, onSuccess }: QueueBuildModalProps) {
                 </select>
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.label}>
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-text">
                   <Rocket size={16} />
                   Pipeline
                 </label>
                 <select
-                  className={styles.select}
+                  className="w-full p-3 bg-surface-light border border-border rounded-lg text-text text-base cursor-pointer transition-colors hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   value={selectedPipeline || ''}
                   onChange={(e) => setSelectedPipeline(Number(e.target.value))}
                   disabled={!selectedProject}
@@ -181,34 +180,34 @@ function QueueBuildModal({ onClose, onSuccess }: QueueBuildModalProps) {
                 </select>
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.label}>
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-text">
                   <GitBranch size={16} />
                   Branch
                 </label>
                 <input
                   type="text"
-                  className={styles.input}
+                  className="w-full p-3 bg-surface-light border border-border rounded-lg text-text text-base transition-colors hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={sourceBranch}
                   onChange={(e) => setSourceBranch(e.target.value)}
                   placeholder="refs/heads/main"
                   required
                 />
-                <small className={styles.hint}>
+                <small className="text-xs text-text-secondary">
                   Exemplo: refs/heads/main, refs/heads/develop, refs/heads/feature/my-feature
                 </small>
               </div>
 
               {error && (
-                <div className={styles.error}>
+                <div className="text-center py-3 px-4 text-error bg-error/10 border border-error rounded-lg">
                   {error}
                 </div>
               )}
 
-              <div className={styles.actions}>
+              <div className="flex gap-3 justify-end pt-4 border-t border-border">
                 <button
                   type="button"
-                  className={styles.cancelButton}
+                  className="py-2.5 px-6 rounded-lg bg-surface-light text-text border-none cursor-pointer font-semibold transition-colors hover:bg-border disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={onClose}
                   disabled={submitting}
                 >
@@ -216,7 +215,7 @@ function QueueBuildModal({ onClose, onSuccess }: QueueBuildModalProps) {
                 </button>
                 <button
                   type="submit"
-                  className={styles.submitButton}
+                  className="py-2.5 px-6 rounded-lg bg-primary text-white border-none cursor-pointer font-semibold transition-colors hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={submitting || !selectedPipeline}
                 >
                   {submitting ? 'Criando...' : 'Criar Build'}

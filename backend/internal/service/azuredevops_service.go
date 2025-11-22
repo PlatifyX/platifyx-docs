@@ -1,6 +1,9 @@
 package service
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/pkg/azuredevops"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
@@ -16,6 +19,21 @@ func NewAzureDevOpsService(config domain.AzureDevOpsConfig, log *logger.Logger) 
 		client: azuredevops.NewClient(config),
 		log:    log,
 	}
+}
+
+// NewAzureDevOpsServiceFromIntegration creates an AzureDevOpsService from an Integration
+func NewAzureDevOpsServiceFromIntegration(integration *domain.Integration) (*AzureDevOpsService, error) {
+	// Parse config JSON
+	var config domain.AzureDevOpsConfig
+	err := json.Unmarshal(integration.Config, &config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse Azure DevOps config: %w", err)
+	}
+
+	// Create a minimal logger (we don't have access to the main logger here)
+	log := logger.NewLogger("info")
+
+	return NewAzureDevOpsService(config, log), nil
 }
 
 func (s *AzureDevOpsService) GetPipelines() ([]domain.Pipeline, error) {

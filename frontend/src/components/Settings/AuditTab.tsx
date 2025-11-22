@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Filter, Download, Calendar, User, Activity } from 'lucide-react';
+import { Filter, Download, Calendar, User, Activity } from 'lucide-react';
 
 interface AuditLog {
   id: string;
@@ -95,7 +95,7 @@ const AuditTab: React.FC = () => {
     return 'text-gray-400';
   };
 
-  const getActionIcon = (action: string) => {
+  const getActionIcon = () => {
     return <Activity className="w-4 h-4" />;
   };
 
@@ -201,7 +201,7 @@ const AuditTab: React.FC = () => {
                     log.status === 'success' ? 'bg-green-500/20' : 'bg-red-500/20'
                   }`}>
                     <div className={getActionColor(log.action)}>
-                      {getActionIcon(log.action)}
+                      {getActionIcon()}
                     </div>
                   </div>
 

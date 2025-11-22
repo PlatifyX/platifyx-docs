@@ -165,7 +165,7 @@ const RolesTab: React.FC = () => {
     }));
   };
 
-  const toggleAllResourcePermissions = (resource: string, perms: Permission[]) => {
+  const toggleAllResourcePermissions = (_resource: string, perms: Permission[]) => {
     const permIds = perms.map(p => p.id);
     const allSelected = permIds.every(id => formData.permission_ids.includes(id));
 

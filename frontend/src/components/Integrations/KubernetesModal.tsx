@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import styles from './AzureDevOpsModal.module.css'
 import { buildApiUrl } from '../../config/api'
 
 interface Integration {
@@ -107,118 +106,124 @@ function KubernetesModal({ integration, isCreating, onSave, onClose }: Kubernete
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2 className={styles.title}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900">
             {isCreating ? 'Nova Integração Kubernetes' : 'Configurar Kubernetes'}
           </h2>
-          <button className={styles.closeButton} onClick={onClose}>
+          <button
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            onClick={onClose}
+          >
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          {isCreating && (
-            <div className={styles.formGroup}>
-              <label htmlFor="name" className={styles.label}>
-                Nome da Integração *
-              </label>
-              <input
-                id="name"
-                type="text"
-                className={styles.input}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Kubernetes - Produção"
-                required
-              />
-              <p className={styles.hint}>
-                Nome identificador desta integração
-              </p>
-            </div>
-          )}
-
-          <div className={styles.formGroup}>
-            <label htmlFor="clusterName" className={styles.label}>
-              Nome do Cluster *
-            </label>
-            <input
-              id="clusterName"
-              type="text"
-              className={styles.input}
-              value={clusterName}
-              onChange={(e) => setClusterName(e.target.value)}
-              placeholder="production-cluster"
-              required
-            />
-            <p className={styles.hint}>
-              Nome identificador do cluster Kubernetes
-            </p>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="kubeconfig" className={styles.label}>
-              Kubeconfig *
-            </label>
-            <textarea
-              id="kubeconfig"
-              className={styles.input}
-              value={kubeconfig}
-              onChange={(e) => setKubeconfig(e.target.value)}
-              placeholder="Cole o conteúdo do arquivo kubeconfig aqui..."
-              rows={8}
-              required
-              style={{ fontFamily: 'monospace', fontSize: '12px' }}
-            />
-            <p className={styles.hint}>
-              Conteúdo completo do arquivo kubeconfig (YAML)
-            </p>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="context" className={styles.label}>
-              Context (opcional)
-            </label>
-            <input
-              id="context"
-              type="text"
-              className={styles.input}
-              value={context}
-              onChange={(e) => setContext(e.target.value)}
-              placeholder="default"
-            />
-            <p className={styles.hint}>
-              Contexto específico do kubeconfig (deixe em branco para usar o padrão)
-            </p>
-          </div>
-
-          <div className={styles.testSection}>
-            <button
-              type="button"
-              className={styles.testButton}
-              onClick={handleTestConnection}
-              disabled={testing || !clusterName || !kubeconfig}
-            >
-              {testing ? 'Testando...' : 'Testar Conexão'}
-            </button>
-
-            {testResult && (
-              <div className={testResult.success ? styles.testSuccess : styles.testError}>
-                {testResult.success ? (
-                  <CheckCircle size={16} />
-                ) : (
-                  <XCircle size={16} />
-                )}
-                <span>{testResult.message}</span>
+        <form onSubmit={handleSubmit}>
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-160px)] space-y-4">
+            {isCreating && (
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome da Integração *
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex: Kubernetes - Produção"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Nome identificador desta integração
+                </p>
               </div>
             )}
+
+            <div>
+              <label htmlFor="clusterName" className="block text-sm font-medium text-gray-700 mb-1">
+                Nome do Cluster *
+              </label>
+              <input
+                id="clusterName"
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={clusterName}
+                onChange={(e) => setClusterName(e.target.value)}
+                placeholder="production-cluster"
+                required
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Nome identificador do cluster Kubernetes
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="kubeconfig" className="block text-sm font-medium text-gray-700 mb-1">
+                Kubeconfig *
+              </label>
+              <textarea
+                id="kubeconfig"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-xs"
+                value={kubeconfig}
+                onChange={(e) => setKubeconfig(e.target.value)}
+                placeholder="Cole o conteúdo do arquivo kubeconfig aqui..."
+                rows={8}
+                required
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Conteúdo completo do arquivo kubeconfig (YAML)
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="context" className="block text-sm font-medium text-gray-700 mb-1">
+                Context (opcional)
+              </label>
+              <input
+                id="context"
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={context}
+                onChange={(e) => setContext(e.target.value)}
+                placeholder="default"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Contexto específico do kubeconfig (deixe em branco para usar o padrão)
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleTestConnection}
+                disabled={testing || !clusterName || !kubeconfig}
+              >
+                {testing ? 'Testando...' : 'Testar Conexão'}
+              </button>
+
+              {testResult && (
+                <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                  testResult.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                }`}>
+                  {testResult.success ? (
+                    <CheckCircle size={16} className="flex-shrink-0" />
+                  ) : (
+                    <XCircle size={16} className="flex-shrink-0" />
+                  )}
+                  <span className="text-sm">{testResult.message}</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className={styles.footer}>
+          <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
             <button
               type="button"
-              className={styles.cancelButton}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium transition-colors disabled:opacity-50"
               onClick={onClose}
               disabled={saving}
             >
@@ -226,7 +231,7 @@ function KubernetesModal({ integration, isCreating, onSave, onClose }: Kubernete
             </button>
             <button
               type="submit"
-              className={styles.saveButton}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={saving}
             >
               {saving ? 'Salvando...' : 'Salvar'}

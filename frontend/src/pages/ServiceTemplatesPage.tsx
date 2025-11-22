@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { Plus, Code, Rocket } from 'lucide-react'
-import styles from './IntegrationsPage.module.css'
 import { buildApiUrl } from '../config/api'
 
 interface Template {
@@ -70,49 +69,42 @@ function ServiceTemplatesPage() {
     }
   }
 
-  if (loading) return <div className={styles.container}><div className={styles.loading}>Carregando...</div></div>
+  if (loading) return (
+    <div className="p-4 md:p-6">
+      <div className="flex items-center justify-center min-h-screen text-gray-400">Carregando...</div>
+    </div>
+  )
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Code size={32} />
+    <div className="p-4 md:p-6">
+      <div className="mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+            <Code className="w-6 h-6 text-blue-400" />
+          </div>
           <div>
-            <h1 className={styles.title}>Templates de Serviços</h1>
-            <p className={styles.subtitle}>Crie novos serviços a partir de templates</p>
+            <h1 className="text-3xl font-bold">Templates de Serviços</h1>
+            <p className="text-gray-400 text-sm mt-1">Crie novos serviços a partir de templates</p>
           </div>
         </div>
       </div>
 
-      <div className={styles.grid}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {templates.map((template) => (
-          <div key={template.id} className={styles.card}>
-            <div style={{ fontSize: '2rem' }}>{template.icon}</div>
-            <h3>{template.name}</h3>
-            <p>{template.description}</p>
-            <div style={{ marginTop: '8px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-              <span style={{ background: '#e3f2fd', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>{template.language}</span>
-              <span style={{ background: '#f3e5f5', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>{template.category}</span>
+          <div key={template.id} className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6 hover:border-[#1B998B] transition-all">
+            <div className="text-5xl mb-4">{template.icon}</div>
+            <h3 className="text-xl font-bold mb-2">{template.name}</h3>
+            <p className="text-sm text-gray-400 mb-4">{template.description}</p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-medium">{template.language}</span>
+              <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded text-xs font-medium">{template.category}</span>
             </div>
             <button
               onClick={() => {
                 setSelectedTemplate(template)
                 setShowCreateModal(true)
               }}
-              style={{
-                marginTop: '12px',
-                padding: '8px 16px',
-                background: '#1976d2',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                width: '100%',
-                justifyContent: 'center',
-              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all"
             >
               <Plus size={16} />
               Usar Template
@@ -122,72 +114,44 @@ function ServiceTemplatesPage() {
       </div>
 
       {showCreateModal && selectedTemplate && (
-        <div className={styles.modalOverlay} onClick={() => setShowCreateModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
-            <h2 style={{ color: '#1E1E1E' }}>Criar Serviço: {selectedTemplate.name}</h2>
-            <div style={{ marginTop: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#1E1E1E' }}>Nome do Serviço *</label>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowCreateModal(false)}>
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold mb-6">Criar Serviço: {selectedTemplate.name}</h2>
+            <div className="mb-4">
+              <label className="block mb-2 font-medium text-gray-300">Nome do Serviço *</label>
               <input
                 type="text"
                 value={serviceName}
                 onChange={(e) => setServiceName(e.target.value)}
                 placeholder="my-awesome-service"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  color: '#1E1E1E',
-                  backgroundColor: 'white'
-                }}
+                className="w-full px-4 py-2 bg-[#2A2A2A] border border-gray-600 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#1B998B]"
               />
             </div>
-            <div style={{ marginTop: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#1E1E1E' }}>Descrição</label>
+            <div className="mb-6">
+              <label className="block mb-2 font-medium text-gray-300">Descrição</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descrição do serviço..."
                 rows={3}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  color: '#1E1E1E',
-                  backgroundColor: 'white'
-                }}
+                className="w-full px-4 py-2 bg-[#2A2A2A] border border-gray-600 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#1B998B]"
               />
             </div>
-            <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowCreateModal(false)}
-                style={{
-                  padding: '8px 16px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  background: 'white',
-                  cursor: 'pointer',
-                  color: '#1E1E1E'
-                }}
+                className="px-4 py-2 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 transition-all"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleCreateService}
                 disabled={!serviceName || creating}
-                style={{
-                  padding: '8px 16px',
-                  background: '#1976d2',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: creating || !serviceName ? 'not-allowed' : 'pointer',
-                  opacity: creating || !serviceName ? 0.6 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                  creating || !serviceName
+                    ? 'bg-blue-600/50 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                } text-white`}
               >
                 <Rocket size={16} />
                 {creating ? 'Criando...' : 'Criar Serviço'}

@@ -94,7 +94,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	// Initialize ServiceCatalog service
 	var serviceCatalogService *ServiceCatalogService
 	if kubernetesService != nil {
-		serviceCatalogService = NewServiceCatalogService(serviceRepo, kubernetesService, azureDevOpsService, githubService, log)
+		serviceCatalogService = NewServiceCatalogService(serviceRepo, integrationRepo, kubernetesService, azureDevOpsService, githubService, log)
 	}
 
 	// Initialize FinOps service

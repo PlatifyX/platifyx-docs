@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/repository"
@@ -15,6 +16,7 @@ import (
 
 type ServiceCatalogService struct {
 	serviceRepo        *repository.ServiceRepository
+	integrationRepo    *repository.IntegrationRepository
 	kubeService        *KubernetesService
 	azureDevOpsService *AzureDevOpsService
 	githubService      *GitHubService
@@ -23,6 +25,7 @@ type ServiceCatalogService struct {
 
 func NewServiceCatalogService(
 	serviceRepo *repository.ServiceRepository,
+	integrationRepo *repository.IntegrationRepository,
 	kubeService *KubernetesService,
 	azureDevOpsService *AzureDevOpsService,
 	githubService *GitHubService,
@@ -30,6 +33,7 @@ func NewServiceCatalogService(
 ) *ServiceCatalogService {
 	return &ServiceCatalogService{
 		serviceRepo:        serviceRepo,
+		integrationRepo:    integrationRepo,
 		kubeService:        kubeService,
 		azureDevOpsService: azureDevOpsService,
 		githubService:      githubService,
@@ -194,19 +198,55 @@ func (s *ServiceCatalogService) fetchServiceMetadata(squad, application, namespa
 		}
 	}
 
-	// If GitHub failed or not available, try Azure DevOps
-	if fileContent == "" && s.azureDevOpsService != nil {
-		s.log.Infow("Trying to fetch from Azure DevOps", "service", serviceName)
+	// If GitHub failed or not available, try ALL Azure DevOps integrations
+	if fileContent == "" && s.integrationRepo != nil {
+		s.log.Infow("Trying to fetch from Azure DevOps integrations", "service", serviceName)
 
-		fileContent, err = s.azureDevOpsService.GetFileContent(serviceName, "ci/pipeline.yml", "main")
+		// Get all Azure DevOps integrations
+		azureIntegrations, err := s.integrationRepo.GetAllByType("azuredevops")
 		if err != nil {
-			// Try refs/heads/main
-			fileContent, err = s.azureDevOpsService.GetFileContent(serviceName, "ci/pipeline.yml", "refs/heads/main")
-		}
+			s.log.Warnw("Failed to get Azure DevOps integrations", "error", err)
+		} else {
+			// Try each integration
+			for _, integration := range azureIntegrations {
+				s.log.Infow("Trying Azure DevOps integration",
+					"service", serviceName,
+					"integration", integration.Name,
+				)
 
-		if err == nil {
-			repoURL, _ = s.azureDevOpsService.GetRepositoryURL(serviceName)
-			repositoryType = "azuredevops"
+				// Create a temporary Azure DevOps service for this integration
+				azureService, err := NewAzureDevOpsServiceFromIntegration(&integration)
+				if err != nil {
+					s.log.Warnw("Failed to create Azure DevOps service from integration",
+						"integration", integration.Name,
+						"error", err,
+					)
+					continue
+				}
+
+				// Try to fetch the file
+				fileContent, err = azureService.GetFileContent(serviceName, "ci/pipeline.yml", "main")
+				if err != nil {
+					// Try refs/heads/main
+					fileContent, err = azureService.GetFileContent(serviceName, "ci/pipeline.yml", "refs/heads/main")
+				}
+
+				if err == nil {
+					repoURL, _ = azureService.GetRepositoryURL(serviceName)
+					repositoryType = "azuredevops"
+					s.log.Infow("Successfully found repository in Azure DevOps",
+						"service", serviceName,
+						"integration", integration.Name,
+					)
+					break
+				} else {
+					s.log.Debugw("Repository not found in this Azure DevOps integration",
+						"service", serviceName,
+						"integration", integration.Name,
+						"error", err.Error(),
+					)
+				}
+			}
 		}
 	}
 
@@ -303,6 +343,7 @@ func (s *ServiceCatalogService) getDeploymentStatus(clientset *kubernetes.Client
 	}
 
 	dep := deployment.Items[0]
+	namespace := dep.Namespace
 
 	status := &domain.DeploymentStatus{
 		Environment:       environment,
@@ -324,7 +365,77 @@ func (s *ServiceCatalogService) getDeploymentStatus(clientset *kubernetes.Client
 		status.Image = dep.Spec.Template.Spec.Containers[0].Image
 	}
 
+	// Get pods for this deployment
+	pods, err := s.getPodsForDeployment(clientset, namespace, deploymentName)
+	if err != nil {
+		s.log.Warnw("Failed to get pods for deployment", "deployment", deploymentName, "error", err)
+	} else {
+		status.Pods = pods
+	}
+
 	return status, nil
+}
+
+// getPodsForDeployment gets pods related to a deployment
+func (s *ServiceCatalogService) getPodsForDeployment(clientset *kubernetes.Clientset, namespace, deploymentName string) ([]domain.PodInfo, error) {
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("app=%s", deploymentName),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var podInfos []domain.PodInfo
+	for _, pod := range pods.Items {
+		// Calculate ready containers
+		readyContainers := 0
+		totalContainers := len(pod.Status.ContainerStatuses)
+		for _, cs := range pod.Status.ContainerStatuses {
+			if cs.Ready {
+				readyContainers++
+			}
+		}
+
+		// Calculate total restarts
+		var totalRestarts int32
+		for _, cs := range pod.Status.ContainerStatuses {
+			totalRestarts += cs.RestartCount
+		}
+
+		// Calculate age
+		age := time.Since(pod.CreationTimestamp.Time)
+		ageStr := formatDuration(age)
+
+		podInfo := domain.PodInfo{
+			Name:      pod.Name,
+			Status:    string(pod.Status.Phase),
+			Ready:     fmt.Sprintf("%d/%d", readyContainers, totalContainers),
+			Restarts:  totalRestarts,
+			Age:       ageStr,
+			Node:      pod.Spec.NodeName,
+			Namespace: pod.Namespace,
+		}
+		podInfos = append(podInfos, podInfo)
+	}
+
+	return podInfos, nil
+}
+
+// formatDuration formats a duration into a human-readable string (e.g., "2d", "5h", "30m")
+func formatDuration(d time.Duration) string {
+	days := int(d.Hours() / 24)
+	if days > 0 {
+		return fmt.Sprintf("%dd", days)
+	}
+	hours := int(d.Hours())
+	if hours > 0 {
+		return fmt.Sprintf("%dh", hours)
+	}
+	minutes := int(d.Minutes())
+	if minutes > 0 {
+		return fmt.Sprintf("%dm", minutes)
+	}
+	return fmt.Sprintf("%ds", int(d.Seconds()))
 }
 
 // GetServiceMetrics returns aggregated metrics from SonarQube and last build from Azure DevOps

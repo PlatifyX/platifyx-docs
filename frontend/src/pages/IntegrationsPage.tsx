@@ -22,7 +22,6 @@ import LokiModal from '../components/Integrations/LokiModal'
 import VaultModal from '../components/Integrations/VaultModal'
 import AWSSecretsModal from '../components/Integrations/AWSSecretsModal'
 import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
-import styles from './IntegrationsPage.module.css'
 
 function IntegrationsPage() {
   const [integrations, setIntegrations] = useState<Integration[]>([])
@@ -120,40 +119,40 @@ function IntegrationsPage() {
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Carregando integrações...</div>
+      <div className="max-w-[1400px] mx-auto">
+        <div className="text-center py-15 px-5 text-base text-text-secondary">Carregando integrações...</div>
       </div>
     )
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Plug size={32} className={styles.headerIcon} />
+    <div className="max-w-[1400px] mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-4">
+          <Plug size={32} className="text-primary" />
           <div>
-            <h1 className={styles.title}>Integrações</h1>
-            <p className={styles.subtitle}>Configure as integrações com ferramentas externas</p>
+            <h1 className="text-[32px] font-bold text-text mb-1">Integrações</h1>
+            <p className="text-base text-text-secondary">Configure as integrações com ferramentas externas</p>
           </div>
         </div>
-        <button className={styles.addButton} onClick={handleCreateNew}>
+        <button className="flex items-center gap-2 py-3 px-6 bg-primary text-white border-none rounded-lg text-[15px] font-semibold cursor-pointer transition-all duration-200 ease-in-out whitespace-nowrap hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)]" onClick={handleCreateNew}>
           <Plus size={20} />
           <span>Nova Integração</span>
         </button>
       </div>
 
-      <div className={styles.stats}>
-        <div className={styles.statItem}>
-          <CheckCircle size={20} className={styles.statIconSuccess} />
+      <div className="flex gap-6 mb-8 p-5 bg-surface border border-border rounded-xl">
+        <div className="flex items-center gap-2 text-[15px] font-semibold text-text">
+          <CheckCircle size={20} className="text-success" />
           <span>{integrations.filter(i => i.enabled).length} Ativas</span>
         </div>
-        <div className={styles.statItem}>
-          <XCircle size={20} className={styles.statIconInactive} />
+        <div className="flex items-center gap-2 text-[15px] font-semibold text-text">
+          <XCircle size={20} className="text-text-secondary" />
           <span>{integrations.filter(i => !i.enabled).length} Inativas</span>
         </div>
       </div>
 
-      <div className={styles.grid}>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(350px,1fr))] gap-6">
         {integrations.map((integration) => (
           <IntegrationCard
             key={integration.id}

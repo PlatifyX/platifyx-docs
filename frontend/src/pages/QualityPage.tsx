@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Shield } from 'lucide-react'
+import { Shield, AlertCircle, RefreshCw } from 'lucide-react'
 import QualityStatsCard from '../components/Quality/QualityStatsCard'
 import ProjectsTab from '../components/Quality/ProjectsTab'
 import IssuesTab from '../components/Quality/IssuesTab'
 import QualityFilters, { QualityFilterValues } from '../components/Quality/QualityFilters'
-import styles from './QualityPage.module.css'
+import IntegrationSelector from '../components/Common/IntegrationSelector'
 import { buildApiUrl } from '../config/api'
 
 type TabType = 'projects' | 'issues'
@@ -43,12 +43,26 @@ function QualityPage() {
       if (filters.project) params.append('project', filters.project)
 
       const response = await fetch(buildApiUrl(`quality/stats?${params.toString()}`))
-      if (!response.ok) throw new Error('Failed to fetch stats')
+      if (!response.ok) {
+        // 404 = sem integração configurada
+        if (response.status === 404) {
+          setStats(null)
+          setError(null)
+        } else {
+          // Outros erros (503, 500, etc.) = problema no serviço
+          setError(`Erro ao buscar estatísticas (${response.status})`)
+          setStats(null)
+        }
+        setLoading(false)
+        return
+      }
       const data = await response.json()
       setStats(data)
       setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load statistics')
+    } catch (err: any) {
+      // Erro de rede ou outros erros
+      setError(`Erro de conexão: ${err.message || 'Não foi possível conectar ao backend'}`)
+      setStats(null)
     } finally {
       setLoading(false)
     }
@@ -58,49 +72,80 @@ function QualityPage() {
     setFilters(newFilters)
   }
 
+  const handleIntegrationChange = (integration: string) => {
+    handleFilterChange({
+      ...filters,
+      integration
+    })
+  }
+
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Shield size={32} className={styles.headerIcon} />
+    <div className="max-w-[1400px] mx-auto">
+      <div className="mb-8">
+        <div className="flex items-center gap-4">
+          <Shield size={32} className="text-primary" />
           <div>
-            <h1 className={styles.title}>Qualidade de Código</h1>
-            <p className={styles.subtitle}>Análise estática, bugs e vulnerabilidades</p>
+            <h1 className="text-[32px] font-bold text-text mb-1">Qualidade de Código</h1>
+            <p className="text-base text-text-secondary">Análise estática, bugs e vulnerabilidades</p>
           </div>
         </div>
       </div>
+
+      <IntegrationSelector
+        integrationType="sonarqube"
+        selectedIntegration={filters.integration}
+        onIntegrationChange={handleIntegrationChange}
+      />
 
       {!loading && stats && !error && (
         <QualityStatsCard stats={stats} />
       )}
 
-      {error && (
-        <div className={styles.error}>
-          <p>⚠️ {error}</p>
-          <p className={styles.errorHint}>
-            Verifique se as credenciais do SonarQube estão configuradas no backend
-          </p>
+      {!loading && error && (
+        <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
+          <AlertCircle size={64} className="text-error mb-4" style={{ opacity: 0.7 }} />
+          <h2 className="text-2xl font-semibold text-text mb-2">Erro ao carregar dados</h2>
+          <p className="text-base text-text-secondary max-w-[500px] mb-4">{error}</p>
+          <button
+            className="flex items-center gap-2 py-2 px-4 bg-primary text-white border-none rounded-lg text-sm font-semibold cursor-pointer transition-all hover:bg-primary-dark"
+            onClick={fetchStats}
+          >
+            <RefreshCw size={16} />
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && !stats && (
+        <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
+          <Shield size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+          <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>
+          <p className="text-base text-text-secondary max-w-[500px]">Configure uma integração do SonarQube para visualizar métricas de qualidade de código</p>
         </div>
       )}
 
       <QualityFilters onFilterChange={handleFilterChange} initialFilters={filters} />
 
-      <div className={styles.tabs}>
+      <div className="flex gap-2 border-b-2 border-border mb-6">
         <button
-          className={`${styles.tab} ${activeTab === 'projects' ? styles.tabActive : ''}`}
+          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold text-text-secondary cursor-pointer relative transition-all duration-200 hover:text-text ${
+            activeTab === 'projects' ? 'text-primary after:content-[""] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary' : ''
+          }`}
           onClick={() => setActiveTab('projects')}
         >
           Projetos
         </button>
         <button
-          className={`${styles.tab} ${activeTab === 'issues' ? styles.tabActive : ''}`}
+          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold text-text-secondary cursor-pointer relative transition-all duration-200 hover:text-text ${
+            activeTab === 'issues' ? 'text-primary after:content-[""] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary' : ''
+          }`}
           onClick={() => setActiveTab('issues')}
         >
           Issues
         </button>
       </div>
 
-      <div className={styles.tabContent}>
+      <div className="min-h-[400px]">
         {activeTab === 'projects' && <ProjectsTab filters={filters} />}
         {activeTab === 'issues' && <IssuesTab filters={filters} />}
       </div>

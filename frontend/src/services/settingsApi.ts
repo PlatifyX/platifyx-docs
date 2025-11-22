@@ -38,6 +38,7 @@ export interface Team {
   name: string;
   display_name: string;
   description?: string;
+  avatar_url?: string;
   members?: TeamMember[];
 }
 

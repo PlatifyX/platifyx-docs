@@ -16,7 +16,6 @@ import {
   Network,
   Boxes
 } from 'lucide-react'
-import styles from './Sidebar.module.css'
 
 interface NavItem {
   path: string
@@ -45,18 +44,22 @@ const navItems: NavItem[] = [
 
 function Sidebar() {
   return (
-    <aside className={styles.sidebar}>
-      <nav className={styles.nav}>
+    <aside className="w-[260px] bg-surface border-r border-border fixed top-16 left-0 bottom-0 overflow-y-auto z-[90]">
+      <nav className="p-4 px-3 flex flex-col gap-1">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `${styles.navItem} ${isActive ? styles.navItemActive : ''}`
+              `flex items-center gap-3 py-2.5 px-3 rounded-lg no-underline transition-all text-sm font-medium ${
+                isActive
+                  ? 'bg-primary text-white hover:bg-primary-dark'
+                  : 'text-muted-foreground hover:bg-surface-light hover:text-foreground'
+              }`
             }
           >
-            <span className={styles.navIcon}>{item.icon}</span>
-            <span className={styles.navLabel}>{item.label}</span>
+            <span className="flex items-center justify-center min-w-[20px]">{item.icon}</span>
+            <span className="flex-1">{item.label}</span>
           </NavLink>
         ))}
       </nav>

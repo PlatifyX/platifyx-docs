@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import styles from './AzureDevOpsModal.module.css'
 import { buildApiUrl } from '../../config/api'
 
 interface Integration {
@@ -100,26 +99,31 @@ function SonarQubeModal({ integration, isCreating, onSave, onClose }: SonarQubeM
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{isCreating ? 'Nova Integração - SonarQube' : 'Editar Integração - SonarQube'}</h2>
-          <button className={styles.closeButton} onClick={onClose}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {isCreating ? 'Nova Integração - SonarQube' : 'Editar Integração - SonarQube'}
+          </h2>
+          <button
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            onClick={onClose}
+          >
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className={styles.modalBody}>
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-160px)] space-y-4">
             {isCreating && (
-              <div className={styles.field}>
-                <label className={styles.label}>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nome da Integração
-                  <span className={styles.required}>*</span>
+                  <span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
                   type="text"
-                  className={styles.input}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ex: SonarQube Produção"
@@ -128,66 +132,76 @@ function SonarQubeModal({ integration, isCreating, onSave, onClose }: SonarQubeM
               </div>
             )}
 
-            <div className={styles.field}>
-              <label className={styles.label}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 URL do SonarQube
-                <span className={styles.required}>*</span>
+                <span className="text-red-500 ml-1">*</span>
               </label>
               <input
                 type="text"
-                className={styles.input}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://sonarqube.company.com"
                 required
               />
-              <p className={styles.hint}>URL completa do seu servidor SonarQube</p>
+              <p className="mt-1 text-xs text-gray-500">URL completa do seu servidor SonarQube</p>
             </div>
 
-            <div className={styles.field}>
-              <label className={styles.label}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Token de Acesso
-                <span className={styles.required}>*</span>
+                <span className="text-red-500 ml-1">*</span>
               </label>
               <input
                 type="password"
-                className={styles.input}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 placeholder="squ_xxxxxxxxxxxxxxxxxxxxxxx"
                 required
               />
-              <p className={styles.hint}>
+              <p className="mt-1 text-xs text-gray-500">
                 Token de autenticação do SonarQube (User &gt; My Account &gt; Security &gt; Generate Tokens)
               </p>
             </div>
 
             {testResult && (
-              <div className={`${styles.testResult} ${testResult.success ? styles.success : styles.error}`}>
+              <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                testResult.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+              }`}>
                 {testResult.success ? (
-                  <CheckCircle size={18} />
+                  <CheckCircle size={18} className="flex-shrink-0" />
                 ) : (
-                  <XCircle size={18} />
+                  <XCircle size={18} className="flex-shrink-0" />
                 )}
-                <span>{testResult.message}</span>
+                <span className="text-sm">{testResult.message}</span>
               </div>
             )}
           </div>
 
-          <div className={styles.modalFooter}>
+          <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
             <button
               type="button"
-              className={styles.testButton}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleTestConnection}
               disabled={testing || !url || !token}
             >
               {testing ? 'Testando...' : 'Testar Conexão'}
             </button>
-            <div className={styles.actionButtons}>
-              <button type="button" className={styles.cancelButton} onClick={onClose}>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                onClick={onClose}
+              >
                 Cancelar
               </button>
-              <button type="submit" className={styles.saveButton} disabled={saving}>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={saving}
+              >
                 {saving ? 'Salvando...' : 'Salvar'}
               </button>
             </div>

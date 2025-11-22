@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import styles from './AzureDevOpsModal.module.css'
 import { buildApiUrl } from '../../config/api'
 
 interface Integration {
@@ -109,46 +108,46 @@ function AWSSecretsModal({ integration, isCreating, onSave, onClose }: AWSSecret
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2 className={styles.title}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-surface rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="text-xl font-bold text-text">
             {isCreating ? 'Nova Integração AWS Secrets Manager' : 'Configurar AWS Secrets Manager'}
           </h2>
-          <button className={styles.closeButton} onClick={onClose}>
+          <button className="p-2 hover:bg-hover rounded-lg transition-colors" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form onSubmit={handleSubmit} className="p-6">
           {isCreating && (
-            <div className={styles.formGroup}>
-              <label htmlFor="name" className={styles.label}>
+            <div className="mb-6">
+              <label htmlFor="name" className="block text-sm font-semibold text-text mb-2">
                 Nome da Integração *
               </label>
               <input
                 id="name"
                 type="text"
-                className={styles.input}
+                className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ex: AWS Secrets - Produção"
                 required
               />
-              <p className={styles.hint}>
+              <p className="mt-2 text-sm text-text-secondary">
                 Nome identificador desta integração
               </p>
             </div>
           )}
 
-          <div className={styles.formGroup}>
-            <label htmlFor="accessKeyId" className={styles.label}>
+          <div className="mb-6">
+            <label htmlFor="accessKeyId" className="block text-sm font-semibold text-text mb-2">
               Access Key ID *
             </label>
             <input
               id="accessKeyId"
               type="text"
-              className={styles.input}
+              className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
               value={accessKeyId}
               onChange={(e) => setAccessKeyId(e.target.value)}
               placeholder="AKIAIOSFODNN7EXAMPLE"
@@ -156,14 +155,14 @@ function AWSSecretsModal({ integration, isCreating, onSave, onClose }: AWSSecret
             />
           </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="secretAccessKey" className={styles.label}>
+          <div className="mb-6">
+            <label htmlFor="secretAccessKey" className="block text-sm font-semibold text-text mb-2">
               Secret Access Key *
             </label>
             <input
               id="secretAccessKey"
               type="password"
-              className={styles.input}
+              className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
               value={secretAccessKey}
               onChange={(e) => setSecretAccessKey(e.target.value)}
               placeholder="••••••••••••••••"
@@ -171,13 +170,13 @@ function AWSSecretsModal({ integration, isCreating, onSave, onClose }: AWSSecret
             />
           </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="region" className={styles.label}>
+          <div className="mb-6">
+            <label htmlFor="region" className="block text-sm font-semibold text-text mb-2">
               AWS Region *
             </label>
             <select
               id="region"
-              className={styles.input}
+              className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
               value={region}
               onChange={(e) => setRegion(e.target.value)}
               required
@@ -194,27 +193,27 @@ function AWSSecretsModal({ integration, isCreating, onSave, onClose }: AWSSecret
             </select>
           </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="sessionToken" className={styles.label}>
+          <div className="mb-6">
+            <label htmlFor="sessionToken" className="block text-sm font-semibold text-text mb-2">
               Session Token (opcional)
             </label>
             <input
               id="sessionToken"
               type="password"
-              className={styles.input}
+              className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
               value={sessionToken}
               onChange={(e) => setSessionToken(e.target.value)}
               placeholder="Para temporary credentials"
             />
-            <p className={styles.hint}>
+            <p className="mt-2 text-sm text-text-secondary">
               Apenas necessário para credenciais temporárias
             </p>
           </div>
 
-          <div className={styles.testSection}>
+          <div className="flex flex-col gap-3 mb-6">
             <button
               type="button"
-              className={styles.testButton}
+              className="py-3 px-6 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleTestConnection}
               disabled={testing || !accessKeyId || !secretAccessKey || !region}
             >
@@ -222,7 +221,11 @@ function AWSSecretsModal({ integration, isCreating, onSave, onClose }: AWSSecret
             </button>
 
             {testResult && (
-              <div className={testResult.success ? styles.testSuccess : styles.testError}>
+              <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+                testResult.success
+                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
+                  : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
+              }`}>
                 {testResult.success ? (
                   <CheckCircle size={16} />
                 ) : (
@@ -233,10 +236,10 @@ function AWSSecretsModal({ integration, isCreating, onSave, onClose }: AWSSecret
             )}
           </div>
 
-          <div className={styles.footer}>
+          <div className="flex justify-end gap-3 pt-6 border-t border-border">
             <button
               type="button"
-              className={styles.cancelButton}
+              className="py-3 px-6 bg-transparent text-text border border-border rounded-lg hover:bg-hover transition-colors disabled:opacity-50"
               onClick={onClose}
               disabled={saving}
             >
@@ -244,7 +247,7 @@ function AWSSecretsModal({ integration, isCreating, onSave, onClose }: AWSSecret
             </button>
             <button
               type="submit"
-              className={styles.saveButton}
+              className="py-3 px-6 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={saving}
             >
               {saving ? 'Salvando...' : 'Salvar'}

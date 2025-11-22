@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
 import { useIntegrationTest } from '../../hooks/useIntegrationTest'
 import type { Integration } from '../../utils/integrationApi'
-import styles from './AzureDevOpsModal.module.css'
 
 interface OpenAIModalProps {
   integration: Integration | null
@@ -66,77 +65,77 @@ function OpenAIModal({ integration, isCreating, onSave, onClose }: OpenAIModalPr
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2 className={styles.title}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-surface rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="text-xl font-bold text-text">
             {isCreating ? 'Nova Integração OpenAI' : 'Configurar OpenAI'}
           </h2>
-          <button className={styles.closeButton} onClick={onClose}>
+          <button className="p-2 hover:bg-hover rounded-lg transition-colors" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form onSubmit={handleSubmit} className="p-6">
           {isCreating && (
-            <div className={styles.formGroup}>
-              <label htmlFor="name" className={styles.label}>
+            <div className="mb-6">
+              <label htmlFor="name" className="block text-sm font-semibold text-text mb-2">
                 Nome da Integração *
               </label>
               <input
                 id="name"
                 type="text"
-                className={styles.input}
+                className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ex: OpenAI - Produção"
                 required
               />
-              <p className={styles.hint}>
+              <p className="mt-2 text-sm text-text-secondary">
                 Nome identificador desta integração
               </p>
             </div>
           )}
 
-          <div className={styles.formGroup}>
-            <label htmlFor="apiKey" className={styles.label}>
+          <div className="mb-6">
+            <label htmlFor="apiKey" className="block text-sm font-semibold text-text mb-2">
               API Key *
             </label>
             <input
               id="apiKey"
               type="password"
-              className={styles.input}
+              className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="sk-..."
               required
             />
-            <p className={styles.hint}>
+            <p className="mt-2 text-sm text-text-secondary">
               Obtenha sua API key em <strong>https://platform.openai.com/api-keys</strong>
             </p>
           </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="organization" className={styles.label}>
+          <div className="mb-6">
+            <label htmlFor="organization" className="block text-sm font-semibold text-text mb-2">
               Organization ID (opcional)
             </label>
             <input
               id="organization"
               type="text"
-              className={styles.input}
+              className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
               value={organization}
               onChange={(e) => setOrganization(e.target.value)}
               placeholder="org-..."
             />
-            <p className={styles.hint}>
+            <p className="mt-2 text-sm text-text-secondary">
               Necessário apenas se você pertence a múltiplas organizações
             </p>
           </div>
 
-          <div className={styles.testSection}>
+          <div className="flex flex-col gap-3 mb-6">
             <button
               type="button"
-              className={styles.testButton}
+              className="py-3 px-6 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleTestConnection}
               disabled={testing || !apiKey}
             >
@@ -144,7 +143,11 @@ function OpenAIModal({ integration, isCreating, onSave, onClose }: OpenAIModalPr
             </button>
 
             {testResult && (
-              <div className={testResult.success ? styles.testSuccess : styles.testError}>
+              <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+                testResult.success
+                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
+                  : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
+              }`}>
                 {testResult.success ? (
                   <CheckCircle size={16} />
                 ) : (
@@ -155,10 +158,10 @@ function OpenAIModal({ integration, isCreating, onSave, onClose }: OpenAIModalPr
             )}
           </div>
 
-          <div className={styles.footer}>
+          <div className="flex justify-end gap-3 pt-6 border-t border-border">
             <button
               type="button"
-              className={styles.cancelButton}
+              className="py-3 px-6 bg-transparent text-text border border-border rounded-lg hover:bg-hover transition-colors disabled:opacity-50"
               onClick={onClose}
               disabled={saving}
             >
@@ -166,7 +169,7 @@ function OpenAIModal({ integration, isCreating, onSave, onClose }: OpenAIModalPr
             </button>
             <button
               type="submit"
-              className={styles.saveButton}
+              className="py-3 px-6 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={saving}
             >
               {saving ? 'Salvando...' : 'Salvar'}

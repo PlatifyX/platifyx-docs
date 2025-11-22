@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, BarChart3, GitMerge, Shield, Bug, TrendingUp, AlertTriangle } from 'lucide-react'
+import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, Shield, Bug, TrendingUp, AlertTriangle, Server, Container } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
-import styles from './ServicesPage.module.css'
 
 interface Service {
   id: number
@@ -48,22 +47,30 @@ interface ServiceMetrics {
   }
 }
 
+interface PodInfo {
+  name: string
+  status: string
+  ready: string
+  restarts: number
+  age: string
+  node?: string
+  namespace: string
+}
+
+interface DeploymentStatus {
+  environment: string
+  status: string
+  replicas: number
+  availableReplicas: number
+  image: string
+  lastDeployed?: string
+  pods?: PodInfo[]
+}
+
 interface ServiceStatus {
   serviceName: string
-  stageStatus?: {
-    environment: string
-    status: string
-    replicas: number
-    availableReplicas: number
-    image: string
-  }
-  prodStatus?: {
-    environment: string
-    status: string
-    replicas: number
-    availableReplicas: number
-    image: string
-  }
+  stageStatus?: DeploymentStatus
+  prodStatus?: DeploymentStatus
 }
 
 function ServicesPage() {
@@ -72,6 +79,7 @@ function ServicesPage() {
   const [error, setError] = useState<string | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [serviceMetrics, setServiceMetrics] = useState<Record<string, ServiceMetrics>>({})
+  const [serviceStatus, setServiceStatus] = useState<Record<string, ServiceStatus>>({})
   const [loadingMetrics, setLoadingMetrics] = useState(false)
   const [filter, setFilter] = useState('')
   const [squadFilter, setSquadFilter] = useState('all')
@@ -100,6 +108,7 @@ function ServicesPage() {
       // Fetch metrics for all services
       if (fetchedServices.length > 0) {
         await fetchServicesMetrics(fetchedServices.map((s: Service) => s.name))
+        await fetchServicesStatus(fetchedServices.map((s: Service) => s.name))
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao buscar serviços')
@@ -136,6 +145,37 @@ function ServicesPage() {
     }
   }
 
+  const fetchServicesStatus = async (serviceNames: string[]) => {
+    try {
+      // Fetch status for each service
+      const statusPromises = serviceNames.map(async (serviceName) => {
+        try {
+          const response = await fetch(buildApiUrl(`service-catalog/${serviceName}/status`))
+          if (response.ok) {
+            const status: ServiceStatus = await response.json()
+            return { serviceName, status }
+          }
+        } catch (err) {
+          console.error(`Failed to fetch status for ${serviceName}:`, err)
+        }
+        return null
+      })
+
+      const results = await Promise.all(statusPromises)
+      const statusMap: Record<string, ServiceStatus> = {}
+
+      results.forEach((result) => {
+        if (result) {
+          statusMap[result.serviceName] = result.status
+        }
+      })
+
+      setServiceStatus(statusMap)
+    } catch (err: any) {
+      console.error('Failed to fetch services status:', err)
+    }
+  }
+
   const syncServices = async () => {
     setSyncing(true)
     setError(null)
@@ -144,11 +184,11 @@ function ServicesPage() {
       const response = await fetch(buildApiUrl('service-catalog/sync'), {
         method: 'POST',
       })
+
       if (!response.ok) {
         throw new Error('Failed to sync services')
       }
 
-      // Reload services after sync
       await fetchServices()
     } catch (err: any) {
       setError(err.message || 'Erro ao sincronizar serviços')
@@ -161,19 +201,6 @@ function ServicesPage() {
     fetchServices()
   }, [])
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Running':
-        return styles.statusRunning
-      case 'Failed':
-        return styles.statusFailed
-      case 'Pending':
-        return styles.statusPending
-      default:
-        return styles.statusUnknown
-    }
-  }
-
   const squads = Array.from(new Set(services.map(s => s.squad))).sort()
 
   const filteredServices = services.filter(service => {
@@ -185,69 +212,142 @@ function ServicesPage() {
     return matchesSearch && matchesSquad
   })
 
+  // Calculate stats
+  const stats = {
+    total: services.length,
+    withStage: services.filter(s => s.hasStage).length,
+    withProd: services.filter(s => s.hasProd).length,
+    squads: squads.length,
+  }
+
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Box size={32} className={styles.headerIcon} />
-          <div>
-            <h1 className={styles.title}>Catálogo de Serviços</h1>
-            <p className={styles.subtitle}>
-              {services.length} serviços descobertos automaticamente do Kubernetes
-            </p>
+    <div className="max-w-[1600px] mx-auto px-4 py-6">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
+              <Box className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-text m-0">Catálogo de Serviços</h1>
+              <p className="text-sm text-text-secondary mt-1">Descoberta automática via Kubernetes</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              className="flex items-center gap-2 px-5 py-2.5 bg-success text-white border-0 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200 hover:bg-success/90 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={syncServices}
+              disabled={syncing}
+            >
+              <RefreshCw size={18} className={syncing ? 'animate-spin' : ''} />
+              <span>{syncing ? 'Sincronizando...' : 'Sincronizar'}</span>
+            </button>
+            <button
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white border-0 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200 hover:bg-primary/90 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={fetchServices}
+              disabled={loading}
+            >
+              <RefreshCw size={18} />
+              <span>Atualizar</span>
+            </button>
           </div>
         </div>
-        <div className={styles.headerActions}>
-          <button
-            className={styles.syncButton}
-            onClick={syncServices}
-            disabled={syncing}
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Box className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-text">{stats.total}</div>
+                <div className="text-sm text-text-secondary">Total de Serviços</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center">
+                <Server className="w-6 h-6 text-warning" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-text">{stats.withStage}</div>
+                <div className="text-sm text-text-secondary">Ambientes Staging</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
+                <Server className="w-6 h-6 text-success" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-text">{stats.withProd}</div>
+                <div className="text-sm text-text-secondary">Ambientes Production</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-text">{stats.squads}</div>
+                <div className="text-sm text-text-secondary">Squads</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex gap-3">
+          <input
+            type="text"
+            placeholder="🔍 Buscar por nome, squad ou aplicação..."
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="flex-1 px-4 py-2.5 border border-border rounded-lg text-sm bg-surface text-text transition-all duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+          <select
+            value={squadFilter}
+            onChange={(e) => setSquadFilter(e.target.value)}
+            className="px-4 py-2.5 border border-border rounded-lg text-sm bg-surface text-text cursor-pointer min-w-[200px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           >
-            <RefreshCw size={20} className={syncing ? styles.spinning : ''} />
-            <span>{syncing ? 'Sincronizando...' : 'Sincronizar'}</span>
-          </button>
-          <button className={styles.refreshButton} onClick={fetchServices} disabled={loading}>
-            <RefreshCw size={20} />
-            <span>Atualizar</span>
-          </button>
+            <option value="all">📂 Todas as Squads</option>
+            {squads.map(squad => (
+              <option key={squad} value={squad}>{squad}</option>
+            ))}
+          </select>
         </div>
       </div>
 
-      <div className={styles.filters}>
-        <input
-          type="text"
-          placeholder="Buscar por nome, squad ou aplicação..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className={styles.searchInput}
-        />
-        <select
-          value={squadFilter}
-          onChange={(e) => setSquadFilter(e.target.value)}
-          className={styles.squadFilter}
-        >
-          <option value="all">Todas as Squads</option>
-          {squads.map(squad => (
-            <option key={squad} value={squad}>{squad}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className={styles.content}>
+      {/* Content */}
+      <div className="min-h-[400px]">
         {error && (
-          <div className={styles.error}>
+          <div className="flex items-center gap-3 bg-error/10 border border-error rounded-xl p-4 mb-6 text-error">
             <Activity size={20} />
-            <span>{error}</span>
+            <span className="font-medium">{error}</span>
           </div>
         )}
 
-        {loading && !error && <div className={styles.loading}>Carregando serviços...</div>}
+        {loading && !error && (
+          <div className="text-center py-20 text-text-secondary">
+            <RefreshCw size={48} className="animate-spin mx-auto mb-4 opacity-50" />
+            <p className="text-lg">Carregando serviços...</p>
+          </div>
+        )}
 
         {!loading && !error && filteredServices.length === 0 && (
-          <div className={styles.empty}>
-            <Box size={64} className={styles.emptyIcon} />
-            <h2>Nenhum serviço encontrado</h2>
-            <p>
+          <div className="text-center py-20">
+            <Box size={64} className="text-text-secondary opacity-20 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-text mb-2">Nenhum serviço encontrado</h2>
+            <p className="text-sm text-text-secondary">
               {filter || squadFilter !== 'all'
                 ? 'Tente ajustar os filtros de busca'
                 : 'Clique em "Sincronizar" para descobrir serviços do Kubernetes'}
@@ -256,181 +356,296 @@ function ServicesPage() {
         )}
 
         {!loading && !error && filteredServices.length > 0 && (
-          <div className={styles.grid}>
-            {filteredServices.map(service => (
-              <div key={service.id} className={styles.serviceCard}>
-                <div className={styles.cardHeader}>
-                  <div className={styles.serviceName}>
-                    <Box size={20} />
-                    <h3>{service.name}</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredServices.map(service => {
+              const hasPods = (serviceStatus[service.name]?.stageStatus?.pods && serviceStatus[service.name]?.stageStatus?.pods!.length > 0) ||
+                             (serviceStatus[service.name]?.prodStatus?.pods && serviceStatus[service.name]?.prodStatus?.pods!.length > 0)
+
+              return (
+                <div key={service.id} className="bg-surface border border-border rounded-xl overflow-hidden transition-all duration-200 hover:border-primary hover:shadow-xl">
+                  {/* Card Header */}
+                  <div className="p-5 border-b border-border bg-background/50">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Box size={18} className="text-primary flex-shrink-0" />
+                        <h3 className="text-base font-semibold text-text truncate">{service.name}</h3>
+                      </div>
+                      <div className="flex items-center gap-2 ml-2">
+                        {service.hasStage && (
+                          <span className="px-2 py-1 bg-warning/10 text-warning rounded text-xs font-semibold">Stage</span>
+                        )}
+                        {service.hasProd && (
+                          <span className="px-2 py-1 bg-success/10 text-success rounded text-xs font-semibold">Prod</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-md text-xs font-medium">
+                        <Users size={14} />
+                        <span>{service.squad}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-surface text-text-secondary rounded-md text-xs font-medium border border-border">
+                        <Code size={14} />
+                        <span>{service.language}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-surface text-text-secondary rounded-md text-xs font-medium border border-border">
+                        <GitBranch size={14} />
+                        <span>{service.repositoryType}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className={styles.squad}>
-                    <Users size={16} />
-                    <span>{service.squad}</span>
+
+                  {/* Card Content */}
+                  <div className="p-5">
+                    {/* Info Section */}
+                    <div className="mb-5">
+                      <h4 className="text-xs font-bold text-text-secondary uppercase mb-3 flex items-center gap-2">
+                        <Activity size={14} />
+                        Informações
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-text-secondary">Aplicação:</span>
+                          <span className="text-text font-medium">{service.application}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-text-secondary">Versão:</span>
+                          <span className="text-text font-mono">{service.version}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-text-secondary">Namespace:</span>
+                          <span className="text-text font-mono">{service.namespace}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-text-secondary">Infraestrutura:</span>
+                          <span className="text-text">{service.infra}</span>
+                        </div>
+                        {service.repositoryUrl && (
+                          <div className="pt-3 mt-3 border-t border-border">
+                            <a
+                              href={service.repositoryUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors no-underline"
+                            >
+                              <ExternalLink size={16} />
+                              <span>Ver Repositório</span>
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Quality Section */}
+                    <div className="mb-5 pb-5 border-t border-border pt-5">
+                      <h4 className="text-xs font-bold text-text-secondary uppercase mb-3 flex items-center gap-2">
+                        <Shield size={14} />
+                        Qualidade
+                      </h4>
+                      {loadingMetrics && !serviceMetrics[service.name] ? (
+                        <div className="flex items-center justify-center py-8 text-text-secondary">
+                          <RefreshCw size={20} className="animate-spin mr-2" />
+                          <span className="text-sm">Carregando métricas...</span>
+                        </div>
+                      ) : serviceMetrics[service.name]?.sonarqube ? (
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="p-3 bg-background rounded-lg border border-border">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Bug size={16} className="text-error" />
+                                <span className="text-xs text-text-secondary font-semibold">Bugs</span>
+                              </div>
+                              <div className="text-2xl font-bold text-text">{formatNumber(serviceMetrics[service.name]?.sonarqube?.bugs || 0)}</div>
+                            </div>
+                            <div className="p-3 bg-background rounded-lg border border-border">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Shield size={16} className="text-error" />
+                                <span className="text-xs text-text-secondary font-semibold">Vulnerab.</span>
+                              </div>
+                              <div className="text-2xl font-bold text-text">{formatNumber(serviceMetrics[service.name]?.sonarqube?.vulnerabilities || 0)}</div>
+                            </div>
+                            <div className="p-3 bg-background rounded-lg border border-border">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Code size={16} className="text-warning" />
+                                <span className="text-xs text-text-secondary font-semibold">Code Smells</span>
+                              </div>
+                              <div className="text-2xl font-bold text-text">{formatNumber(serviceMetrics[service.name]?.sonarqube?.codeSmells || 0)}</div>
+                            </div>
+                            <div className="p-3 bg-background rounded-lg border border-border">
+                              <div className="flex items-center gap-2 mb-1">
+                                <TrendingUp size={16} className="text-success" />
+                                <span className="text-xs text-text-secondary font-semibold">Cobertura</span>
+                              </div>
+                              <div className="text-2xl font-bold text-text">{serviceMetrics[service.name]?.sonarqube?.coverage?.toFixed(1) || '0.0'}%</div>
+                            </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-text-secondary text-sm">
+                          Nenhuma métrica de qualidade disponível
+                        </div>
+                      )}
+                    </div>
+
+                    {/* CI/CD Section */}
+                    <div className="mb-5 pb-5 border-t border-border pt-5">
+                      <h4 className="text-xs font-bold text-text-secondary uppercase mb-3 flex items-center gap-2">
+                        <GitBranch size={14} />
+                        CI/CD
+                      </h4>
+                      {loadingMetrics && !serviceMetrics[service.name] ? (
+                        <div className="flex items-center justify-center py-8 text-text-secondary">
+                          <RefreshCw size={20} className="animate-spin mr-2" />
+                          <span className="text-sm">Carregando builds...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {serviceMetrics[service.name]?.stageBuild && (
+                              <div className="p-3 bg-background rounded-lg border border-border">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-semibold text-text-secondary">STAGE BUILD</span>
+                                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                                    serviceMetrics[service.name]?.stageBuild?.status === 'succeeded' ? 'bg-success/10 text-success' :
+                                    serviceMetrics[service.name]?.stageBuild?.status === 'failed' ? 'bg-error/10 text-error' :
+                                    'bg-warning/10 text-warning'
+                                  }`}>
+                                    {serviceMetrics[service.name]?.stageBuild?.status}
+                                  </span>
+                                </div>
+                                <div className="space-y-1.5 text-xs">
+                                  <div className="flex justify-between">
+                                    <span className="text-text-secondary">Build:</span>
+                                    <span className="text-text font-mono">{serviceMetrics[service.name]?.stageBuild?.buildNumber}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-text-secondary">Branch:</span>
+                                    <span className="text-text font-mono truncate max-w-[150px]">{serviceMetrics[service.name]?.stageBuild?.sourceBranch}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {serviceMetrics[service.name]?.mainBuild && (
+                              <div className="p-3 bg-background rounded-lg border border-border">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-semibold text-text-secondary">PROD BUILD</span>
+                                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                                    serviceMetrics[service.name]?.mainBuild?.status === 'succeeded' ? 'bg-success/10 text-success' :
+                                    serviceMetrics[service.name]?.mainBuild?.status === 'failed' ? 'bg-error/10 text-error' :
+                                    'bg-warning/10 text-warning'
+                                  }`}>
+                                    {serviceMetrics[service.name]?.mainBuild?.status}
+                                  </span>
+                                </div>
+                                <div className="space-y-1.5 text-xs">
+                                  <div className="flex justify-between">
+                                    <span className="text-text-secondary">Build:</span>
+                                    <span className="text-text font-mono">{serviceMetrics[service.name]?.mainBuild?.buildNumber}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-text-secondary">Branch:</span>
+                                    <span className="text-text font-mono truncate max-w-[150px]">{serviceMetrics[service.name]?.mainBuild?.sourceBranch}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                          {!serviceMetrics[service.name]?.stageBuild && !serviceMetrics[service.name]?.mainBuild && (
+                            <div className="text-center py-8 text-text-secondary text-sm">
+                              Nenhum build disponível
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Pods Section */}
+                    {hasPods && (
+                      <div className="pb-5 border-t border-border pt-5">
+                        <h4 className="text-xs font-bold text-text-secondary uppercase mb-3 flex items-center gap-2">
+                          <Container size={14} />
+                          Pods Kubernetes
+                        </h4>
+                        <div className="space-y-3">
+                        {serviceStatus[service.name]?.stageStatus?.pods && serviceStatus[service.name]?.stageStatus?.pods!.length > 0 && (
+                          <div>
+                            <div className="text-xs font-semibold text-text-secondary mb-2 flex items-center gap-2">
+                              <Container size={14} className="text-warning" />
+                              STAGE PODS ({serviceStatus[service.name]?.stageStatus?.pods!.length})
+                            </div>
+                            <div className="space-y-2">
+                              {serviceStatus[service.name]?.stageStatus?.pods!.map((pod, idx) => (
+                                <div key={idx} className="p-2.5 bg-background rounded-lg border border-border">
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-xs font-mono text-text truncate flex-1 mr-2">{pod.name}</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                                        pod.status === 'Running' ? 'bg-success/10 text-success' :
+                                        pod.status === 'Pending' ? 'bg-warning/10 text-warning' :
+                                        'bg-error/10 text-error'
+                                      }`}>
+                                        {pod.status}
+                                      </span>
+                                      <span className="text-xs text-text-secondary">{pod.ready}</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center justify-between text-xs text-text-secondary">
+                                    <span>{pod.namespace}</span>
+                                    <div className="flex items-center gap-2">
+                                      <span>Age: {pod.age}</span>
+                                      {pod.restarts > 0 && (
+                                        <span className="text-warning font-semibold">↻{pod.restarts}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {serviceStatus[service.name]?.prodStatus?.pods && serviceStatus[service.name]?.prodStatus?.pods!.length > 0 && (
+                          <div className={serviceStatus[service.name]?.stageStatus?.pods && serviceStatus[service.name]?.stageStatus?.pods!.length > 0 ? 'pt-3 mt-3 border-t border-border' : ''}>
+                            <div className="text-xs font-semibold text-text-secondary mb-2 flex items-center gap-2">
+                              <Container size={14} className="text-success" />
+                              PROD PODS ({serviceStatus[service.name]?.prodStatus?.pods!.length})
+                            </div>
+                            <div className="space-y-2">
+                              {serviceStatus[service.name]?.prodStatus?.pods!.map((pod, idx) => (
+                                <div key={idx} className="p-2.5 bg-background rounded-lg border border-border">
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-xs font-mono text-text truncate flex-1 mr-2">{pod.name}</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                                        pod.status === 'Running' ? 'bg-success/10 text-success' :
+                                        pod.status === 'Pending' ? 'bg-warning/10 text-warning' :
+                                        'bg-error/10 text-error'
+                                      }`}>
+                                        {pod.status}
+                                      </span>
+                                      <span className="text-xs text-text-secondary">{pod.ready}</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center justify-between text-xs text-text-secondary">
+                                    <span>{pod.namespace}</span>
+                                    <div className="flex items-center gap-2">
+                                      <span>Age: {pod.age}</span>
+                                      {pod.restarts > 0 && (
+                                        <span className="text-warning font-semibold">↻{pod.restarts}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                <div className={styles.cardBody}>
-                  <div className={styles.info}>
-                    <Code size={16} />
-                    <span>{service.language} {service.version}</span>
-                  </div>
-                  <div className={styles.info}>
-                    <GitBranch size={16} />
-                    <span>{service.repositoryType}</span>
-                  </div>
-                </div>
-
-                <div className={styles.environments}>
-                  {service.hasStage && (
-                    <div className={styles.env}>
-                      <span className={styles.envLabel}>Stage</span>
-                      <span className={`${styles.envStatus} ${styles.statusRunning}`}>
-                        Disponível
-                      </span>
-                    </div>
-                  )}
-                  {service.hasProd && (
-                    <div className={styles.env}>
-                      <span className={styles.envLabel}>Prod</span>
-                      <span className={`${styles.envStatus} ${styles.statusRunning}`}>
-                        Disponível
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Loading Metrics */}
-                {loadingMetrics && !serviceMetrics[service.name] && (
-                  <div className={styles.metricsLoading}>
-                    <RefreshCw size={20} className={styles.spinning} />
-                    <span>Carregando métricas e pipelines...</span>
-                  </div>
-                )}
-
-                {/* SonarQube Metrics */}
-                {serviceMetrics[service.name]?.sonarqube && (
-                  <div className={styles.metricsSection}>
-                    <h4 className={styles.metricsTitle}>SonarQube</h4>
-                    <div className={styles.metricsGrid}>
-                      <div className={styles.metric}>
-                        <Bug size={14} style={{ color: 'var(--color-error)' }} />
-                        <span className={styles.metricLabel}>Bugs</span>
-                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name].sonarqube.bugs)}</span>
-                      </div>
-                      <div className={styles.metric}>
-                        <Shield size={14} style={{ color: 'var(--color-error)' }} />
-                        <span className={styles.metricLabel}>Vulnerabilidades</span>
-                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name].sonarqube.vulnerabilities)}</span>
-                      </div>
-                      <div className={styles.metric}>
-                        <Code size={14} style={{ color: 'var(--color-warning)' }} />
-                        <span className={styles.metricLabel}>Code Smells</span>
-                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name].sonarqube.codeSmells)}</span>
-                      </div>
-                      <div className={styles.metric}>
-                        <AlertTriangle size={14} style={{ color: 'var(--color-warning)' }} />
-                        <span className={styles.metricLabel}>Security Hotspots</span>
-                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name].sonarqube.securityHotspots)}</span>
-                      </div>
-                      <div className={styles.metric}>
-                        <TrendingUp size={14} style={{ color: 'var(--color-success)' }} />
-                        <span className={styles.metricLabel}>Cobertura</span>
-                        <span className={styles.metricValue}>{serviceMetrics[service.name].sonarqube.coverage.toFixed(1)}%</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Stage Build */}
-                {serviceMetrics[service.name]?.stageBuild && (
-                  <div className={styles.buildSection}>
-                    <h4 className={styles.buildTitle}>CI/CD Stage</h4>
-                    <div className={styles.buildInfo}>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Status:</span>
-                        <span className={`${styles.buildStatus} ${styles[`status${serviceMetrics[service.name].stageBuild.status}`]}`}>
-                          {serviceMetrics[service.name].stageBuild.status}
-                        </span>
-                      </div>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Build:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name].stageBuild.buildNumber}</span>
-                      </div>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Branch:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name].stageBuild.sourceBranch}</span>
-                      </div>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Finished:</span>
-                        <span className={styles.buildValue}>
-                          {new Date(serviceMetrics[service.name].stageBuild.finishTime).toLocaleString('pt-BR')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Main Build */}
-                {serviceMetrics[service.name]?.mainBuild && (
-                  <div className={styles.buildSection}>
-                    <h4 className={styles.buildTitle}>CI/CD Prod</h4>
-                    <div className={styles.buildInfo}>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Status:</span>
-                        <span className={`${styles.buildStatus} ${styles[`status${serviceMetrics[service.name].mainBuild.status}`]}`}>
-                          {serviceMetrics[service.name].mainBuild.status}
-                        </span>
-                      </div>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Build:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name].mainBuild.buildNumber}</span>
-                      </div>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Branch:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name].mainBuild.sourceBranch}</span>
-                      </div>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Finished:</span>
-                        <span className={styles.buildValue}>
-                          {new Date(serviceMetrics[service.name].mainBuild.finishTime).toLocaleString('pt-BR')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className={styles.cardFooter}>
-                  {service.repositoryUrl && (
-                    <a
-                      href={service.repositoryUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.link}
-                    >
-                      <ExternalLink size={16} />
-                      <span>Repositório</span>
-                    </a>
-                  )}
-                  <a
-                    href={`/ci?repo=${service.name}`}
-                    className={styles.link}
-                    title="Ver pipelines no CI/CD"
-                  >
-                    <GitMerge size={16} />
-                    <span>Pipeline</span>
-                  </a>
-                  <a
-                    href={`/quality?project=${service.name}`}
-                    className={styles.link}
-                    title="Ver qualidade no SonarQube"
-                  >
-                    <Shield size={16} />
-                    <span>Qualidade</span>
-                  </a>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

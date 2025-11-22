@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Package, Clock, Cog, Layers, Plus, Search, Filter, Database, Globe, MessageSquare, Box } from 'lucide-react'
 import TemplateWizardModal from '../components/InfrastructureTemplates/TemplateWizardModal'
-import styles from './InfrastructureTemplatesPage.module.css'
 import { buildApiUrl } from '../config/api'
 
 interface Template {
@@ -56,18 +55,18 @@ function InfrastructureTemplatesPage() {
     }
   }
 
-  const getIcon = (iconEmoji: string, type: string) => {
+  const getIcon = (iconEmoji: string) => {
     const iconMap: { [key: string]: JSX.Element } = {
-      '🌐': <Globe className={styles.templateIcon} />,
-      '💻': <Package className={styles.templateIcon} />,
-      '⚙️': <Cog className={styles.templateIcon} />,
-      '⏰': <Clock className={styles.templateIcon} />,
-      '💾': <Database className={styles.templateIcon} />,
-      '🗄️': <Database className={styles.templateIcon} />,
-      '📨': <MessageSquare className={styles.templateIcon} />,
-      '📦': <Box className={styles.templateIcon} />
+      '🌐': <Globe className="w-8 h-8 text-blue-400" />,
+      '💻': <Package className="w-8 h-8 text-green-400" />,
+      '⚙️': <Cog className="w-8 h-8 text-purple-400" />,
+      '⏰': <Clock className="w-8 h-8 text-orange-400" />,
+      '💾': <Database className="w-8 h-8 text-blue-400" />,
+      '🗄️': <Database className="w-8 h-8 text-blue-400" />,
+      '📨': <MessageSquare className="w-8 h-8 text-purple-400" />,
+      '📦': <Box className="w-8 h-8 text-gray-400" />
     }
-    return iconMap[iconEmoji] || <Package className={styles.templateIcon} />
+    return iconMap[iconEmoji] || <Package className="w-8 h-8 text-green-400" />
   }
 
   const allLanguages = useMemo(() => {
@@ -110,9 +109,9 @@ function InfrastructureTemplatesPage() {
 
   if (loading) {
     return (
-      <div className={styles.page}>
-        <div className={styles.loading}>
-          <div className={styles.spinner}></div>
+      <div className="p-4 md:p-6">
+        <div className="flex flex-col items-center justify-center min-h-screen text-gray-400">
+          <div className="w-12 h-12 border-4 border-[#1B998B] border-t-transparent rounded-full animate-spin mb-4"></div>
           <p>Carregando templates...</p>
         </div>
       </div>
@@ -120,48 +119,54 @@ function InfrastructureTemplatesPage() {
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <div className={styles.headerTitle}>
-            <h1 className={styles.title}>Infrastructure Templates</h1>
-            <p className={styles.subtitle}>
+    <div className="p-4 md:p-6">
+      <div className="mb-6">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Infrastructure Templates</h1>
+            <p className="text-gray-400 text-sm">
               Crie novos serviços seguindo os padrões da plataforma em minutos
             </p>
           </div>
-          <div className={styles.headerStats}>
-            <div className={styles.statCard}>
-              <span className={styles.statNumber}>{templates.length}</span>
-              <span className={styles.statLabel}>Templates</span>
+          <div className="flex gap-4">
+            <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 text-center min-w-[100px]">
+              <span className="block text-3xl font-bold text-[#1B998B]">{templates.length}</span>
+              <span className="block text-sm text-gray-400 mt-1">Templates</span>
             </div>
-            <div className={styles.statCard}>
-              <span className={styles.statNumber}>{allLanguages.length}</span>
-              <span className={styles.statLabel}>Linguagens</span>
+            <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 text-center min-w-[100px]">
+              <span className="block text-3xl font-bold text-blue-400">{allLanguages.length}</span>
+              <span className="block text-sm text-gray-400 mt-1">Linguagens</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className={styles.filters}>
-        <div className={styles.searchBox}>
-          <Search size={20} className={styles.searchIcon} />
+      <div className="mb-6 space-y-4">
+        <div className="relative">
+          <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Buscar templates..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={styles.searchInput}
+            className="w-full pl-10 pr-4 py-3 bg-[#1E1E1E] border border-gray-700 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none focus:border-[#1B998B]"
           />
         </div>
 
-        <div className={styles.filterGroup}>
-          <Filter size={18} />
-          <span className={styles.filterLabel}>Categoria:</span>
-          <div className={styles.categoryTabs}>
+        <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Filter size={18} className="text-gray-400" />
+            <span className="font-medium text-gray-300">Categoria:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
             {categories.map((cat) => (
               <button
                 key={cat.id}
-                className={`${styles.categoryTab} ${selectedCategory === cat.id ? styles.categoryTabActive : ''}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                  selectedCategory === cat.id
+                    ? 'bg-[#1B998B] text-white'
+                    : 'bg-[#2A2A2A] text-gray-400 hover:bg-gray-700'
+                }`}
                 onClick={() => setSelectedCategory(cat.id)}
               >
                 {cat.icon}
@@ -171,12 +176,12 @@ function InfrastructureTemplatesPage() {
           </div>
         </div>
 
-        <div className={styles.languageFilter}>
-          <label>Linguagem:</label>
+        <div className="flex items-center gap-2">
+          <label className="text-gray-300 font-medium">Linguagem:</label>
           <select
             value={selectedLanguage}
             onChange={(e) => setSelectedLanguage(e.target.value)}
-            className={styles.languageSelect}
+            className="flex-1 px-4 py-2 bg-[#1E1E1E] border border-gray-700 rounded-lg text-gray-300 cursor-pointer focus:outline-none focus:border-[#1B998B]"
           >
             <option value="all">Todas</option>
             {allLanguages.map((lang) => (
@@ -187,36 +192,39 @@ function InfrastructureTemplatesPage() {
       </div>
 
       {filteredTemplates.length === 0 ? (
-        <div className={styles.noResults}>
-          <Package size={48} />
-          <h3>Nenhum template encontrado</h3>
-          <p>Tente ajustar os filtros ou termo de busca</p>
+        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+          <Package size={48} className="mb-4" />
+          <h3 className="text-xl font-bold mb-2">Nenhum template encontrado</h3>
+          <p className="text-sm">Tente ajustar os filtros ou termo de busca</p>
         </div>
       ) : (
-        <div className={styles.templatesGrid}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTemplates.map((template) => (
             <div
               key={template.type}
-              className={styles.templateCard}
+              className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6 hover:border-[#1B998B] transition-all border-t-4"
               style={{ borderTopColor: getCategoryColor(template.type) }}
             >
-              <div className={styles.templateHeader}>
-                <div className={styles.templateIconWrapper}>
-                  {getIcon(template.icon, template.type)}
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
+                  {getIcon(template.icon)}
                 </div>
-                <div className={styles.templateBadge} style={{ backgroundColor: getCategoryColor(template.type) }}>
+                <div
+                  className="px-3 py-1 rounded-full text-xs font-medium text-white"
+                  style={{ backgroundColor: getCategoryColor(template.type) }}
+                >
                   {templateCategories[template.type]}
                 </div>
               </div>
 
-              <h3 className={styles.templateName}>{template.name}</h3>
-              <p className={styles.templateDescription}>{template.description}</p>
+              <h3 className="text-xl font-bold mb-2">{template.name}</h3>
+              <p className="text-sm text-gray-400 mb-4">{template.description}</p>
 
-              <div className={styles.templateLanguages}>
-                <span className={styles.languagesLabel}>Linguagens disponíveis:</span>
-                <div className={styles.languagesList}>
+              <div className="mb-4">
+                <span className="text-xs text-gray-500 block mb-2">Linguagens disponíveis:</span>
+                <div className="flex flex-wrap gap-2">
                   {template.languages.map((lang) => (
-                    <span key={lang} className={styles.languageBadge}>
+                    <span key={lang} className="px-2 py-1 bg-gray-700 rounded text-xs text-gray-300">
                       {lang}
                     </span>
                   ))}
@@ -224,7 +232,7 @@ function InfrastructureTemplatesPage() {
               </div>
 
               <button
-                className={styles.createButton}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#1B998B] hover:bg-[#159179] text-white rounded-lg font-medium transition-all"
                 onClick={() => handleCreateService(template)}
               >
                 <Plus size={18} />
