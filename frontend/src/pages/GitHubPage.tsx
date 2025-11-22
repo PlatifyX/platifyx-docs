@@ -53,7 +53,7 @@ function GitHubPage() {
       if (activeTab === 'overview') {
         const params = new URLSearchParams()
         if (selectedIntegration) params.append('integration', selectedIntegration)
-        const statsRes = await fetch(buildApiUrl(`github/stats?${params.toString()}`))
+        const statsRes = await fetch(buildApiUrl(`code/stats?${params.toString()}`))
         if (!statsRes.ok) {
           // 404 = sem integração configurada
           if (statsRes.status === 404) {
@@ -76,7 +76,7 @@ function GitHubPage() {
       if (activeTab === 'repositories' || activeTab === 'overview') {
         const params = new URLSearchParams()
         if (selectedIntegration) params.append('integration', selectedIntegration)
-        const reposRes = await fetch(buildApiUrl(`github/repositories?${params.toString()}`))
+        const reposRes = await fetch(buildApiUrl(`code/repositories?${params.toString()}`))
         if (!reposRes.ok) {
           // 404 = sem integração configurada
           if (reposRes.status === 404) {
