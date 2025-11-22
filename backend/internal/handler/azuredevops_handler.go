@@ -819,3 +819,133 @@ func (h *AzureDevOpsHandler) RejectRelease(c *gin.Context) {
 		"message": "Release rejected successfully",
 	})
 }
+
+// ListRepositories lists all repositories from Azure DevOps
+func (h *AzureDevOpsHandler) ListRepositories(c *gin.Context) {
+	filterIntegration := c.Query("integration")
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configurations",
+		})
+		return
+	}
+	if len(configs) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "No Azure DevOps integrations configured",
+		})
+		return
+	}
+
+	h.log.Infow("Fetching repositories from all integrations", "integrationCount", len(configs), "filter", filterIntegration)
+
+	var allRepositories []map[string]interface{}
+	for integrationName, config := range configs {
+		h.log.Infow("Processing integration", "integration", integrationName, "filter", filterIntegration, "willSkip", filterIntegration != "" && integrationName != filterIntegration)
+
+		// Skip if integration filter is set and doesn't match
+		if filterIntegration != "" && integrationName != filterIntegration {
+			h.log.Infow("Skipping integration (filter mismatch)", "integration", integrationName, "filter", filterIntegration)
+			continue
+		}
+
+		h.log.Infow("Fetching repositories from integration", "integration", integrationName, "organization", config.Organization, "project", config.Project)
+		svc := service.NewAzureDevOpsService(*config, h.log)
+		repos, err := svc.GetRepositories()
+		if err != nil {
+			h.log.Errorw("Failed to fetch repositories from integration", "integration", integrationName, "error", err)
+			continue
+		}
+
+		h.log.Infow("Fetched repositories from integration", "integration", integrationName, "count", len(repos))
+
+		// Convert to a format compatible with frontend
+		for _, repo := range repos {
+			allRepositories = append(allRepositories, map[string]interface{}{
+				"id":          repo.ID,
+				"name":        repo.Name,
+				"full_name":   repo.Project.Name + "/" + repo.Name,
+				"description": "",
+				"html_url":    repo.WebURL,
+				"private":     false, // Azure DevOps repos visibility would need additional API call
+				"fork":        false,
+				"created_at":  "",
+				"updated_at":  "",
+				"pushed_at":   "",
+				"size":        repo.Size,
+				"stargazers_count": 0,
+				"watchers_count":   0,
+				"language":         "",
+				"forks_count":      0,
+				"open_issues_count": 0,
+				"default_branch":    repo.DefaultBranch,
+				"owner": map[string]interface{}{
+					"login":      repo.Project.Name,
+					"avatar_url": "",
+				},
+				"integration": integrationName,
+			})
+		}
+	}
+
+	h.log.Infow("Total repositories", "total", len(allRepositories))
+
+	c.JSON(http.StatusOK, gin.H{
+		"repositories": allRepositories,
+		"total":        len(allRepositories),
+	})
+}
+
+// GetRepositoriesStats returns statistics about repositories
+func (h *AzureDevOpsHandler) GetRepositoriesStats(c *gin.Context) {
+	filterIntegration := c.Query("integration")
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Azure DevOps configurations",
+		})
+		return
+	}
+	if len(configs) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "No Azure DevOps integrations configured",
+		})
+		return
+	}
+
+	totalRepos := 0
+	totalSize := 0
+
+	for integrationName, config := range configs {
+		// Skip if integration filter is set and doesn't match
+		if filterIntegration != "" && integrationName != filterIntegration {
+			continue
+		}
+
+		svc := service.NewAzureDevOpsService(*config, h.log)
+		stats, err := svc.GetRepositoriesStats()
+		if err != nil {
+			h.log.Errorw("Failed to fetch repository stats from integration", "integration", integrationName, "error", err)
+			continue
+		}
+
+		if count, ok := stats["totalRepositories"].(int); ok {
+			totalRepos += count
+		}
+		if size, ok := stats["totalSize"].(int); ok {
+			totalSize += size
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"totalRepositories": totalRepos,
+		"totalSize":         totalSize,
+		"totalStars":        0,
+		"totalForks":        0,
+		"totalOpenIssues":   0,
+		"publicRepos":       0,
+		"privateRepos":      0,
+	})
+}

@@ -554,3 +554,65 @@ func (c *Client) GetRepositoryURL(repositoryName string) (string, error) {
 
 	return repo.WebURL, nil
 }
+
+// Repository represents an Azure DevOps Git repository
+type Repository struct {
+	ID         string    `json:"id"`
+	Name       string    `json:"name"`
+	URL        string    `json:"url"`
+	WebURL     string    `json:"webUrl"`
+	RemoteURL  string    `json:"remoteUrl"`
+	Size       int       `json:"size"`
+	DefaultBranch string `json:"defaultBranch"`
+	Project    struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	} `json:"project"`
+}
+
+// ListRepositories lists all repositories in the configured project
+func (c *Client) ListRepositories() ([]Repository, error) {
+	return c.ListRepositoriesForProject(c.project)
+}
+
+// ListRepositoriesForProject lists all repositories in a specific project
+func (c *Client) ListRepositoriesForProject(project string) ([]Repository, error) {
+	url := fmt.Sprintf("%s/%s/%s/_apis/git/repositories?api-version=%s",
+		c.baseURL, c.organization, project, apiVersion)
+
+	body, err := c.doRequest("GET", url)
+	if err != nil {
+		return nil, err
+	}
+
+	var response struct {
+		Value []Repository `json:"value"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+
+	return response.Value, nil
+}
+
+// ListAllRepositories lists all repositories across all projects
+func (c *Client) ListAllRepositories() ([]Repository, error) {
+	projects, err := c.ListProjects()
+	if err != nil {
+		return nil, err
+	}
+
+	var allRepos []Repository
+	for _, project := range projects {
+		repos, err := c.ListRepositoriesForProject(project.Name)
+		if err != nil {
+			// Log error but continue with other projects
+			fmt.Printf("Error fetching repositories for project %s: %v\n", project.Name, err)
+			continue
+		}
+		allRepos = append(allRepos, repos...)
+	}
+
+	return allRepos, nil
+}
