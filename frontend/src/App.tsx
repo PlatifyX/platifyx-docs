@@ -4,7 +4,7 @@ import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
 import ServicesPage from './pages/ServicesPage'
 import KubernetesPage from './pages/KubernetesPage'
-import GitHubPage from './pages/GitHubPage'
+import ReposPage from './pages/ReposPage'
 import AzureDevOpsPage from './pages/AzureDevOpsPage'
 import IntegrationsPage from './pages/IntegrationsPage'
 import InfrastructureTemplatesPage from './pages/InfrastructureTemplatesPage'
@@ -23,7 +23,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/kubernetes" element={<KubernetesPage />} />
-          <Route path="/repos" element={<GitHubPage />} />
+          <Route path="/repos" element={<ReposPage />} />
           <Route path="/ci" element={<AzureDevOpsPage />} />
           <Route path="/observability" element={<ObservabilityPage />} />
           <Route path="/quality" element={<QualityPage />} />
