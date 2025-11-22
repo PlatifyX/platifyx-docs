@@ -23,7 +23,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/kubernetes" element={<KubernetesPage />} />
-          <Route path="/github" element={<GitHubPage />} />
+          <Route path="/repos" element={<GitHubPage />} />
           <Route path="/ci" element={<AzureDevOpsPage />} />
           <Route path="/observability" element={<ObservabilityPage />} />
           <Route path="/quality" element={<QualityPage />} />

@@ -12,9 +12,9 @@ import {
   BarChart3,
   Plug,
   FileText,
-  Github,
   Network,
-  Boxes
+  Boxes,
+  Workflow
 } from 'lucide-react'
 
 interface NavItem {
@@ -28,14 +28,12 @@ const navItems: NavItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
   { path: '/services', label: 'Serviços', icon: <Box size={20} /> },
   { path: '/kubernetes', label: 'Kubernetes', icon: <Server size={20} /> },
-  { path: '/github', label: 'Repositórios', icon: <Github size={20} /> },
+  { path: '/repos', label: 'Repositórios', icon: <Workflow size={20} /> },
   { path: '/ci', label: 'CI/CD', icon: <GitBranch size={20} /> },
   { path: '/observability', label: 'Observabilidade', icon: <Activity size={20} /> },
   { path: '/quality', label: 'Qualidade', icon: <Shield size={20} /> },
   { path: '/finops', label: 'FinOps', icon: <DollarSign size={20} /> },
-  { path: '/analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
   { path: '/techdocs', label: 'Documentação', icon: <FileText size={20} /> },
-  { path: '/diagrams', label: 'Diagramas', icon: <Network size={20} /> },
   { path: '/infrastructure-templates', label: 'Templates', icon: <Boxes size={20} /> },
   { path: '/integrations', label: 'Integrações', icon: <Plug size={20} /> },
   { path: '/settings', label: 'Configurações', icon: <Settings size={20} /> },
