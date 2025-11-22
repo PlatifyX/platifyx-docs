@@ -155,21 +155,21 @@ func (h *SSOHandler) CallbackSSO(c *gin.Context) {
 		h.userRepo.Update(user)
 	}
 
-	// Gerar JWT token
-	loginReq := domain.LoginRequest{
-		Email: user.Email,
-	}
-
+	// Fazer login via SSO
 	ipAddress := c.ClientIP()
 	userAgent := c.GetHeader("User-Agent")
 
-	loginResp, err := h.authService.Login(loginReq, ipAddress, userAgent)
+	loginResp, err := h.authService.LoginWithSSO(user.ID, ipAddress, userAgent)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		frontendCallback := fmt.Sprintf("http://localhost:7000/login?error=%s", err.Error())
+		c.Redirect(http.StatusTemporaryRedirect, frontendCallback)
 		return
 	}
 
-	c.JSON(http.StatusOK, loginResp)
+	// Redirecionar para o frontend com o token
+	frontendCallback := fmt.Sprintf("http://localhost:7000/auth/callback/%s?token=%s",
+		provider, loginResp.Token)
+	c.Redirect(http.StatusTemporaryRedirect, frontendCallback)
 }
 
 // getOAuth2Config retorna a configuração OAuth2 para o provider

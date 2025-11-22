@@ -41,6 +41,13 @@ O PlatifyX agora possui um sistema completo de autenticação com JWT (JSON Web 
    - Botão de logout
    - Navegação para configurações
 
+6. **Single Sign-On (SSO)** (`/login`)
+   - Botões de login com Google e Microsoft
+   - Integração OAuth2 completa
+   - Criação automática de usuários SSO
+   - Suporte a restrição por domínio de email
+   - Página de callback para processar retorno do provedor
+
 ### Backend
 
 O backend já possui toda a infraestrutura necessária:
@@ -53,6 +60,8 @@ O backend já possui toda a infraestrutura necessária:
    - `POST /change-password` - Alteração de senha
    - `POST /forgot-password` - Solicitar reset de senha
    - `POST /reset-password` - Redefinir senha com token
+   - `GET /sso/:provider` - Iniciar fluxo SSO (Google/Microsoft)
+   - `GET /callback/:provider` - Callback do provedor SSO
 
 2. **Sistema RBAC (Role-Based Access Control)**
    - 4 roles padrão: Admin, Platform Engineer, Developer, Viewer
@@ -60,10 +69,11 @@ O backend já possui toda a infraestrutura necessária:
    - Middleware de autorização
 
 3. **Banco de Dados**
-   - Tabela `users` com suporte a SSO
+   - Tabela `users` com suporte a SSO (campos `is_sso`, `sso_provider`)
    - Tabela `sessions` para gerenciamento de tokens
    - Tabela `roles` e `permissions` para RBAC
    - Tabela `password_reset_tokens` para tokens de recuperação de senha
+   - Tabela `sso_configs` para configurações de provedores SSO
 
 ## Fluxo de Autenticação
 
@@ -184,6 +194,18 @@ Protege rotas que requerem autenticação.
 
 Página de login com design moderno usando TailwindCSS.
 
+## Configuração de SSO
+
+Para configurar Google e Microsoft SSO, consulte o guia detalhado:
+**[SSO_SETUP.md](./SSO_SETUP.md)**
+
+O guia inclui:
+- Configuração passo a passo no Google Cloud Console
+- Configuração passo a passo no Azure AD
+- Como configurar no PlatifyX
+- Troubleshooting
+- Checklist de produção
+
 ## Como Testar
 
 ### 1. Iniciar o Backend
@@ -260,12 +282,12 @@ location.reload()
 ## Próximos Passos
 
 - [x] Implementar "Esqueci minha senha" ✅
+- [x] Implementar SSO com Google/Microsoft ✅
 - [ ] Configurar envio de email para reset de senha (atualmente usa link direto em dev)
+- [ ] Implementar validação de state token no SSO (prevenção CSRF)
 - [ ] Adicionar autenticação de dois fatores (2FA)
-- [ ] Implementar SSO com Google/Microsoft
 - [ ] Adicionar rate limiting no endpoint de login
 - [ ] Implementar refresh automático de token
-- [ ] Adicionar logs de auditoria para logins
 - [ ] Implementar expiração de sessão por inatividade
 
 ## Segurança

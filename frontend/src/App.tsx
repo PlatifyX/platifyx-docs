@@ -5,6 +5,7 @@ import PrivateRoute from './components/PrivateRoute'
 import LoginPage from './pages/LoginPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import SSOCallbackPage from './pages/SSOCallbackPage'
 import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
 import ServicesPage from './pages/ServicesPage'
@@ -48,6 +49,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/auth/callback/:provider" element={<SSOCallbackPage />} />
 
           {/* Rotas protegidas */}
           <Route path="/home" element={

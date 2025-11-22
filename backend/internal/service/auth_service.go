@@ -384,3 +384,60 @@ func (s *AuthService) ResetPassword(req domain.ConfirmResetPasswordRequest, ipAd
 func (s *AuthService) CleanupExpiredResetTokens() (int64, error) {
 	return s.passwordResetRepo.DeleteExpiredTokens()
 }
+
+// LoginWithSSO autentica um usuário via SSO (não requer senha)
+func (s *AuthService) LoginWithSSO(userID, ipAddress, userAgent string) (*domain.LoginResponse, error) {
+	// Buscar usuário
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	// Verificar se o usuário está ativo
+	if !user.IsActive {
+		s.logAudit(&user.ID, user.Email, "user.sso_login", "user", &user.ID, ipAddress, userAgent, "failure")
+		return nil, ErrUserNotActive
+	}
+
+	// Gerar tokens
+	token, refreshToken, expiresIn, err := s.generateTokens(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Criar sessão
+	session := &domain.Session{
+		UserID:       user.ID,
+		Token:        token,
+		RefreshToken: &refreshToken,
+		IPAddress:    &ipAddress,
+		UserAgent:    &userAgent,
+		ExpiresAt:    time.Now().Add(time.Duration(expiresIn) * time.Second),
+	}
+
+	if err := s.sessionRepo.Create(session); err != nil {
+		return nil, err
+	}
+
+	// Atualizar último login
+	s.userRepo.UpdateLastLogin(user.ID)
+
+	// Log de auditoria
+	s.logAudit(&user.ID, user.Email, "user.sso_login", "user", &user.ID, ipAddress, userAgent, "success")
+
+	// Carregar roles e teams
+	user.Roles, _ = s.userRepo.GetUserRoles(user.ID)
+	user.Teams, _ = s.userRepo.GetUserTeams(user.ID)
+
+	return &domain.LoginResponse{
+		User:         *user,
+		Token:        token,
+		RefreshToken: refreshToken,
+		ExpiresIn:    expiresIn,
+	}, nil
+}
+
+// CreateSession cria uma sessão sem fazer login completo (usado por SSO)
+func (s *AuthService) CreateSession(session *domain.Session) error {
+	return s.sessionRepo.Create(session)
+}
