@@ -47,12 +47,39 @@ interface ServiceMetrics {
   }
 }
 
+interface PodInfo {
+  name: string
+  status: string
+  ready: string
+  restarts: number
+  age: string
+  node?: string
+  namespace: string
+}
+
+interface DeploymentStatus {
+  environment: string
+  status: string
+  replicas: number
+  availableReplicas: number
+  image: string
+  lastDeployed?: string
+  pods?: PodInfo[]
+}
+
+interface ServiceStatus {
+  serviceName: string
+  stageStatus?: DeploymentStatus
+  prodStatus?: DeploymentStatus
+}
+
 function ServicesPage() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [serviceMetrics, setServiceMetrics] = useState<Record<string, ServiceMetrics>>({})
+  const [serviceStatus, setServiceStatus] = useState<Record<string, ServiceStatus>>({})
   const [loadingMetrics, setLoadingMetrics] = useState(false)
   const [filter, setFilter] = useState('')
   const [squadFilter, setSquadFilter] = useState('all')
@@ -81,6 +108,7 @@ function ServicesPage() {
       // Fetch metrics for all services
       if (fetchedServices.length > 0) {
         await fetchServicesMetrics(fetchedServices.map((s: Service) => s.name))
+        await fetchServicesStatus(fetchedServices.map((s: Service) => s.name))
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao buscar serviços')
@@ -114,6 +142,37 @@ function ServicesPage() {
       // Don't show error to user, just log it
     } finally {
       setLoadingMetrics(false)
+    }
+  }
+
+  const fetchServicesStatus = async (serviceNames: string[]) => {
+    try {
+      // Fetch status for each service
+      const statusPromises = serviceNames.map(async (serviceName) => {
+        try {
+          const response = await fetch(buildApiUrl(`service-catalog/${serviceName}/status`))
+          if (response.ok) {
+            const status: ServiceStatus = await response.json()
+            return { serviceName, status }
+          }
+        } catch (err) {
+          console.error(`Failed to fetch status for ${serviceName}:`, err)
+        }
+        return null
+      })
+
+      const results = await Promise.all(statusPromises)
+      const statusMap: Record<string, ServiceStatus> = {}
+
+      results.forEach((result) => {
+        if (result) {
+          statusMap[result.serviceName] = result.status
+        }
+      })
+
+      setServiceStatus(statusMap)
+    } catch (err: any) {
+      console.error('Failed to fetch services status:', err)
     }
   }
 
@@ -364,6 +423,70 @@ function ServicesPage() {
                           {serviceMetrics[service.name]?.mainBuild?.finishTime && new Date(serviceMetrics[service.name]?.mainBuild?.finishTime!).toLocaleString('pt-BR')}
                         </span>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Kubernetes Pods - Stage */}
+                {serviceStatus[service.name]?.stageStatus?.pods && serviceStatus[service.name]?.stageStatus?.pods!.length > 0 && (
+                  <div className="mb-4 p-4 bg-background rounded-lg">
+                    <h4 className="text-sm font-semibold text-text mb-3 mt-0">Pods - Stage ({serviceStatus[service.name]?.stageStatus?.pods!.length})</h4>
+                    <div className="space-y-2">
+                      {serviceStatus[service.name]?.stageStatus?.pods!.map((pod, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-xs p-2 bg-surface rounded border border-border">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-mono text-text truncate">{pod.name}</div>
+                            <div className="text-text-secondary mt-1">
+                              Namespace: {pod.namespace} • Age: {pod.age}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-2">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${
+                              pod.status === 'Running' ? 'bg-success/10 text-success' :
+                              pod.status === 'Pending' ? 'bg-warning/10 text-warning' :
+                              'bg-error/10 text-error'
+                            }`}>
+                              {pod.status}
+                            </span>
+                            <span className="text-text-secondary">{pod.ready}</span>
+                            {pod.restarts > 0 && (
+                              <span className="text-warning text-xs">↻{pod.restarts}</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Kubernetes Pods - Prod */}
+                {serviceStatus[service.name]?.prodStatus?.pods && serviceStatus[service.name]?.prodStatus?.pods!.length > 0 && (
+                  <div className="mb-4 p-4 bg-background rounded-lg">
+                    <h4 className="text-sm font-semibold text-text mb-3 mt-0">Pods - Prod ({serviceStatus[service.name]?.prodStatus?.pods!.length})</h4>
+                    <div className="space-y-2">
+                      {serviceStatus[service.name]?.prodStatus?.pods!.map((pod, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-xs p-2 bg-surface rounded border border-border">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-mono text-text truncate">{pod.name}</div>
+                            <div className="text-text-secondary mt-1">
+                              Namespace: {pod.namespace} • Age: {pod.age}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-2">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${
+                              pod.status === 'Running' ? 'bg-success/10 text-success' :
+                              pod.status === 'Pending' ? 'bg-warning/10 text-warning' :
+                              'bg-error/10 text-error'
+                            }`}>
+                              {pod.status}
+                            </span>
+                            <span className="text-text-secondary">{pod.ready}</span>
+                            {pod.restarts > 0 && (
+                              <span className="text-warning text-xs">↻{pod.restarts}</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
