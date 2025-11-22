@@ -851,7 +851,7 @@ func (h *AzureDevOpsHandler) ListRepositories(c *gin.Context) {
 		}
 
 		h.log.Infow("Fetching repositories from integration", "integration", integrationName, "organization", config.Organization, "project", config.Project)
-		svc := service.NewAzureDevOpsServiceWithCache(*config, h.integrationService.GetCacheService().GetRedisClient(), h.log)
+		svc := service.NewAzureDevOpsService(*config, h.log)
 		repos, err := svc.GetRepositories()
 		if err != nil {
 			h.log.Errorw("Failed to fetch repositories from integration", "integration", integrationName, "error", err)
