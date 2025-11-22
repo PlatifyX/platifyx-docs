@@ -293,10 +293,20 @@ WHERE u.email = 'usuario@exemplo.com'
 
 ### State Token Validation
 
-> **TODO**: O código atual gera um state token mas não o valida no callback. Para produção, implemente:
-> 1. Armazene o state em cache/Redis com TTL curto (5 min)
-> 2. Valide no callback que o state recebido corresponde ao armazenado
-> 3. Isso previne CSRF attacks
+✅ **IMPLEMENTADO**: O sistema agora valida state tokens para prevenir ataques CSRF:
+1. ✅ State tokens criptográficos de 32 bytes são gerados ao iniciar o fluxo SSO
+2. ✅ Tokens armazenados no Redis com TTL de 5 minutos
+3. ✅ Validação no callback verifica se o state recebido corresponde ao armazenado
+4. ✅ Tokens são deletados após uso (proteção contra reuso)
+5. ✅ Tokens expirados são automaticamente removidos
+
+**Como funciona:**
+- Ao clicar em "Login com Google/Microsoft", um state token único é gerado
+- O token é armazenado no Redis com a chave `sso:state:{token}`
+- O usuário é redirecionado para o provedor OAuth2 com o state
+- No callback, o backend valida se o state recebido existe no cache e corresponde ao provedor
+- Se inválido ou expirado, o usuário é redirecionado para `/login` com erro
+- Se válido, o token é deletado e a autenticação prossegue
 
 ---
 
@@ -307,8 +317,9 @@ WHERE u.email = 'usuario@exemplo.com'
 - [ ] Configurar HTTPS
 - [ ] Atualizar Redirect URIs para domínio de produção
 - [ ] Configurar `allowed_domains` adequadamente
-- [ ] Implementar validação de state token
-- [ ] Configurar rate limiting nos endpoints SSO
+- [x] Implementar validação de state token ✅
+- [x] Configurar rate limiting nos endpoints SSO ✅
+- [ ] Configurar Redis persistente para produção
 - [ ] Configurar monitoramento e alertas
 - [ ] Testar fluxo completo em staging
 - [ ] Documentar para usuários finais

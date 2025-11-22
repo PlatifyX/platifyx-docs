@@ -283,10 +283,10 @@ location.reload()
 
 - [x] Implementar "Esqueci minha senha" ✅
 - [x] Implementar SSO com Google/Microsoft ✅
+- [x] Implementar validação de state token no SSO (prevenção CSRF) ✅
+- [x] Adicionar rate limiting nos endpoints de autenticação ✅
 - [ ] Configurar envio de email para reset de senha (atualmente usa link direto em dev)
-- [ ] Implementar validação de state token no SSO (prevenção CSRF)
 - [ ] Adicionar autenticação de dois fatores (2FA)
-- [ ] Adicionar rate limiting no endpoint de login
 - [ ] Implementar refresh automático de token
 - [ ] Implementar expiração de sessão por inatividade
 
@@ -298,15 +298,51 @@ location.reload()
 - ✅ HTTPS recomendado para produção
 - ✅ Tokens armazenados apenas no localStorage (não em cookies)
 - ✅ Validação de token em todas as requisições
+- ✅ **Rate limiting em endpoints de autenticação** (proteção contra brute force)
+  - Login: 5 tentativas por minuto por IP
+  - Password reset: 3 tentativas a cada 5 minutos por IP
+  - SSO: 10 tentativas por minuto por IP
+- ✅ **State token validation no SSO** (proteção contra CSRF)
+  - Tokens criptográficos únicos (32 bytes)
+  - TTL de 5 minutos
+  - Uso único (deletado após validação)
+
+### Detalhes de Segurança
+
+#### Rate Limiting
+O sistema implementa rate limiting baseado em IP usando Redis:
+- **Endpoint `/auth/login`**: Máximo de 5 tentativas por minuto
+- **Endpoint `/auth/forgot-password`**: Máximo de 3 tentativas a cada 5 minutos
+- **Endpoint `/auth/reset-password`**: Máximo de 3 tentativas a cada 5 minutos
+- **Endpoint `/auth/sso/:provider`**: Máximo de 10 tentativas por minuto
+
+Quando o limite é excedido, a API retorna HTTP 429 (Too Many Requests) com informações sobre quando tentar novamente.
+
+Headers de rate limiting incluídos nas respostas:
+- `X-RateLimit-Limit`: Número máximo de requisições permitidas
+- `X-RateLimit-Remaining`: Requisições restantes na janela atual
+- `X-RateLimit-Reset`: Timestamp Unix quando o limite será resetado
+
+#### SSO State Token Validation
+Proteção contra ataques CSRF no fluxo OAuth2:
+1. **Geração**: Token criptográfico de 32 bytes gerado ao iniciar SSO
+2. **Armazenamento**: Token armazenado no Redis com TTL de 5 minutos
+3. **Validação**: No callback, o state é validado contra o armazenado
+4. **Prevenção de Reuso**: Token deletado após validação bem-sucedida
+5. **Expiração**: Tokens expiram automaticamente após 5 minutos
+
+Se o state token for inválido ou expirado, o usuário é redirecionado para `/login` com mensagem de erro.
 
 ### Recomendações para Produção
 1. Alterar senha padrão do admin
 2. Configurar HTTPS
-3. Implementar rate limiting
-4. Adicionar logs de auditoria
+3. Configurar Redis persistente para rate limiting
+4. Adicionar logs de auditoria detalhados
 5. Configurar políticas de senha forte
 6. Implementar refresh token rotation
 7. Adicionar blacklist de tokens revogados
+8. Monitorar tentativas de login falhadas
+9. Configurar alertas para rate limiting excessivo
 
 ## Suporte
 

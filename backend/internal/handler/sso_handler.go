@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,20 +21,23 @@ import (
 )
 
 type SSOHandler struct {
-	ssoRepo     *repository.SSORepository
-	userRepo    *repository.UserRepository
-	authService *service.AuthService
+	ssoRepo      *repository.SSORepository
+	userRepo     *repository.UserRepository
+	authService  *service.AuthService
+	cacheService *service.CacheService
 }
 
 func NewSSOHandler(
 	ssoRepo *repository.SSORepository,
 	userRepo *repository.UserRepository,
 	authService *service.AuthService,
+	cacheService *service.CacheService,
 ) *SSOHandler {
 	return &SSOHandler{
-		ssoRepo:     ssoRepo,
-		userRepo:    userRepo,
-		authService: authService,
+		ssoRepo:      ssoRepo,
+		userRepo:     userRepo,
+		authService:  authService,
+		cacheService: cacheService,
 	}
 }
 
@@ -54,9 +59,17 @@ func (h *SSOHandler) LoginWithSSO(c *gin.Context) {
 		return
 	}
 
-	// Gerar state token para segurança
-	state := fmt.Sprintf("%d", time.Now().Unix())
-	// TODO: Armazenar state em cache/session para validar no callback
+	// Gerar state token criptográfico único para segurança (prevenção CSRF)
+	state := h.generateStateToken()
+
+	// Armazenar state no cache com TTL de 5 minutos
+	if h.cacheService != nil {
+		cacheKey := fmt.Sprintf("sso:state:%s", state)
+		if err := h.cacheService.Set(cacheKey, provider, 5*time.Minute); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize SSO session"})
+			return
+		}
+	}
 
 	// Redirecionar para página de autenticação do provider
 	url := oauth2Config.AuthCodeURL(state, oauth2.AccessTypeOffline)
@@ -67,14 +80,29 @@ func (h *SSOHandler) LoginWithSSO(c *gin.Context) {
 func (h *SSOHandler) CallbackSSO(c *gin.Context) {
 	provider := c.Param("provider")
 	code := c.Query("code")
-	// state := c.Query("state")
+	state := c.Query("state")
 
 	if code == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing authorization code"})
+		frontendCallback := "http://localhost:7000/login?error=Missing+authorization+code"
+		c.Redirect(http.StatusTemporaryRedirect, frontendCallback)
 		return
 	}
 
-	// TODO: Validar state token
+	// Validar state token (prevenção CSRF)
+	if state != "" && h.cacheService != nil {
+		cacheKey := fmt.Sprintf("sso:state:%s", state)
+		storedProvider, err := h.cacheService.Get(cacheKey)
+
+		if err != nil || storedProvider != provider {
+			// State inválido ou expirado - possível ataque CSRF
+			frontendCallback := "http://localhost:7000/login?error=Invalid+SSO+session"
+			c.Redirect(http.StatusTemporaryRedirect, frontendCallback)
+			return
+		}
+
+		// Deletar state do cache para prevenir reuso
+		h.cacheService.Delete(cacheKey)
+	}
 
 	// Buscar configuração do SSO
 	config, err := h.ssoRepo.GetByProvider(provider)
@@ -296,4 +324,14 @@ func (h *SSOHandler) fetchUserInfo(provider, accessToken string) (*UserInfo, err
 	default:
 		return nil, fmt.Errorf("unsupported provider")
 	}
+}
+
+// generateStateToken gera um token aleatório criptográfico de 32 bytes
+func (h *SSOHandler) generateStateToken() string {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		// Fallback para timestamp se random falhar
+		return fmt.Sprintf("%d", time.Now().UnixNano())
+	}
+	return hex.EncodeToString(b)
 }

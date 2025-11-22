@@ -59,6 +59,6 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		TemplateHandler:        NewTemplateHandler(services.TemplateService, log),
 		SettingsHandler:        NewSettingsHandler(services.UserService, services.UserRepository, services.RoleRepository, services.TeamRepository, services.AuditRepository, services.SSORepository),
 		AuthHandler:            NewAuthHandler(services.AuthService, services.UserService),
-		SSOHandler:             NewSSOHandler(services.SSORepository, services.UserRepository, services.AuthService),
+		SSOHandler:             NewSSOHandler(services.SSORepository, services.UserRepository, services.AuthService, services.CacheService),
 	}
 }

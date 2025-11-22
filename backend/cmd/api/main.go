@@ -49,7 +49,7 @@ func main() {
 	serviceManager := service.NewServiceManager(cfg, log, db)
 	handlerManager := handler.NewHandlerManager(serviceManager, log)
 
-	router := setupRouter(cfg, handlerManager, log)
+	router := setupRouter(cfg, handlerManager, serviceManager, log)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.Port),
@@ -82,7 +82,7 @@ func main() {
 	log.Info("Server exited")
 }
 
-func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logger.Logger) *gin.Engine {
+func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services *service.ServiceManager, log *logger.Logger) *gin.Engine {
 	if cfg.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -416,16 +416,32 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 		// Authentication
 		auth := v1.Group("/auth")
 		{
-			auth.POST("/login", handlers.AuthHandler.Login)
+			// Login endpoint com rate limiting (5 tentativas por minuto)
+			auth.POST("/login",
+				middleware.RateLimiter(services.CacheService, middleware.DefaultLoginRateLimiter()),
+				handlers.AuthHandler.Login,
+			)
+
 			auth.POST("/logout", handlers.AuthHandler.Logout)
 			auth.POST("/refresh", handlers.AuthHandler.RefreshToken)
 			auth.GET("/me", handlers.AuthHandler.Me)
 			auth.POST("/change-password", handlers.AuthHandler.ChangePassword)
-			auth.POST("/forgot-password", handlers.AuthHandler.ForgotPassword)
-			auth.POST("/reset-password", handlers.AuthHandler.ResetPassword)
 
-			// SSO Login
-			auth.GET("/sso/:provider", handlers.SSOHandler.LoginWithSSO)
+			// Password reset com rate limiting (3 tentativas a cada 5 minutos)
+			auth.POST("/forgot-password",
+				middleware.RateLimiter(services.CacheService, middleware.DefaultPasswordResetRateLimiter()),
+				handlers.AuthHandler.ForgotPassword,
+			)
+			auth.POST("/reset-password",
+				middleware.RateLimiter(services.CacheService, middleware.DefaultPasswordResetRateLimiter()),
+				handlers.AuthHandler.ResetPassword,
+			)
+
+			// SSO Login com rate limiting moderado (10 tentativas por minuto)
+			auth.GET("/sso/:provider",
+				middleware.IPBasedRateLimiter(services.CacheService, 10),
+				handlers.SSOHandler.LoginWithSSO,
+			)
 			auth.GET("/callback/:provider", handlers.SSOHandler.CallbackSSO)
 		}
 	}
