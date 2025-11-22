@@ -1,7 +1,6 @@
 import { ReactNode } from 'react'
 import Header from './Header'
 import Sidebar from './Sidebar'
-import styles from './Layout.module.css'
 
 interface LayoutProps {
   children: ReactNode
@@ -9,10 +8,10 @@ interface LayoutProps {
 
 function Layout({ children }: LayoutProps) {
   return (
-    <div className={styles.layout}>
+    <div className="min-h-screen flex flex-col">
       <Header />
       <Sidebar />
-      <main className={styles.main}>
+      <main className="mt-16 ml-[260px] p-6 min-h-[calc(100vh-4rem)] bg-background">
         {children}
       </main>
     </div>

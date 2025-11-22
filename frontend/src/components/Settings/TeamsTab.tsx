@@ -1,29 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Users2, Plus, Edit2, Trash2, UserPlus, X, Loader2, Crown, Shield as ShieldIcon, User } from 'lucide-react';
+import { Users2, Plus, Edit2, Trash2, UserPlus, X, Loader2, Crown, Shield as ShieldIcon, User as UserIcon } from 'lucide-react';
 import * as settingsApi from '../../services/settingsApi';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar_url?: string;
-}
-
-interface Team {
-  id: string;
-  name: string;
-  display_name: string;
-  description?: string;
-  avatar_url?: string;
-  members?: TeamMember[];
-}
-
-interface TeamMember {
-  user_id: string;
-  role: string;
-  joined_at: string;
-  user?: User;
-}
+type User = settingsApi.User;
+type Team = settingsApi.Team;
 
 interface TeamFormData {
   name: string;
@@ -206,7 +186,7 @@ const TeamsTab: React.FC = () => {
       case 'admin':
         return <ShieldIcon className="w-3 h-3" />;
       default:
-        return <User className="w-3 h-3" />;
+        return <UserIcon className="w-3 h-3" />;
     }
   };
 

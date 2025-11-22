@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import styles from './AzureDevOpsModal.module.css'
 import { buildApiUrl } from '../../config/api'
 
 interface Integration {
@@ -104,104 +103,111 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2 className={styles.title}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900">
             {isCreating ? 'Nova Integração Azure DevOps' : 'Configurar Azure DevOps'}
           </h2>
-          <button className={styles.closeButton} onClick={onClose}>
+          <button
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            onClick={onClose}
+          >
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          {isCreating && (
-            <div className={styles.formGroup}>
-              <label htmlFor="name" className={styles.label}>
-                Nome da Integração *
-              </label>
-              <input
-                id="name"
-                type="text"
-                className={styles.input}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Azure DevOps - Produção"
-                required
-              />
-              <p className={styles.hint}>
-                Nome identificador desta integração
-              </p>
-            </div>
-          )}
-
-          <div className={styles.formGroup}>
-            <label htmlFor="organization" className={styles.label}>
-              Organização *
-            </label>
-            <input
-              id="organization"
-              type="text"
-              className={styles.input}
-              value={organization}
-              onChange={(e) => setOrganization(e.target.value)}
-              placeholder="sua-organizacao"
-              required
-            />
-            <p className={styles.hint}>
-              Nome da sua organização no Azure DevOps (dev.azure.com/<strong>sua-organizacao</strong>)
-            </p>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="pat" className={styles.label}>
-              Token de Acesso (PAT) *
-            </label>
-            <input
-              id="pat"
-              type="password"
-              className={styles.input}
-              value={pat}
-              onChange={(e) => setPat(e.target.value)}
-              placeholder="••••••••••••••••"
-              required
-            />
-            <p className={styles.hint}>
-              Token de acesso pessoal com permissões de leitura em Pipelines, Builds e Releases
-            </p>
-          </div>
-
-          <div className={styles.infoBox}>
-            <p>ℹ️ Esta integração conectará com <strong>todos os projetos</strong> da organização automaticamente.</p>
-          </div>
-
-          <div className={styles.testSection}>
-            <button
-              type="button"
-              className={styles.testButton}
-              onClick={handleTestConnection}
-              disabled={testing || !organization || !pat}
-            >
-              {testing ? 'Testando...' : 'Testar Conexão'}
-            </button>
-
-            {testResult && (
-              <div className={testResult.success ? styles.testSuccess : styles.testError}>
-                {testResult.success ? (
-                  <CheckCircle size={16} />
-                ) : (
-                  <XCircle size={16} />
-                )}
-                <span>{testResult.message}</span>
+        <form onSubmit={handleSubmit}>
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-160px)] space-y-4">
+            {isCreating && (
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome da Integração *
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex: Azure DevOps - Produção"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Nome identificador desta integração
+                </p>
               </div>
             )}
+
+            <div>
+              <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-1">
+                Organização *
+              </label>
+              <input
+                id="organization"
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={organization}
+                onChange={(e) => setOrganization(e.target.value)}
+                placeholder="sua-organizacao"
+                required
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Nome da sua organização no Azure DevOps (dev.azure.com/<strong>sua-organizacao</strong>)
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="pat" className="block text-sm font-medium text-gray-700 mb-1">
+                Token de Acesso (PAT) *
+              </label>
+              <input
+                id="pat"
+                type="password"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={pat}
+                onChange={(e) => setPat(e.target.value)}
+                placeholder="••••••••••••••••"
+                required
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Token de acesso pessoal com permissões de leitura em Pipelines, Builds e Releases
+              </p>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">ℹ️ Esta integração conectará com <strong>todos os projetos</strong> da organização automaticamente.</p>
+            </div>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleTestConnection}
+                disabled={testing || !organization || !pat}
+              >
+                {testing ? 'Testando...' : 'Testar Conexão'}
+              </button>
+
+              {testResult && (
+                <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                  testResult.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                }`}>
+                  {testResult.success ? (
+                    <CheckCircle size={16} className="flex-shrink-0" />
+                  ) : (
+                    <XCircle size={16} className="flex-shrink-0" />
+                  )}
+                  <span className="text-sm">{testResult.message}</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className={styles.footer}>
+          <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
             <button
               type="button"
-              className={styles.cancelButton}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium transition-colors disabled:opacity-50"
               onClick={onClose}
               disabled={saving}
             >
@@ -209,7 +215,7 @@ function AzureDevOpsModal({ integration, isCreating, onSave, onClose }: AzureDev
             </button>
             <button
               type="submit"
-              className={styles.saveButton}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={saving}
             >
               {saving ? 'Salvando...' : 'Salvar'}

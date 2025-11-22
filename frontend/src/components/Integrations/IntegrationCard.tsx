@@ -1,5 +1,4 @@
 import { Settings, CheckCircle, XCircle, Trash2 } from 'lucide-react'
-import styles from './IntegrationCard.module.css'
 
 interface Integration {
   id: number
@@ -108,46 +107,54 @@ function IntegrationCard({ integration, onConfigure, onToggle, onDelete }: Integ
   }
 
   return (
-    <div className={styles.card}>
-      <div className={styles.cardHeader}>
-        <div className={styles.iconWrapper}>
+    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-12 h-12 flex items-center justify-center bg-gray-50 rounded-lg">
           <img
             src={getIntegrationLogo(integration.type)}
             alt={integration.name}
-            className={styles.icon}
+            className="w-8 h-8 object-contain"
           />
         </div>
-        <div className={styles.status}>
+        <div>
           {integration.enabled ? (
-            <CheckCircle size={20} className={styles.statusIconActive} />
+            <CheckCircle size={20} className="text-green-500" />
           ) : (
-            <XCircle size={20} className={styles.statusIconInactive} />
+            <XCircle size={20} className="text-gray-400" />
           )}
         </div>
       </div>
 
-      <div className={styles.cardBody}>
-        <h3 className={styles.cardTitle}>{integration.name}</h3>
-        <p className={styles.cardDescription}>{getIntegrationDescription(integration.type)}</p>
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">{integration.name}</h3>
+        <p className="text-sm text-gray-600">{getIntegrationDescription(integration.type)}</p>
       </div>
 
-      <div className={styles.cardFooter}>
-        <div className={styles.cardActions}>
-          <button className={styles.configureButton} onClick={onConfigure}>
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+        <div className="flex items-center gap-2">
+          <button
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors"
+            onClick={onConfigure}
+          >
             <Settings size={16} />
             <span>Configurar</span>
           </button>
-          <button className={styles.deleteButton} onClick={onDelete} title="Deletar integração">
+          <button
+            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+            onClick={onDelete}
+            title="Deletar integração"
+          >
             <Trash2 size={16} />
           </button>
         </div>
-        <label className={styles.toggle}>
+        <label className="relative inline-flex items-center cursor-pointer">
           <input
             type="checkbox"
             checked={integration.enabled}
             onChange={onToggle}
+            className="sr-only peer"
           />
-          <span className={styles.toggleSlider}></span>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
         </label>
       </div>
     </div>

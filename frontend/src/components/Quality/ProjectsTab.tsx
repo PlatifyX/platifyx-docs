@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { FolderOpen, Bug, Shield, Code, TrendingUp, Copy, CheckCircle, XCircle } from 'lucide-react'
 import { QualityFilterValues } from './QualityFilters'
-import styles from './QualityTabs.module.css'
 import { buildApiUrl } from '../../config/api'
 
 interface Project {
@@ -35,7 +34,6 @@ function ProjectsTab({ filters }: ProjectsTabProps) {
   const [projectDetails, setProjectDetails] = useState<Map<string, ProjectDetails>>(new Map())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedProject, setSelectedProject] = useState<string | null>(null)
 
   useEffect(() => {
     fetchProjects()
@@ -88,17 +86,6 @@ function ProjectsTab({ filters }: ProjectsTabProps) {
     }
   }
 
-  const getQualityGateColor = (status: string) => {
-    switch (status) {
-      case 'OK':
-        return 'var(--color-success)'
-      case 'ERROR':
-        return 'var(--color-error)'
-      default:
-        return 'var(--color-text-secondary)'
-    }
-  }
-
   const formatNumber = (num: number): string => {
     if (num >= 1000) {
       return `${(num / 1000).toFixed(1)}K`
@@ -107,39 +94,36 @@ function ProjectsTab({ filters }: ProjectsTabProps) {
   }
 
   if (loading) {
-    return <div className={styles.loading}>Carregando projetos...</div>
+    return <div className="text-center py-8 text-gray-400">Carregando projetos...</div>
   }
 
   if (error) {
-    return <div className={styles.error}>Erro: {error}</div>
+    return <div className="text-center py-8 text-red-500">Erro: {error}</div>
   }
 
   if (projects.length === 0) {
     return (
-      <div className={styles.empty}>
-        <FolderOpen size={48} />
+      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+        <FolderOpen size={48} className="mb-4" />
         <p>Nenhum projeto encontrado</p>
       </div>
     )
   }
 
   return (
-    <div className={styles.grid}>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {projects.map((project) => {
         const details = projectDetails.get(project.key)
 
         return (
-          <div key={project.key} className={styles.card}>
-            <div className={styles.cardHeader}>
-              <div className={styles.cardTitle}>
-                <FolderOpen size={18} />
-                <span>{project.name}</span>
+          <div key={project.key} className="card-base">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <FolderOpen size={18} className="text-blue-400" />
+                <span className="font-medium text-white">{project.name}</span>
               </div>
               {details?.qualityGateStatus && (
-                <div
-                  className={styles.qualityGate}
-                  style={{ color: getQualityGateColor(details.qualityGateStatus) }}
-                >
+                <div className={details.qualityGateStatus === 'OK' ? 'text-green-500' : 'text-red-500'}>
                   {details.qualityGateStatus === 'OK' ? (
                     <CheckCircle size={18} />
                   ) : (
@@ -149,49 +133,61 @@ function ProjectsTab({ filters }: ProjectsTabProps) {
               )}
             </div>
 
-            <div className={styles.cardMeta}>
-              <span>Key: {project.key}</span>
+            <div className="text-sm text-gray-400 mb-4 space-y-1">
+              <div>Key: {project.key}</div>
               {project.integration && (
-                <span className={styles.integration}>Integração: {project.integration}</span>
+                <div className="text-blue-400">Integração: {project.integration}</div>
               )}
             </div>
 
             {details && (
-              <div className={styles.metricsGrid}>
-                <div className={styles.metric}>
-                  <Bug size={14} style={{ color: 'var(--color-error)' }} />
-                  <span className={styles.metricLabel}>Bugs</span>
-                  <span className={styles.metricValue}>{formatNumber(details.bugs)}</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  <Bug size={14} className="text-red-500" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-400">Bugs</div>
+                    <div className="text-sm font-medium text-white">{formatNumber(details.bugs)}</div>
+                  </div>
                 </div>
 
-                <div className={styles.metric}>
-                  <Shield size={14} style={{ color: 'var(--color-error)' }} />
-                  <span className={styles.metricLabel}>Vulnerabilidades</span>
-                  <span className={styles.metricValue}>{formatNumber(details.vulnerabilities)}</span>
+                <div className="flex items-center gap-2">
+                  <Shield size={14} className="text-red-500" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-400">Vulnerabilidades</div>
+                    <div className="text-sm font-medium text-white">{formatNumber(details.vulnerabilities)}</div>
+                  </div>
                 </div>
 
-                <div className={styles.metric}>
-                  <Code size={14} style={{ color: 'var(--color-warning)' }} />
-                  <span className={styles.metricLabel}>Code Smells</span>
-                  <span className={styles.metricValue}>{formatNumber(details.code_smells)}</span>
+                <div className="flex items-center gap-2">
+                  <Code size={14} className="text-yellow-500" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-400">Code Smells</div>
+                    <div className="text-sm font-medium text-white">{formatNumber(details.code_smells)}</div>
+                  </div>
                 </div>
 
-                <div className={styles.metric}>
-                  <TrendingUp size={14} style={{ color: 'var(--color-success)' }} />
-                  <span className={styles.metricLabel}>Cobertura</span>
-                  <span className={styles.metricValue}>{details.coverage.toFixed(1)}%</span>
+                <div className="flex items-center gap-2">
+                  <TrendingUp size={14} className="text-green-500" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-400">Cobertura</div>
+                    <div className="text-sm font-medium text-white">{details.coverage.toFixed(1)}%</div>
+                  </div>
                 </div>
 
-                <div className={styles.metric}>
-                  <Copy size={14} style={{ color: details.duplications > 5 ? 'var(--color-error)' : 'var(--color-warning)' }} />
-                  <span className={styles.metricLabel}>Duplicação</span>
-                  <span className={styles.metricValue}>{details.duplications.toFixed(1)}%</span>
+                <div className="flex items-center gap-2">
+                  <Copy size={14} className={details.duplications > 5 ? 'text-red-500' : 'text-yellow-500'} />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-400">Duplicação</div>
+                    <div className="text-sm font-medium text-white">{details.duplications.toFixed(1)}%</div>
+                  </div>
                 </div>
 
-                <div className={styles.metric}>
-                  <Code size={14} />
-                  <span className={styles.metricLabel}>Linhas</span>
-                  <span className={styles.metricValue}>{formatNumber(details.lines)}</span>
+                <div className="flex items-center gap-2">
+                  <Code size={14} className="text-gray-400" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-400">Linhas</div>
+                    <div className="text-sm font-medium text-white">{formatNumber(details.lines)}</div>
+                  </div>
                 </div>
               </div>
             )}

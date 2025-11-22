@@ -5,7 +5,6 @@ import PipelinesTab from '../components/AzureDevOps/PipelinesTab'
 import BuildsTab from '../components/AzureDevOps/BuildsTab'
 import ReleasesTab from '../components/AzureDevOps/ReleasesTab'
 import CIFilters, { FilterValues } from '../components/AzureDevOps/CIFilters'
-import styles from './AzureDevOpsPage.module.css'
 import { buildApiUrl } from '../config/api'
 
 type TabType = 'pipelines' | 'builds' | 'releases'
@@ -75,24 +74,24 @@ function AzureDevOpsPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <GitBranch size={32} className={styles.headerIcon} />
+    <div className="max-w-[1400px] mx-auto">
+      <div className="mb-8">
+        <div className="flex items-center gap-4">
+          <GitBranch size={32} className="text-primary" />
           <div>
-            <h1 className={styles.title}>CI</h1>
-            <p className={styles.subtitle}>Pipelines, Builds e Releases</p>
+            <h1 className="text-[32px] font-bold text-text mb-1">CI</h1>
+            <p className="text-base text-text-secondary">Pipelines, Builds e Releases</p>
           </div>
         </div>
       </div>
 
-      <div className={styles.integrationSelector}>
-        <div className={styles.selectorLabel}>
+      <div className="flex items-center gap-4 py-4 px-5 bg-surface border border-border rounded-lg mb-6">
+        <div className="flex items-center gap-2 text-sm font-semibold text-text">
           <Layers size={18} />
           <span>Tipo de Integração:</span>
         </div>
         <select
-          className={styles.selectorDropdown}
+          className="flex-1 max-w-[300px] py-2.5 px-3 border border-border rounded-md bg-background text-text text-sm font-medium cursor-pointer transition-all duration-200 focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] hover:border-primary"
           value={integrationType}
           onChange={(e) => setIntegrationType(e.target.value as IntegrationType)}
         >
@@ -108,37 +107,43 @@ function AzureDevOpsPage() {
       )}
 
       {!loading && !stats && !error && (
-        <div className={styles.emptyState}>
+        <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
           <GitBranch size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-          <h2>Nenhuma integração</h2>
-          <p>Configure uma integração de CI/CD (Azure DevOps, GitHub Actions, Jenkins) para visualizar pipelines e builds</p>
+          <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>
+          <p className="text-base text-text-secondary max-w-[500px]">Configure uma integração de CI/CD (Azure DevOps, GitHub Actions, Jenkins) para visualizar pipelines e builds</p>
         </div>
       )}
 
       <CIFilters onFilterChange={handleFilterChange} initialFilters={filters} />
 
-      <div className={styles.tabs}>
+      <div className="flex gap-2 border-b-2 border-border mb-6">
         <button
-          className={`${styles.tab} ${activeTab === 'pipelines' ? styles.tabActive : ''}`}
+          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold text-text-secondary cursor-pointer relative transition-all duration-200 hover:text-text ${
+            activeTab === 'pipelines' ? 'text-primary after:content-[""] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary' : ''
+          }`}
           onClick={() => setActiveTab('pipelines')}
         >
           Pipelines
         </button>
         <button
-          className={`${styles.tab} ${activeTab === 'builds' ? styles.tabActive : ''}`}
+          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold text-text-secondary cursor-pointer relative transition-all duration-200 hover:text-text ${
+            activeTab === 'builds' ? 'text-primary after:content-[""] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary' : ''
+          }`}
           onClick={() => setActiveTab('builds')}
         >
           Builds
         </button>
         <button
-          className={`${styles.tab} ${activeTab === 'releases' ? styles.tabActive : ''}`}
+          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold text-text-secondary cursor-pointer relative transition-all duration-200 hover:text-text ${
+            activeTab === 'releases' ? 'text-primary after:content-[""] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary' : ''
+          }`}
           onClick={() => setActiveTab('releases')}
         >
           Releases
         </button>
       </div>
 
-      <div className={styles.tabContent}>
+      <div className="min-h-[400px]">
         {activeTab === 'pipelines' && <PipelinesTab filters={filters} />}
         {activeTab === 'builds' && <BuildsTab filters={filters} />}
         {activeTab === 'releases' && <ReleasesTab filters={filters} />}

@@ -33,6 +33,7 @@ export default {
       animation: {
         'slide-in-right': 'slide-in-right 0.3s ease-out',
         'fade-in': 'fade-in 0.2s ease-out',
+        'fadeIn': 'fadeIn 0.3s ease',
         'scale-in': 'scale-in 0.2s ease-out',
         'slide-down': 'slide-down 0.3s ease-out',
         'spin': 'spin 1s linear infinite',
@@ -45,6 +46,10 @@ export default {
         'fade-in': {
           from: { opacity: '0' },
           to: { opacity: '1' },
+        },
+        'fadeIn': {
+          from: { opacity: '0', transform: 'translateY(10px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
         },
         'scale-in': {
           from: { opacity: '0', transform: 'scale(0.95)' },

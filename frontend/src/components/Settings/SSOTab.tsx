@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { LogIn, CheckCircle, XCircle, Settings, Key } from 'lucide-react';
 import { buildSSORedirectUri } from '../../services/settingsApi';
 

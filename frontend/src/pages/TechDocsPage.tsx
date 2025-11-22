@@ -5,7 +5,6 @@ import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
 import AIAssistant from '../components/TechDocs/AIAssistant'
-import styles from './TechDocsPage.module.css'
 import { buildApiUrl } from '../config/api'
 
 interface TreeNode {
@@ -179,15 +178,19 @@ function TechDocsPage() {
     return (
       <div key={node.path} style={{ marginLeft: `${level * 20}px` }}>
         <div
-          className={`${styles.treeItem} ${selectedDoc?.path === node.path ? styles.treeItemActive : ''}`}
+          className={`flex items-center gap-2 py-2.5 px-3 rounded-lg cursor-pointer transition-all duration-200 relative ${
+            selectedDoc?.path === node.path
+              ? 'bg-gradient-to-br from-[#3e5c7626] to-[#3e5c7626] text-[#3e5c76] font-semibold shadow-md shadow-[#3e5c7633]'
+              : 'hover:bg-gradient-to-br hover:from-[#3e5c7614] hover:to-[#3e5c7614] hover:translate-x-1'
+          }`}
           onClick={() => !node.isDirectory && fetchDocument(node.path)}
         >
           {node.isDirectory ? (
-            <Folder size={16} className={styles.folderIcon} />
+            <Folder size={16} className="text-[#f59e0b] flex-shrink-0" />
           ) : (
-            <FileText size={16} className={styles.fileIcon} />
+            <FileText size={16} className="text-[#3e5c76] flex-shrink-0" />
           )}
-          <span className={styles.treeName}>{node.name}</span>
+          <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">{node.name}</span>
         </div>
         {node.children && node.children.map(child => renderTreeNode(child, level + 1))}
       </div>
@@ -196,44 +199,54 @@ function TechDocsPage() {
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Carregando documentação...</div>
+      <div className="p-8 max-w-full h-[calc(100vh-4rem)] flex flex-col">
+        <div className="flex justify-center items-center h-96 text-lg text-text-secondary">Carregando documentação...</div>
       </div>
     )
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <FileText size={32} className={styles.headerIcon} />
+    <div className="p-8 max-w-full h-[calc(100vh-4rem)] flex flex-col">
+      <div className="bg-gradient-to-br from-[#3e5c76] to-[#3e5c76] rounded-2xl p-10 mb-8 shadow-[0_8px_24px_rgba(62,92,118,0.25)] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[radial-gradient(circle,rgba(255,255,255,0.1)_0%,transparent_70%)] rounded-full translate-x-[30%] -translate-y-[30%]"></div>
+        <div className="flex items-center gap-4 relative z-10 mb-6">
+          <FileText size={32} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]" />
           <div>
-            <h1 className={styles.title}>TechDocs</h1>
-            <p className={styles.subtitle}>Documentação técnica centralizada</p>
+            <h1 className="text-[2rem] font-bold text-white m-0 drop-shadow-[0_2px_8px_rgba(0,0,0,0.15)]">TechDocs</h1>
+            <p className="text-base text-white/90 mt-1 mb-0">Documentação técnica centralizada</p>
           </div>
         </div>
-        <div className={styles.headerActions}>
-          <button className={styles.aiButton} onClick={() => setShowAIAssistant(!showAIAssistant)}>
+        <div className="flex gap-3 relative z-10 flex-wrap">
+          <button
+            className="flex items-center gap-2 py-2.5 px-5 bg-gradient-to-br from-[#3e5c76] to-[#3e5c76] text-white border-none rounded-lg cursor-pointer font-medium transition-all duration-200 shadow-[0_2px_4px_rgba(62,92,118,0.2)] hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(62,92,118,0.3)]"
+            onClick={() => setShowAIAssistant(!showAIAssistant)}
+          >
             <Sparkles size={20} />
             <span>Assistente IA</span>
           </button>
-          <button className={styles.addButton} onClick={() => setShowNewFolderModal(true)}>
+          <button
+            className="flex items-center gap-2 py-2.5 px-5 bg-white/20 backdrop-blur-[10px] text-white border border-white/30 rounded-lg cursor-pointer font-semibold transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:bg-white/30 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
+            onClick={() => setShowNewFolderModal(true)}
+          >
             <FolderPlus size={20} />
             <span>Nova Pasta</span>
           </button>
-          <button className={styles.addButton} onClick={() => setShowNewDocModal(true)}>
+          <button
+            className="flex items-center gap-2 py-2.5 px-5 bg-white/20 backdrop-blur-[10px] text-white border border-white/30 rounded-lg cursor-pointer font-semibold transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:bg-white/30 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
+            onClick={() => setShowNewDocModal(true)}
+          >
             <Plus size={20} />
             <span>Novo Documento</span>
           </button>
         </div>
       </div>
 
-      <div className={styles.content}>
-        <div className={styles.sidebar}>
-          <h3 className={styles.sidebarTitle}>Documentos</h3>
-          <div className={styles.tree}>
+      <div className="flex gap-6 flex-1 overflow-hidden">
+        <div className="w-[280px] bg-white rounded-xl p-6 overflow-y-auto border border-[#f0ebd8] shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <h3 className="text-sm font-bold text-[#f0ebd8] uppercase m-0 mb-4 tracking-wider bg-gradient-to-br from-[#3e5c76] to-[#3e5c76] bg-clip-text text-transparent">Documentos</h3>
+          <div className="flex flex-col gap-1">
             {tree.length === 0 ? (
-              <p className={styles.emptyMessage}>Nenhum documento encontrado</p>
+              <p className="text-sm text-[#9ca3af] text-center p-4 m-0">Nenhum documento encontrado</p>
             ) : (
               tree.map(node => renderTreeNode(node))
             )}
@@ -241,7 +254,7 @@ function TechDocsPage() {
         </div>
 
         {showAIAssistant && (
-          <div className={styles.aiPanel}>
+          <div className="w-[450px] h-[calc(100vh-200px)] max-h-[800px] overflow-hidden flex-shrink-0">
             <AIAssistant
               currentContent={selectedDoc?.content}
               onInsertContent={(content) => {
@@ -257,33 +270,45 @@ function TechDocsPage() {
           </div>
         )}
 
-        <div className={styles.main}>
+        <div className="flex-1 bg-white rounded-xl border border-[#f0ebd8] flex flex-col overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-shadow duration-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
           {selectedDoc ? (
             <>
-              <div className={styles.docHeader}>
-                <h2 className={styles.docTitle}>{selectedDoc.name}</h2>
-                <div className={styles.docActions}>
+              <div className="flex justify-between items-center p-6 border-b border-[#e5e7eb]">
+                <h2 className="text-2xl font-semibold text-[#0d1321] m-0">{selectedDoc.name}</h2>
+                <div className="flex gap-2">
                   {isEditing ? (
                     <>
-                      <button className={styles.actionButton} onClick={handleSave}>
+                      <button
+                        className="flex items-center gap-1.5 py-2 px-4 bg-[#0d1321] text-[#f0ebd8] border border-[#f0ebd8] rounded-md cursor-pointer font-medium text-sm transition-all duration-200 hover:bg-[#0d1321] hover:border-[#f0ebd8]"
+                        onClick={handleSave}
+                      >
                         <Save size={18} />
                         <span>Salvar</span>
                       </button>
-                      <button className={styles.actionButton} onClick={() => {
-                        setIsEditing(false)
-                        setEditContent(selectedDoc.content || '')
-                      }}>
+                      <button
+                        className="flex items-center gap-1.5 py-2 px-4 bg-[#0d1321] text-[#f0ebd8] border border-[#f0ebd8] rounded-md cursor-pointer font-medium text-sm transition-all duration-200 hover:bg-[#0d1321] hover:border-[#f0ebd8]"
+                        onClick={() => {
+                          setIsEditing(false)
+                          setEditContent(selectedDoc.content || '')
+                        }}
+                      >
                         <X size={18} />
                         <span>Cancelar</span>
                       </button>
                     </>
                   ) : (
                     <>
-                      <button className={styles.actionButton} onClick={() => setIsEditing(true)}>
+                      <button
+                        className="flex items-center gap-1.5 py-2 px-4 bg-[#0d1321] text-[#f0ebd8] border border-[#f0ebd8] rounded-md cursor-pointer font-medium text-sm transition-all duration-200 hover:bg-[#0d1321] hover:border-[#f0ebd8]"
+                        onClick={() => setIsEditing(true)}
+                      >
                         <Edit2 size={18} />
                         <span>Editar</span>
                       </button>
-                      <button className={styles.actionButtonDanger} onClick={handleDelete}>
+                      <button
+                        className="flex items-center gap-1.5 py-2 px-4 bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] rounded-md cursor-pointer font-medium text-sm transition-all duration-200 hover:bg-[#fee2e2] hover:border-[#fca5a5]"
+                        onClick={handleDelete}
+                      >
                         <Trash2 size={18} />
                         <span>Deletar</span>
                       </button>
@@ -292,43 +317,43 @@ function TechDocsPage() {
                 </div>
               </div>
 
-              <div className={styles.docContent}>
+              <div className="flex-1 overflow-hidden flex flex-col">
                 {isEditing ? (
                   <textarea
-                    className={styles.editor}
+                    className="flex-1 p-6 border-none font-[Monaco,Menlo,'Ubuntu_Mono',monospace] text-sm leading-relaxed resize-none outline-none"
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     placeholder="Escreva seu conteúdo em markdown..."
                   />
                 ) : (
-                  <div className={styles.markdownViewer}>
+                  <div className="flex-1 p-8 overflow-auto bg-white font-[-apple-system,BlinkMacSystemFont,'Segoe_UI','Roboto','Oxygen','Ubuntu',sans-serif] leading-relaxed text-[#1f2937]">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw, rehypeSanitize]}
                       components={{
-                        h1: ({ node, ...props }) => <h1 className={styles.mdH1} {...props} />,
-                        h2: ({ node, ...props }) => <h2 className={styles.mdH2} {...props} />,
-                        h3: ({ node, ...props }) => <h3 className={styles.mdH3} {...props} />,
-                        h4: ({ node, ...props }) => <h4 className={styles.mdH4} {...props} />,
-                        p: ({ node, ...props }) => <p className={styles.mdP} {...props} />,
+                        h1: ({ node, ...props }) => <h1 className="text-4xl font-bold text-white m-0 mb-6 pb-2 border-b-2 border-[#f0ebd8] leading-tight" {...props} />,
+                        h2: ({ node, ...props }) => <h2 className="text-3xl font-semibold text-white mt-8 mb-4 pb-1.5 border-b border-[#f0ebd8] leading-tight" {...props} />,
+                        h3: ({ node, ...props }) => <h3 className="text-2xl font-semibold text-white mt-6 mb-3 leading-snug" {...props} />,
+                        h4: ({ node, ...props }) => <h4 className="text-xl font-semibold text-[#f0ebd8] mt-5 mb-2 leading-snug" {...props} />,
+                        p: ({ node, ...props }) => <p className="m-0 mb-4 text-[#f0ebd8] text-base leading-7" {...props} />,
                         code: ({ node, inline, ...props }: any) =>
                           inline ?
-                            <code className={styles.mdCodeInline} {...props} /> :
-                            <code className={styles.mdCodeBlock} {...props} />,
-                        pre: ({ node, ...props }) => <pre className={styles.mdPre} {...props} />,
-                        ul: ({ node, ...props }) => <ul className={styles.mdUl} {...props} />,
-                        ol: ({ node, ...props }) => <ol className={styles.mdOl} {...props} />,
-                        li: ({ node, ...props }) => <li className={styles.mdLi} {...props} />,
-                        a: ({ node, ...props }) => <a className={styles.mdLink} {...props} target="_blank" rel="noopener noreferrer" />,
-                        blockquote: ({ node, ...props }) => <blockquote className={styles.mdBlockquote} {...props} />,
-                        table: ({ node, ...props }) => <table className={styles.mdTable} {...props} />,
-                        thead: ({ node, ...props }) => <thead className={styles.mdThead} {...props} />,
-                        tbody: ({ node, ...props }) => <tbody className={styles.mdTbody} {...props} />,
-                        tr: ({ node, ...props }) => <tr className={styles.mdTr} {...props} />,
-                        th: ({ node, ...props }) => <th className={styles.mdTh} {...props} />,
-                        td: ({ node, ...props }) => <td className={styles.mdTd} {...props} />,
-                        hr: ({ node, ...props }) => <hr className={styles.mdHr} {...props} />,
-                        img: ({ node, ...props }) => <img className={styles.mdImg} {...props} />,
+                            <code className="bg-[#f3f4f6] text-[#dc2626] py-0.5 px-1.5 rounded-sm font-[Monaco,Menlo,'Ubuntu_Mono',monospace] text-[0.875em] border border-[#e5e7eb]" {...props} /> :
+                            <code className="text-[#f9fafb] font-[Monaco,Menlo,'Ubuntu_Mono',monospace] text-sm leading-relaxed" {...props} />,
+                        pre: ({ node, ...props }) => <pre className="bg-[#0d1321] rounded-lg p-4 overflow-x-auto my-4 border border-[#f0ebd8]" {...props} />,
+                        ul: ({ node, ...props }) => <ul className="my-4 pl-8 text-[#374151]" {...props} />,
+                        ol: ({ node, ...props }) => <ol className="my-4 pl-8 text-[#374151]" {...props} />,
+                        li: ({ node, ...props }) => <li className="my-2 leading-7" {...props} />,
+                        a: ({ node, ...props }) => <a className="text-[#3e5c76] no-underline border-b border-transparent transition-all duration-200 hover:border-[#3e5c76] hover:text-[#3e5c76]" {...props} target="_blank" rel="noopener noreferrer" />,
+                        blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-[#3e5c76] bg-[#0d1321] py-3 px-5 my-6 rounded-r-md" {...props} />,
+                        table: ({ node, ...props }) => <table className="w-full border-collapse my-6 border border-[#e5e7eb] rounded-lg overflow-hidden" {...props} />,
+                        thead: ({ node, ...props }) => <thead className="bg-[#f9fafb]" {...props} />,
+                        tbody: ({ node, ...props }) => <tbody className="bg-white" {...props} />,
+                        tr: ({ node, ...props }) => <tr className="border-b border-[#e5e7eb] last:border-b-0 [tbody_&]:hover:bg-[#f9fafb]" {...props} />,
+                        th: ({ node, ...props }) => <th className="py-3 px-4 text-left font-semibold text-[#1f2937] border-b-2 border-[#d1d5db]" {...props} />,
+                        td: ({ node, ...props }) => <td className="py-3 px-4 text-[#374151]" {...props} />,
+                        hr: ({ node, ...props }) => <hr className="border-none border-t-2 border-[#e5e7eb] my-8" {...props} />,
+                        img: ({ node, ...props }) => <img className="max-w-full h-auto rounded-lg my-4 shadow-md" {...props} />,
                       }}
                     >
                       {selectedDoc.content}
@@ -338,34 +363,40 @@ function TechDocsPage() {
               </div>
             </>
           ) : (
-            <div className={styles.placeholder}>
-              <FileText size={64} className={styles.placeholderIcon} />
-              <p className={styles.placeholderText}>Selecione um documento para visualizar</p>
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-[#9ca3af]">
+              <FileText size={64} className="opacity-50" />
+              <p className="text-lg m-0">Selecione um documento para visualizar</p>
             </div>
           )}
         </div>
       </div>
 
       {showNewDocModal && (
-        <div className={styles.modal}>
-          <div className={styles.modalContent}>
-            <h3 className={styles.modalTitle}>Novo Documento</h3>
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[1000]">
+          <div className="bg-white p-8 rounded-xl w-[90%] max-w-[500px] shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]">
+            <h3 className="text-xl font-semibold text-[#1f2937] m-0 mb-6">Novo Documento</h3>
             <input
               type="text"
-              className={styles.modalInput}
+              className="w-full py-3 px-3 border border-[#d1d5db] rounded-lg text-base mb-6 outline-none transition-colors duration-200 focus:border-[#3e5c76]"
               placeholder="ex: guides/tutorial.md"
               value={newDocPath}
               onChange={(e) => setNewDocPath(e.target.value)}
               autoFocus
             />
-            <div className={styles.modalActions}>
-              <button className={styles.modalButton} onClick={handleCreateDocument}>
+            <div className="flex gap-3 justify-end">
+              <button
+                className="py-2.5 px-6 bg-[#3e5c76] text-white border-none rounded-lg cursor-pointer font-medium transition-colors duration-200 hover:bg-[#3e5c76]"
+                onClick={handleCreateDocument}
+              >
                 Criar
               </button>
-              <button className={styles.modalButtonCancel} onClick={() => {
-                setShowNewDocModal(false)
-                setNewDocPath('')
-              }}>
+              <button
+                className="py-2.5 px-6 bg-[#f3f4f6] text-[#374151] border border-[#d1d5db] rounded-lg cursor-pointer font-medium transition-all duration-200 hover:bg-[#e5e7eb]"
+                onClick={() => {
+                  setShowNewDocModal(false)
+                  setNewDocPath('')
+                }}
+              >
                 Cancelar
               </button>
             </div>
@@ -374,25 +405,31 @@ function TechDocsPage() {
       )}
 
       {showNewFolderModal && (
-        <div className={styles.modal}>
-          <div className={styles.modalContent}>
-            <h3 className={styles.modalTitle}>Nova Pasta</h3>
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[1000]">
+          <div className="bg-white p-8 rounded-xl w-[90%] max-w-[500px] shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]">
+            <h3 className="text-xl font-semibold text-[#1f2937] m-0 mb-6">Nova Pasta</h3>
             <input
               type="text"
-              className={styles.modalInput}
+              className="w-full py-3 px-3 border border-[#d1d5db] rounded-lg text-base mb-6 outline-none transition-colors duration-200 focus:border-[#3e5c76]"
               placeholder="ex: guides/advanced"
               value={newFolderPath}
               onChange={(e) => setNewFolderPath(e.target.value)}
               autoFocus
             />
-            <div className={styles.modalActions}>
-              <button className={styles.modalButton} onClick={handleCreateFolder}>
+            <div className="flex gap-3 justify-end">
+              <button
+                className="py-2.5 px-6 bg-[#3e5c76] text-white border-none rounded-lg cursor-pointer font-medium transition-colors duration-200 hover:bg-[#3e5c76]"
+                onClick={handleCreateFolder}
+              >
                 Criar
               </button>
-              <button className={styles.modalButtonCancel} onClick={() => {
-                setShowNewFolderModal(false)
-                setNewFolderPath('')
-              }}>
+              <button
+                className="py-2.5 px-6 bg-[#f3f4f6] text-[#374151] border border-[#d1d5db] rounded-lg cursor-pointer font-medium transition-all duration-200 hover:bg-[#e5e7eb]"
+                onClick={() => {
+                  setShowNewFolderModal(false)
+                  setNewFolderPath('')
+                }}
+              >
                 Cancelar
               </button>
             </div>

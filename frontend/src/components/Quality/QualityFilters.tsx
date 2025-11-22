@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { Filter } from 'lucide-react'
-import styles from './QualityFilters.module.css'
 import { buildApiUrl } from '../../config/api'
 
 export interface QualityFilterValues {
@@ -69,25 +68,27 @@ function QualityFilters({ onFilterChange, initialFilters }: QualityFiltersProps)
     : projects
 
   return (
-    <div className={styles.filtersContainer}>
+    <div className="mb-6">
       <button
-        className={`${styles.toggleButton} ${showFilters ? styles.active : ''}`}
+        className={`btn-base flex items-center gap-2 ${showFilters ? 'bg-blue-600' : ''}`}
         onClick={() => setShowFilters(!showFilters)}
       >
         <Filter size={18} />
         <span>Filtros</span>
         {getActiveFilterCount() > 0 && (
-          <span className={styles.badge}>{getActiveFilterCount()}</span>
+          <span className="ml-1 px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">
+            {getActiveFilterCount()}
+          </span>
         )}
       </button>
 
       {showFilters && (
-        <div className={styles.filtersPanel}>
-          <div className={styles.filterRow}>
-            <div className={styles.filterGroup}>
-              <label className={styles.filterLabel}>Integração</label>
+        <div className="card-base mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Integração</label>
               <select
-                className={styles.filterSelect}
+                className="input-base w-full"
                 value={integration}
                 onChange={(e) => {
                   setIntegration(e.target.value)
@@ -103,10 +104,10 @@ function QualityFilters({ onFilterChange, initialFilters }: QualityFiltersProps)
               </select>
             </div>
 
-            <div className={styles.filterGroup}>
-              <label className={styles.filterLabel}>Projeto</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Projeto</label>
               <select
-                className={styles.filterSelect}
+                className="input-base w-full"
                 value={project}
                 onChange={(e) => setProject(e.target.value)}
               >
@@ -120,11 +121,11 @@ function QualityFilters({ onFilterChange, initialFilters }: QualityFiltersProps)
             </div>
           </div>
 
-          <div className={styles.filterActions}>
-            <button className={styles.clearButton} onClick={handleClear}>
+          <div className="flex justify-end gap-3">
+            <button className="btn-base bg-gray-700 hover:bg-gray-600" onClick={handleClear}>
               Limpar
             </button>
-            <button className={styles.applyButton} onClick={handleApply}>
+            <button className="btn-base bg-blue-600 hover:bg-blue-700" onClick={handleApply}>
               Aplicar
             </button>
           </div>

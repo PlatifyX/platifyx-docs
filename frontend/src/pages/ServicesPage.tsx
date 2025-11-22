@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, BarChart3, GitMerge, Shield, Bug, TrendingUp, AlertTriangle } from 'lucide-react'
+import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, GitMerge, Shield, Bug, TrendingUp, AlertTriangle } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
-import styles from './ServicesPage.module.css'
 
 interface Service {
   id: number
@@ -45,24 +44,6 @@ interface ServiceMetrics {
     sourceBranch: string
     finishTime: string
     integration: string
-  }
-}
-
-interface ServiceStatus {
-  serviceName: string
-  stageStatus?: {
-    environment: string
-    status: string
-    replicas: number
-    availableReplicas: number
-    image: string
-  }
-  prodStatus?: {
-    environment: string
-    status: string
-    replicas: number
-    availableReplicas: number
-    image: string
   }
 }
 
@@ -161,19 +142,6 @@ function ServicesPage() {
     fetchServices()
   }, [])
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Running':
-        return styles.statusRunning
-      case 'Failed':
-        return styles.statusFailed
-      case 'Pending':
-        return styles.statusPending
-      default:
-        return styles.statusUnknown
-    }
-  }
-
   const squads = Array.from(new Set(services.map(s => s.squad))).sort()
 
   const filteredServices = services.filter(service => {
@@ -186,45 +154,45 @@ function ServicesPage() {
   })
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Box size={32} className={styles.headerIcon} />
+    <div className="max-w-[1400px] mx-auto">
+      <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center gap-4">
+          <Box size={32} className="text-primary" />
           <div>
-            <h1 className={styles.title}>Catálogo de Serviços</h1>
-            <p className={styles.subtitle}>
+            <h1 className="text-[32px] font-bold text-text mb-1">Catálogo de Serviços</h1>
+            <p className="text-base text-text-secondary">
               {services.length} serviços descobertos automaticamente do Kubernetes
             </p>
           </div>
         </div>
-        <div className={styles.headerActions}>
+        <div className="flex gap-3">
           <button
-            className={styles.syncButton}
+            className="flex items-center gap-2 px-6 py-3 bg-[#10b981] text-white border-0 rounded-lg text-[15px] font-semibold cursor-pointer transition-all duration-200 hover:bg-[#059669] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(16,185,129,0.3)] disabled:opacity-60 disabled:cursor-not-allowed"
             onClick={syncServices}
             disabled={syncing}
           >
-            <RefreshCw size={20} className={syncing ? styles.spinning : ''} />
+            <RefreshCw size={20} className={syncing ? 'animate-spin' : ''} />
             <span>{syncing ? 'Sincronizando...' : 'Sincronizar'}</span>
           </button>
-          <button className={styles.refreshButton} onClick={fetchServices} disabled={loading}>
+          <button className="flex items-center gap-2 px-6 py-3 bg-primary text-white border-0 rounded-lg text-[15px] font-semibold cursor-pointer transition-all duration-200 hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)] disabled:opacity-60 disabled:cursor-not-allowed" onClick={fetchServices} disabled={loading}>
             <RefreshCw size={20} />
             <span>Atualizar</span>
           </button>
         </div>
       </div>
 
-      <div className={styles.filters}>
+      <div className="flex gap-4 mb-8">
         <input
           type="text"
           placeholder="Buscar por nome, squad ou aplicação..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className={styles.searchInput}
+          className="flex-1 px-4 py-3 border border-border rounded-lg text-[15px] bg-surface text-text transition-all duration-200 focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]"
         />
         <select
           value={squadFilter}
           onChange={(e) => setSquadFilter(e.target.value)}
-          className={styles.squadFilter}
+          className="px-4 py-3 border border-border rounded-lg text-[15px] bg-surface text-text cursor-pointer min-w-[200px]"
         >
           <option value="all">Todas as Squads</option>
           {squads.map(squad => (
@@ -233,21 +201,21 @@ function ServicesPage() {
         </select>
       </div>
 
-      <div className={styles.content}>
+      <div className="min-h-[400px]">
         {error && (
-          <div className={styles.error}>
+          <div className="flex items-center justify-center gap-3 bg-[rgba(239,68,68,0.1)] border border-error rounded-xl p-5 mb-6 text-error text-center">
             <Activity size={20} />
             <span>{error}</span>
           </div>
         )}
 
-        {loading && !error && <div className={styles.loading}>Carregando serviços...</div>}
+        {loading && !error && <div className="text-center py-[60px] px-5 text-lg text-text-secondary">Carregando serviços...</div>}
 
         {!loading && !error && filteredServices.length === 0 && (
-          <div className={styles.empty}>
-            <Box size={64} className={styles.emptyIcon} />
-            <h2>Nenhum serviço encontrado</h2>
-            <p>
+          <div className="text-center py-20 px-5">
+            <Box size={64} className="text-text-secondary opacity-30 mb-4" />
+            <h2 className="text-2xl font-semibold text-text mb-2">Nenhum serviço encontrado</h2>
+            <p className="text-base text-text-secondary">
               {filter || squadFilter !== 'all'
                 ? 'Tente ajustar os filtros de busca'
                 : 'Clique em "Sincronizar" para descobrir serviços do Kubernetes'}
@@ -256,44 +224,44 @@ function ServicesPage() {
         )}
 
         {!loading && !error && filteredServices.length > 0 && (
-          <div className={styles.grid}>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(350px,1fr))] gap-6 animate-fadeIn">
             {filteredServices.map(service => (
-              <div key={service.id} className={styles.serviceCard}>
-                <div className={styles.cardHeader}>
-                  <div className={styles.serviceName}>
+              <div key={service.id} className="bg-surface border border-border rounded-xl p-6 transition-all duration-200 hover:border-primary hover:shadow-[0_6px_16px_rgba(99,102,241,0.1)] hover:-translate-y-1">
+                <div className="flex justify-between items-start mb-4 pb-4 border-b border-border">
+                  <div className="flex items-center gap-2 text-primary">
                     <Box size={20} />
-                    <h3>{service.name}</h3>
+                    <h3 className="text-lg font-semibold m-0 text-text">{service.name}</h3>
                   </div>
-                  <div className={styles.squad}>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(99,102,241,0.1)] text-primary rounded-md text-[13px] font-semibold">
                     <Users size={16} />
                     <span>{service.squad}</span>
                   </div>
                 </div>
 
-                <div className={styles.cardBody}>
-                  <div className={styles.info}>
+                <div className="flex flex-col gap-3 mb-4">
+                  <div className="flex items-center gap-2 text-sm text-text-secondary">
                     <Code size={16} />
                     <span>{service.language} {service.version}</span>
                   </div>
-                  <div className={styles.info}>
+                  <div className="flex items-center gap-2 text-sm text-text-secondary">
                     <GitBranch size={16} />
                     <span>{service.repositoryType}</span>
                   </div>
                 </div>
 
-                <div className={styles.environments}>
+                <div className="flex gap-3 mb-4 pt-4 border-t border-border">
                   {service.hasStage && (
-                    <div className={styles.env}>
-                      <span className={styles.envLabel}>Stage</span>
-                      <span className={`${styles.envStatus} ${styles.statusRunning}`}>
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Stage</span>
+                      <span className="inline-block px-3 py-1.5 rounded-md text-xs font-semibold text-center bg-[rgba(34,197,94,0.1)] text-success">
                         Disponível
                       </span>
                     </div>
                   )}
                   {service.hasProd && (
-                    <div className={styles.env}>
-                      <span className={styles.envLabel}>Prod</span>
-                      <span className={`${styles.envStatus} ${styles.statusRunning}`}>
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Prod</span>
+                      <span className="inline-block px-3 py-1.5 rounded-md text-xs font-semibold text-center bg-[rgba(34,197,94,0.1)] text-success">
                         Disponível
                       </span>
                     </div>
@@ -302,41 +270,41 @@ function ServicesPage() {
 
                 {/* Loading Metrics */}
                 {loadingMetrics && !serviceMetrics[service.name] && (
-                  <div className={styles.metricsLoading}>
-                    <RefreshCw size={20} className={styles.spinning} />
+                  <div className="flex items-center justify-center gap-3 p-6 mb-4 bg-[rgba(99,102,241,0.05)] border border-dashed border-primary rounded-lg text-primary text-sm font-medium">
+                    <RefreshCw size={20} className="animate-spin" />
                     <span>Carregando métricas e pipelines...</span>
                   </div>
                 )}
 
                 {/* SonarQube Metrics */}
                 {serviceMetrics[service.name]?.sonarqube && (
-                  <div className={styles.metricsSection}>
-                    <h4 className={styles.metricsTitle}>SonarQube</h4>
-                    <div className={styles.metricsGrid}>
-                      <div className={styles.metric}>
+                  <div className="mb-4 p-4 bg-background rounded-lg">
+                    <h4 className="text-sm font-semibold text-text mb-3 mt-0">SonarQube</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
                         <Bug size={14} style={{ color: 'var(--color-error)' }} />
-                        <span className={styles.metricLabel}>Bugs</span>
-                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name]?.sonarqube?.bugs || 0)}</span>
+                        <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">Bugs</span>
+                        <span className="text-xl font-bold text-text">{formatNumber(serviceMetrics[service.name]?.sonarqube?.bugs || 0)}</span>
                       </div>
-                      <div className={styles.metric}>
+                      <div className="flex flex-col gap-1">
                         <Shield size={14} style={{ color: 'var(--color-error)' }} />
-                        <span className={styles.metricLabel}>Vulnerabilidades</span>
-                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name]?.sonarqube?.vulnerabilities || 0)}</span>
+                        <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">Vulnerabilidades</span>
+                        <span className="text-xl font-bold text-text">{formatNumber(serviceMetrics[service.name]?.sonarqube?.vulnerabilities || 0)}</span>
                       </div>
-                      <div className={styles.metric}>
+                      <div className="flex flex-col gap-1">
                         <Code size={14} style={{ color: 'var(--color-warning)' }} />
-                        <span className={styles.metricLabel}>Code Smells</span>
-                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name]?.sonarqube?.codeSmells || 0)}</span>
+                        <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">Code Smells</span>
+                        <span className="text-xl font-bold text-text">{formatNumber(serviceMetrics[service.name]?.sonarqube?.codeSmells || 0)}</span>
                       </div>
-                      <div className={styles.metric}>
+                      <div className="flex flex-col gap-1">
                         <AlertTriangle size={14} style={{ color: 'var(--color-warning)' }} />
-                        <span className={styles.metricLabel}>Security Hotspots</span>
-                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name]?.sonarqube?.securityHotspots || 0)}</span>
+                        <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">Security Hotspots</span>
+                        <span className="text-xl font-bold text-text">{formatNumber(serviceMetrics[service.name]?.sonarqube?.securityHotspots || 0)}</span>
                       </div>
-                      <div className={styles.metric}>
+                      <div className="flex flex-col gap-1">
                         <TrendingUp size={14} style={{ color: 'var(--color-success)' }} />
-                        <span className={styles.metricLabel}>Cobertura</span>
-                        <span className={styles.metricValue}>{serviceMetrics[service.name]?.sonarqube?.coverage?.toFixed(1) || '0.0'}%</span>
+                        <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">Cobertura</span>
+                        <span className="text-xl font-bold text-text">{serviceMetrics[service.name]?.sonarqube?.coverage?.toFixed(1) || '0.0'}%</span>
                       </div>
                     </div>
                   </div>
@@ -344,26 +312,26 @@ function ServicesPage() {
 
                 {/* Stage Build */}
                 {serviceMetrics[service.name]?.stageBuild && (
-                  <div className={styles.buildSection}>
-                    <h4 className={styles.buildTitle}>CI/CD Stage</h4>
-                    <div className={styles.buildInfo}>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Status:</span>
-                        <span className={`${styles.buildStatus} ${styles[`status${serviceMetrics[service.name]?.stageBuild?.status}`]}`}>
+                  <div className="mb-4 p-4 bg-background rounded-lg">
+                    <h4 className="text-sm font-semibold text-text mb-3 mt-0">CI/CD Stage</h4>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="font-semibold text-text-secondary">Status:</span>
+                        <span className={`inline-block px-2.5 py-1 rounded-md text-xs font-semibold capitalize ${serviceMetrics[service.name]?.stageBuild?.status === 'succeeded' ? 'bg-[rgba(34,197,94,0.1)] text-success' : serviceMetrics[service.name]?.stageBuild?.status === 'failed' ? 'bg-[rgba(239,68,68,0.1)] text-error' : serviceMetrics[service.name]?.stageBuild?.status === 'partiallysucceeded' ? 'bg-[rgba(255,187,40,0.1)] text-[#FFBB28]' : 'bg-[rgba(156,163,175,0.1)] text-text-secondary'}`}>
                           {serviceMetrics[service.name]?.stageBuild?.status}
                         </span>
                       </div>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Build:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name]?.stageBuild?.buildNumber}</span>
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="font-semibold text-text-secondary">Build:</span>
+                        <span className="text-text font-mono text-xs">{serviceMetrics[service.name]?.stageBuild?.buildNumber}</span>
                       </div>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Branch:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name]?.stageBuild?.sourceBranch}</span>
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="font-semibold text-text-secondary">Branch:</span>
+                        <span className="text-text font-mono text-xs">{serviceMetrics[service.name]?.stageBuild?.sourceBranch}</span>
                       </div>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Finished:</span>
-                        <span className={styles.buildValue}>
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="font-semibold text-text-secondary">Finished:</span>
+                        <span className="text-text font-mono text-xs">
                           {serviceMetrics[service.name]?.stageBuild?.finishTime && new Date(serviceMetrics[service.name]?.stageBuild?.finishTime!).toLocaleString('pt-BR')}
                         </span>
                       </div>
@@ -373,26 +341,26 @@ function ServicesPage() {
 
                 {/* Main Build */}
                 {serviceMetrics[service.name]?.mainBuild && (
-                  <div className={styles.buildSection}>
-                    <h4 className={styles.buildTitle}>CI/CD Prod</h4>
-                    <div className={styles.buildInfo}>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Status:</span>
-                        <span className={`${styles.buildStatus} ${styles[`status${serviceMetrics[service.name]?.mainBuild?.status}`]}`}>
+                  <div className="mb-4 p-4 bg-background rounded-lg">
+                    <h4 className="text-sm font-semibold text-text mb-3 mt-0">CI/CD Prod</h4>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="font-semibold text-text-secondary">Status:</span>
+                        <span className={`inline-block px-2.5 py-1 rounded-md text-xs font-semibold capitalize ${serviceMetrics[service.name]?.mainBuild?.status === 'succeeded' ? 'bg-[rgba(34,197,94,0.1)] text-success' : serviceMetrics[service.name]?.mainBuild?.status === 'failed' ? 'bg-[rgba(239,68,68,0.1)] text-error' : serviceMetrics[service.name]?.mainBuild?.status === 'partiallysucceeded' ? 'bg-[rgba(255,187,40,0.1)] text-[#FFBB28]' : 'bg-[rgba(156,163,175,0.1)] text-text-secondary'}`}>
                           {serviceMetrics[service.name]?.mainBuild?.status}
                         </span>
                       </div>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Build:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name]?.mainBuild?.buildNumber}</span>
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="font-semibold text-text-secondary">Build:</span>
+                        <span className="text-text font-mono text-xs">{serviceMetrics[service.name]?.mainBuild?.buildNumber}</span>
                       </div>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Branch:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name]?.mainBuild?.sourceBranch}</span>
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="font-semibold text-text-secondary">Branch:</span>
+                        <span className="text-text font-mono text-xs">{serviceMetrics[service.name]?.mainBuild?.sourceBranch}</span>
                       </div>
-                      <div className={styles.buildRow}>
-                        <span className={styles.buildLabel}>Finished:</span>
-                        <span className={styles.buildValue}>
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="font-semibold text-text-secondary">Finished:</span>
+                        <span className="text-text font-mono text-xs">
                           {serviceMetrics[service.name]?.mainBuild?.finishTime && new Date(serviceMetrics[service.name]?.mainBuild?.finishTime!).toLocaleString('pt-BR')}
                         </span>
                       </div>
@@ -400,13 +368,13 @@ function ServicesPage() {
                   </div>
                 )}
 
-                <div className={styles.cardFooter}>
+                <div className="flex gap-3 pt-4 border-t border-border">
                   {service.repositoryUrl && (
                     <a
                       href={service.repositoryUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={styles.link}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-background text-primary border border-border rounded-md text-[13px] font-medium no-underline transition-all duration-200 hover:bg-primary hover:text-white hover:border-primary hover:-translate-y-px"
                     >
                       <ExternalLink size={16} />
                       <span>Repositório</span>
@@ -414,7 +382,7 @@ function ServicesPage() {
                   )}
                   <a
                     href={`/ci?repo=${service.name}`}
-                    className={styles.link}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-background text-primary border border-border rounded-md text-[13px] font-medium no-underline transition-all duration-200 hover:bg-primary hover:text-white hover:border-primary hover:-translate-y-px"
                     title="Ver pipelines no CI/CD"
                   >
                     <GitMerge size={16} />
@@ -422,7 +390,7 @@ function ServicesPage() {
                   </a>
                   <a
                     href={`/quality?project=${service.name}`}
-                    className={styles.link}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-background text-primary border border-border rounded-md text-[13px] font-medium no-underline transition-all duration-200 hover:bg-primary hover:text-white hover:border-primary hover:-translate-y-px"
                     title="Ver qualidade no SonarQube"
                   >
                     <Shield size={16} />

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { Filter, X, Calendar, FolderTree, Building2 } from 'lucide-react'
-import styles from './CIFilters.module.css'
 import { buildApiUrl } from '../../config/api'
 
 interface Pipeline {
@@ -77,28 +76,30 @@ function CIFilters({ onFilterChange, initialFilters }: CIFiltersProps) {
   const hasActiveFilters = integration || startDate || endDate || project
 
   return (
-    <div className={styles.container}>
+    <div className="mb-6">
       <button
-        className={`${styles.toggleButton} ${hasActiveFilters ? styles.active : ''}`}
+        className={`flex items-center gap-2 py-2.5 px-4 border border-border rounded-lg bg-surface text-text text-sm font-medium cursor-pointer transition-all duration-200 ease-in-out relative ${
+          hasActiveFilters ? 'bg-primary text-white border-primary' : 'hover:bg-surface-light hover:border-primary'
+        }`}
         onClick={() => setShowFilters(!showFilters)}
       >
         <Filter size={18} />
         <span>Filtros</span>
-        {hasActiveFilters && <span className={styles.badge}>{
+        {hasActiveFilters && <span className="bg-white/30 text-white py-0.5 px-2 rounded-xl text-xs font-semibold">{
           [integration, startDate, endDate, project].filter(Boolean).length
         }</span>}
       </button>
 
       {showFilters && (
-        <div className={styles.filtersPanel}>
-          <div className={styles.filterRow}>
-            <div className={styles.filterGroup}>
-              <label className={styles.label}>
-                <Building2 size={16} />
+        <div className="mt-4 p-5 border border-border rounded-lg bg-surface">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 mb-4">
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-1.5 text-[13px] font-semibold text-text">
+                <Building2 size={16} className="text-text-secondary" />
                 Integração
               </label>
               <select
-                className={styles.select}
+                className="w-full py-2.5 px-3 border border-border rounded-md bg-background text-text text-sm transition-all duration-200 ease-in-out focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]"
                 value={integration}
                 onChange={(e) => {
                   setIntegration(e.target.value)
@@ -114,13 +115,13 @@ function CIFilters({ onFilterChange, initialFilters }: CIFiltersProps) {
               </select>
             </div>
 
-            <div className={styles.filterGroup}>
-              <label className={styles.label}>
-                <FolderTree size={16} />
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-1.5 text-[13px] font-semibold text-text">
+                <FolderTree size={16} className="text-text-secondary" />
                 Projeto
               </label>
               <select
-                className={styles.select}
+                className="w-full py-2.5 px-3 border border-border rounded-md bg-background text-text text-sm transition-all duration-200 ease-in-out focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]"
                 value={project}
                 onChange={(e) => setProject(e.target.value)}
               >
@@ -134,37 +135,37 @@ function CIFilters({ onFilterChange, initialFilters }: CIFiltersProps) {
             </div>
           </div>
 
-          <div className={styles.filterRow}>
-            <div className={styles.filterGroup}>
-              <label className={styles.label}>
-                <Calendar size={16} />
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 mb-5">
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-1.5 text-[13px] font-semibold text-text">
+                <Calendar size={16} className="text-text-secondary" />
                 Data Início
               </label>
               <input
                 type="date"
-                className={styles.input}
+                className="w-full py-2.5 px-3 border border-border rounded-md bg-background text-text text-sm transition-all duration-200 ease-in-out focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
 
-            <div className={styles.filterGroup}>
-              <label className={styles.label}>
-                <Calendar size={16} />
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-1.5 text-[13px] font-semibold text-text">
+                <Calendar size={16} className="text-text-secondary" />
                 Data Fim
               </label>
               <input
                 type="date"
-                className={styles.input}
+                className="w-full py-2.5 px-3 border border-border rounded-md bg-background text-text text-sm transition-all duration-200 ease-in-out focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
           </div>
 
-          <div className={styles.actions}>
+          <div className="flex gap-3 justify-end pt-4 border-t border-border">
             <button
-              className={styles.clearButton}
+              className="flex items-center gap-1.5 py-2.5 px-5 rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 ease-in-out border border-border bg-transparent text-text-secondary hover:bg-surface-light hover:text-text disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleClearFilters}
               disabled={!hasActiveFilters}
             >
@@ -172,7 +173,7 @@ function CIFilters({ onFilterChange, initialFilters }: CIFiltersProps) {
               Limpar
             </button>
             <button
-              className={styles.applyButton}
+              className="flex items-center gap-1.5 py-2.5 px-5 rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 ease-in-out border-none bg-primary text-white hover:bg-primary-dark hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)]"
               onClick={handleApplyFilters}
             >
               <Filter size={16} />

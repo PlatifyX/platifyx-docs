@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Server, Box, Layers, Network, AlertCircle, RefreshCw } from 'lucide-react'
+import { Server, Box, Layers, Network, RefreshCw } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
-import styles from './KubernetesPage.module.css'
 
 interface Pod {
   name: string
@@ -39,7 +38,6 @@ interface ClusterInfo {
 function KubernetesPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'pods' | 'deployments' | 'nodes'>('overview')
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   const [clusterInfo, setClusterInfo] = useState<ClusterInfo | null>(null)
   const [pods, setPods] = useState<Pod[]>([])
@@ -48,7 +46,6 @@ function KubernetesPage() {
 
   const fetchData = async () => {
     setLoading(true)
-    setError(null)
 
     try {
       const clusterRes = await fetch(buildApiUrl('kubernetes/cluster'))
@@ -104,34 +101,34 @@ function KubernetesPage() {
   }, [activeTab])
 
   const renderOverview = () => (
-    <div className={styles.overview}>
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <Server size={24} className={styles.statIcon} />
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Nodes</span>
-            <span className={styles.statValue}>{clusterInfo?.nodes || 0}</span>
+    <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-surface rounded-lg p-6 flex items-center gap-4 border border-border">
+          <Server size={24} className="text-primary" />
+          <div className="flex flex-col">
+            <span className="text-sm text-text-secondary mb-1">Nodes</span>
+            <span className="text-2xl font-bold text-text">{clusterInfo?.nodes || 0}</span>
           </div>
         </div>
-        <div className={styles.statCard}>
-          <Box size={24} className={styles.statIcon} />
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Pods</span>
-            <span className={styles.statValue}>{clusterInfo?.totalPods || 0}</span>
+        <div className="bg-surface rounded-lg p-6 flex items-center gap-4 border border-border">
+          <Box size={24} className="text-primary" />
+          <div className="flex flex-col">
+            <span className="text-sm text-text-secondary mb-1">Pods</span>
+            <span className="text-2xl font-bold text-text">{clusterInfo?.totalPods || 0}</span>
           </div>
         </div>
-        <div className={styles.statCard}>
-          <Layers size={24} className={styles.statIcon} />
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Deployments</span>
-            <span className={styles.statValue}>{deployments.length}</span>
+        <div className="bg-surface rounded-lg p-6 flex items-center gap-4 border border-border">
+          <Layers size={24} className="text-primary" />
+          <div className="flex flex-col">
+            <span className="text-sm text-text-secondary mb-1">Deployments</span>
+            <span className="text-2xl font-bold text-text">{deployments.length}</span>
           </div>
         </div>
-        <div className={styles.statCard}>
-          <Network size={24} className={styles.statIcon} />
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Version</span>
-            <span className={styles.statValue}>{clusterInfo?.version || 'N/A'}</span>
+        <div className="bg-surface rounded-lg p-6 flex items-center gap-4 border border-border">
+          <Network size={24} className="text-primary" />
+          <div className="flex flex-col">
+            <span className="text-sm text-text-secondary mb-1">Version</span>
+            <span className="text-2xl font-bold text-text">{clusterInfo?.version || 'N/A'}</span>
           </div>
         </div>
       </div>
@@ -139,8 +136,8 @@ function KubernetesPage() {
   )
 
   const renderPods = () => (
-    <div className={styles.tableContainer}>
-      <table className={styles.table}>
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse">
         <thead>
           <tr>
             <th>Nome</th>
@@ -157,7 +154,7 @@ function KubernetesPage() {
               <td>{pod.name}</td>
               <td>{pod.namespace}</td>
               <td>
-                <span className={styles.status}>{pod.status}</span>
+                <span className="px-3 py-1 rounded-full bg-success/10 text-success text-sm font-medium">{pod.status}</span>
               </td>
               <td>{pod.ready}</td>
               <td>{pod.restarts}</td>
@@ -170,8 +167,8 @@ function KubernetesPage() {
   )
 
   const renderDeployments = () => (
-    <div className={styles.tableContainer}>
-      <table className={styles.table}>
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse">
         <thead>
           <tr>
             <th>Nome</th>
@@ -199,8 +196,8 @@ function KubernetesPage() {
   )
 
   const renderNodes = () => (
-    <div className={styles.tableContainer}>
-      <table className={styles.table}>
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse">
         <thead>
           <tr>
             <th>Nome</th>
@@ -215,7 +212,7 @@ function KubernetesPage() {
             <tr key={idx}>
               <td>{node.name}</td>
               <td>
-                <span className={styles.status}>{node.status}</span>
+                <span className="px-3 py-1 rounded-full bg-success/10 text-success text-sm font-medium">{node.status}</span>
               </td>
               <td>{node.roles.join(', ')}</td>
               <td>{node.version}</td>
@@ -228,55 +225,55 @@ function KubernetesPage() {
   )
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Server size={32} className={styles.headerIcon} />
+    <div className="max-w-[1400px] mx-auto">
+      <div className="mb-8 flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <Server size={32} className="text-primary" />
           <div>
-            <h1 className={styles.title}>Kubernetes</h1>
-            <p className={styles.subtitle}>Gerencie seus clusters e recursos</p>
+            <h1 className="text-[32px] font-bold text-text mb-1">Kubernetes</h1>
+            <p className="text-base text-text-secondary">Gerencie seus clusters e recursos</p>
           </div>
         </div>
-        <button className={styles.refreshButton} onClick={fetchData} disabled={loading}>
+        <button className="flex items-center gap-2 py-3 px-6 bg-primary text-white border-none rounded-lg text-[15px] font-semibold cursor-pointer transition-all duration-200 hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed" onClick={fetchData} disabled={loading}>
           <RefreshCw size={20} />
           <span>Atualizar</span>
         </button>
       </div>
 
-      <div className={styles.tabs}>
+      <div className="flex gap-2 border-b-2 border-border mb-6">
         <button
-          className={`${styles.tab} ${activeTab === 'overview' ? styles.active : ''}`}
+          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold cursor-pointer relative transition-all duration-200 hover:text-text ${activeTab === 'overview' ? "text-primary after:content-[''] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary" : 'text-text-secondary'}`}
           onClick={() => setActiveTab('overview')}
         >
           Overview
         </button>
         <button
-          className={`${styles.tab} ${activeTab === 'pods' ? styles.active : ''}`}
+          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold cursor-pointer relative transition-all duration-200 hover:text-text ${activeTab === 'pods' ? "text-primary after:content-[''] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary" : 'text-text-secondary'}`}
           onClick={() => setActiveTab('pods')}
         >
           Pods ({pods.length})
         </button>
         <button
-          className={`${styles.tab} ${activeTab === 'deployments' ? styles.active : ''}`}
+          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold cursor-pointer relative transition-all duration-200 hover:text-text ${activeTab === 'deployments' ? "text-primary after:content-[''] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary" : 'text-text-secondary'}`}
           onClick={() => setActiveTab('deployments')}
         >
           Deployments ({deployments.length})
         </button>
         <button
-          className={`${styles.tab} ${activeTab === 'nodes' ? styles.active : ''}`}
+          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold cursor-pointer relative transition-all duration-200 hover:text-text ${activeTab === 'nodes' ? "text-primary after:content-[''] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary" : 'text-text-secondary'}`}
           onClick={() => setActiveTab('nodes')}
         >
           Nodes ({nodes.length})
         </button>
       </div>
 
-      <div className={styles.content}>
+      <div className="min-h-[400px]">
         {loading && (
-          <div className={styles.loading}>Carregando...</div>
+          <div className="text-center py-15 px-5 text-lg text-text-secondary">Carregando...</div>
         )}
 
         {!loading && !clusterInfo && (
-          <div className={styles.emptyState}>
+          <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
             <Server size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
             <h2>Nenhuma integração</h2>
             <p>Configure uma integração do Kubernetes para visualizar clusters, pods e deployments</p>

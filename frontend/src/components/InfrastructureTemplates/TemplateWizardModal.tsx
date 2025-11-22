@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X, ChevronRight, ChevronLeft, Download, CheckCircle2, FileText } from 'lucide-react'
 import JSZip from 'jszip'
-import styles from './TemplateWizardModal.module.css'
 import { buildApiUrl } from '../../config/api'
 
 interface Template {
@@ -161,42 +160,45 @@ function TemplateWizardModal({ template, onClose }: TemplateWizardModalProps) {
     switch (currentStep) {
       case 0:
         return (
-          <div className={styles.stepContent}>
-            <h3>Informações Básicas</h3>
-            <div className={styles.formGroup}>
-              <label>Squad *</label>
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-text">Informações Básicas</h3>
+            <div>
+              <label className="block text-sm font-medium text-text mb-2">Squad *</label>
               <input
                 type="text"
                 value={formData.squad}
                 onChange={(e) => setFormData({ ...formData, squad: e.target.value })}
                 placeholder="ex: cxm"
                 required
+                className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <small>Nome da squad responsável pelo serviço</small>
+              <small className="text-text-secondary text-sm">Nome da squad responsável pelo serviço</small>
             </div>
-            <div className={styles.formGroup}>
-              <label>Nome da Aplicação *</label>
+            <div>
+              <label className="block text-sm font-medium text-text mb-2">Nome da Aplicação *</label>
               <input
                 type="text"
                 value={formData.appName}
                 onChange={(e) => setFormData({ ...formData, appName: e.target.value })}
                 placeholder="ex: distribution"
                 required
+                className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <small>Nome da aplicação (será usado como: {formData.squad || 'squad'}-{formData.appName || 'app'})</small>
+              <small className="text-text-secondary text-sm">Nome da aplicação (será usado como: {formData.squad || 'squad'}-{formData.appName || 'app'})</small>
             </div>
           </div>
         )
 
       case 1:
         return (
-          <div className={styles.stepContent}>
-            <h3>Tecnologia</h3>
-            <div className={styles.formGroup}>
-              <label>Linguagem *</label>
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-text">Tecnologia</h3>
+            <div>
+              <label className="block text-sm font-medium text-text mb-2">Linguagem *</label>
               <select
                 value={formData.language}
                 onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 {template.languages.map((lang) => (
                   <option key={lang} value={lang.toLowerCase()}>
@@ -205,44 +207,48 @@ function TemplateWizardModal({ template, onClose }: TemplateWizardModalProps) {
                 ))}
               </select>
             </div>
-            <div className={styles.formGroup}>
-              <label>Versão *</label>
+            <div>
+              <label className="block text-sm font-medium text-text mb-2">Versão *</label>
               <input
                 type="text"
                 value={formData.version}
                 onChange={(e) => setFormData({ ...formData, version: e.target.value })}
                 placeholder="ex: 1.23.0"
+                className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <small>Versão da linguagem/runtime</small>
+              <small className="text-text-secondary text-sm">Versão da linguagem/runtime</small>
             </div>
-            <div className={styles.formGroup}>
-              <label>
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.hasTests}
                   onChange={(e) => setFormData({ ...formData, hasTests: e.target.checked })}
+                  className="w-4 h-4"
                 />
-                Possui testes unitários
+                <span className="text-sm font-medium text-text">Possui testes unitários</span>
               </label>
             </div>
-            <div className={styles.formGroup}>
-              <label>
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.isMonorepo}
                   onChange={(e) => setFormData({ ...formData, isMonorepo: e.target.checked })}
+                  className="w-4 h-4"
                 />
-                É um monorepo
+                <span className="text-sm font-medium text-text">É um monorepo</span>
               </label>
             </div>
             {formData.isMonorepo && (
-              <div className={styles.formGroup}>
-                <label>Caminho da aplicação</label>
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">Caminho da aplicação</label>
                 <input
                   type="text"
                   value={formData.appPath}
                   onChange={(e) => setFormData({ ...formData, appPath: e.target.value })}
                   placeholder="ex: services/api"
+                  className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             )}
@@ -251,61 +257,66 @@ function TemplateWizardModal({ template, onClose }: TemplateWizardModalProps) {
 
       case 2:
         return (
-          <div className={styles.stepContent}>
-            <h3>Configuração</h3>
-            <div className={styles.formGroup}>
-              <label>Porta do Container</label>
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-text">Configuração</h3>
+            <div>
+              <label className="block text-sm font-medium text-text mb-2">Porta do Container</label>
               <input
                 type="number"
                 value={formData.port}
                 onChange={(e) => setFormData({ ...formData, port: parseInt(e.target.value) })}
+                className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <small>Porta que a aplicação escuta (padrão: 80)</small>
+              <small className="text-text-secondary text-sm">Porta que a aplicação escuta (padrão: 80)</small>
             </div>
             {template.type === 'cronjob' && (
-              <div className={styles.formGroup}>
-                <label>Cron Schedule *</label>
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">Cron Schedule *</label>
                 <input
                   type="text"
                   value={formData.cronSchedule}
                   onChange={(e) => setFormData({ ...formData, cronSchedule: e.target.value })}
                   placeholder="0 2 * * *"
+                  className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                <small>Expressão cron (ex: 0 2 * * * = todo dia às 2h)</small>
+                <small className="text-text-secondary text-sm">Expressão cron (ex: 0 2 * * * = todo dia às 2h)</small>
               </div>
             )}
-            <div className={styles.formGroup}>
-              <label>
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.useSecret}
                   onChange={(e) => setFormData({ ...formData, useSecret: e.target.checked })}
+                  className="w-4 h-4"
                 />
-                Usar External Secret (AWS Secrets Manager)
+                <span className="text-sm font-medium text-text">Usar External Secret (AWS Secrets Manager)</span>
               </label>
             </div>
             {template.type === 'api' && (
               <>
-                <div className={styles.formGroup}>
-                  <label>
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formData.useIngress}
                       onChange={(e) => setFormData({ ...formData, useIngress: e.target.checked })}
+                      className="w-4 h-4"
                     />
-                    Usar Ingress (expor externamente)
+                    <span className="text-sm font-medium text-text">Usar Ingress (expor externamente)</span>
                   </label>
                 </div>
                 {formData.useIngress && (
-                  <div className={styles.formGroup}>
-                    <label>Hostname do Ingress *</label>
+                  <div>
+                    <label className="block text-sm font-medium text-text mb-2">Hostname do Ingress *</label>
                     <input
                       type="text"
                       value={formData.ingressHost}
                       onChange={(e) => setFormData({ ...formData, ingressHost: e.target.value })}
                       placeholder="ex: api.example.com"
+                      className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
                     />
-                    <small>Stage será: stage-{formData.ingressHost}</small>
+                    <small className="text-text-secondary text-sm">Stage será: stage-{formData.ingressHost}</small>
                   </div>
                 )}
               </>
@@ -315,101 +326,108 @@ function TemplateWizardModal({ template, onClose }: TemplateWizardModalProps) {
 
       case 3:
         return (
-          <div className={styles.stepContent}>
-            <h3>Recursos</h3>
-            <div className={styles.formRow}>
-              <div className={styles.formGroup}>
-                <label>CPU Request</label>
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-text">Recursos</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">CPU Request</label>
                 <input
                   type="text"
                   value={formData.cpuRequest}
                   onChange={(e) => setFormData({ ...formData, cpuRequest: e.target.value })}
                   placeholder="250m"
+                  className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
-              <div className={styles.formGroup}>
-                <label>CPU Limit</label>
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">CPU Limit</label>
                 <input
                   type="text"
                   value={formData.cpuLimit}
                   onChange={(e) => setFormData({ ...formData, cpuLimit: e.target.value })}
                   placeholder="500m"
+                  className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
-            <div className={styles.formRow}>
-              <div className={styles.formGroup}>
-                <label>Memory Request</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">Memory Request</label>
                 <input
                   type="text"
                   value={formData.memoryRequest}
                   onChange={(e) => setFormData({ ...formData, memoryRequest: e.target.value })}
                   placeholder="256Mi"
+                  className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
-              <div className={styles.formGroup}>
-                <label>Memory Limit</label>
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">Memory Limit</label>
                 <input
                   type="text"
                   value={formData.memoryLimit}
                   onChange={(e) => setFormData({ ...formData, memoryLimit: e.target.value })}
                   placeholder="512Mi"
+                  className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
-            <div className={styles.formGroup}>
-              <label>Replicas</label>
+            <div>
+              <label className="block text-sm font-medium text-text mb-2">Replicas</label>
               <input
                 type="number"
                 min="1"
                 value={formData.replicas}
                 onChange={(e) => setFormData({ ...formData, replicas: parseInt(e.target.value) })}
+                className="w-full p-3 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <small>Número de pods para o deployment</small>
+              <small className="text-text-secondary text-sm">Número de pods para o deployment</small>
             </div>
           </div>
         )
 
       case 4:
         return (
-          <div className={styles.stepContent}>
-            <h3>Preview e Geração</h3>
-            {loading && <div className={styles.loading}>Gerando preview...</div>}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-text">Preview e Geração</h3>
+            {loading && <div className="text-center py-8 text-text-secondary">Gerando preview...</div>}
             {generatedTemplate && (
-              <div className={styles.previewContainer}>
-                <div className={styles.previewHeader}>
-                  <h4>Repositório: {generatedTemplate.repositoryName}</h4>
-                  <span className={styles.fileCount}>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-4 bg-surface border border-border rounded-lg">
+                  <h4 className="text-lg font-semibold text-text">Repositório: {generatedTemplate.repositoryName}</h4>
+                  <span className="text-sm text-text-secondary">
                     {Object.keys(generatedTemplate.files).length} arquivos
                   </span>
                 </div>
 
-                <div className={styles.filesList}>
-                  <h5>Arquivos que serão gerados:</h5>
-                  {Object.keys(generatedTemplate.files).map((path) => (
-                    <div key={path} className={styles.fileItem}>
-                      <FileText size={16} />
-                      <span>{path}</span>
-                    </div>
-                  ))}
+                <div className="border border-border rounded-lg p-4">
+                  <h5 className="font-semibold text-text mb-3">Arquivos que serão gerados:</h5>
+                  <div className="space-y-2">
+                    {Object.keys(generatedTemplate.files).map((path) => (
+                      <div key={path} className="flex items-center gap-2 text-sm text-text">
+                        <FileText size={16} className="text-primary" />
+                        <span>{path}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className={styles.instructions}>
-                  <h5>Instruções de Setup:</h5>
-                  <ol>
+                <div className="border border-border rounded-lg p-4">
+                  <h5 className="font-semibold text-text mb-3">Instruções de Setup:</h5>
+                  <ol className="list-decimal list-inside space-y-2 text-sm text-text">
                     {generatedTemplate.instructions.map((instruction, idx) => (
                       <li key={idx}>{instruction}</li>
                     ))}
                   </ol>
                 </div>
 
-                <div className={styles.actions}>
-                  <button onClick={handleDownloadZip} className={styles.downloadButton}>
+                <div className="flex gap-3">
+                  <button onClick={handleDownloadZip} className="flex items-center gap-2 py-3 px-6 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium">
                     <Download size={18} />
                     Baixar ZIP
                   </button>
                   {previewMode && (
-                    <button onClick={handleGenerate} className={styles.generateButton}>
+                    <button onClick={handleGenerate} className="flex items-center gap-2 py-3 px-6 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium">
                       <CheckCircle2 size={18} />
                       Confirmar e Gerar
                     </button>
@@ -443,44 +461,54 @@ function TemplateWizardModal({ template, onClose }: TemplateWizardModalProps) {
   }
 
   const modalContent = (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-surface rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
-            <h2>Criar {template.name}</h2>
-            <p>{template.description}</p>
+            <h2 className="text-xl font-bold text-text">Criar {template.name}</h2>
+            <p className="text-sm text-text-secondary mt-1">{template.description}</p>
           </div>
-          <button onClick={onClose} className={styles.closeButton}>
+          <button onClick={onClose} className="p-2 hover:bg-hover rounded-lg transition-colors">
             <X size={20} />
           </button>
         </div>
 
-        <div className={styles.stepsIndicator}>
+        <div className="flex gap-2 p-6 border-b border-border overflow-x-auto">
           {steps.map((step, idx) => (
             <div
               key={step.id}
-              className={`${styles.stepIndicator} ${
-                idx === currentStep ? styles.stepIndicatorActive : ''
-              } ${completedSteps[idx] ? styles.stepIndicatorCompleted : ''}`}
+              className={`flex items-center gap-3 min-w-[200px] p-3 rounded-lg border transition-colors ${
+                idx === currentStep
+                  ? 'bg-primary/10 border-primary'
+                  : completedSteps[idx]
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                  : 'bg-surface border-border'
+              }`}
             >
-              <div className={styles.stepNumber}>
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full font-semibold ${
+                idx === currentStep
+                  ? 'bg-primary text-white'
+                  : completedSteps[idx]
+                  ? 'bg-green-500 text-white'
+                  : 'bg-background text-text-secondary'
+              }`}>
                 {completedSteps[idx] ? <CheckCircle2 size={18} /> : idx + 1}
               </div>
-              <div className={styles.stepInfo}>
-                <div className={styles.stepTitle}>{step.title}</div>
-                <div className={styles.stepDescription}>{step.description}</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-text text-sm">{step.title}</div>
+                <div className="text-xs text-text-secondary truncate">{step.description}</div>
               </div>
             </div>
           ))}
         </div>
 
-        <div className={styles.modalBody}>{renderStepContent()}</div>
+        <div className="flex-1 overflow-y-auto p-6">{renderStepContent()}</div>
 
-        <div className={styles.modalFooter}>
+        <div className="flex justify-between items-center p-6 border-t border-border">
           <button
             onClick={handlePrevious}
             disabled={currentStep === 0}
-            className={styles.backButton}
+            className="flex items-center gap-2 py-3 px-6 bg-transparent text-text border border-border rounded-lg hover:bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
             <ChevronLeft size={18} />
             Voltar
@@ -489,13 +517,13 @@ function TemplateWizardModal({ template, onClose }: TemplateWizardModalProps) {
             <button
               onClick={handleNext}
               disabled={!isStepValid() || loading}
-              className={styles.nextButton}
+              className="flex items-center gap-2 py-3 px-6 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {currentStep === steps.length - 2 ? 'Gerar Preview' : 'Próximo'}
               <ChevronRight size={18} />
             </button>
           ) : (
-            <button onClick={onClose} className={styles.closeButtonSecondary}>
+            <button onClick={onClose} className="py-3 px-6 bg-transparent text-text border border-border rounded-lg hover:bg-hover transition-colors font-medium">
               Fechar
             </button>
           )}

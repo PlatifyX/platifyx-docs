@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, TrendingDown, Cloud, AlertTriangle, Calendar, Filter } from 'lucide-react'
+import { DollarSign, TrendingUp, TrendingDown, Cloud, AlertTriangle, Calendar } from 'lucide-react'
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart
+  BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart
 } from 'recharts'
-import styles from './FinOpsPage.module.css'
 import { buildApiUrl } from '../config/api'
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
 interface MonthlyCost {
   month: string
@@ -92,8 +89,8 @@ function FinOpsPageEnhanced() {
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Carregando dados FinOps...</div>
+      <div className="p-4 md:p-6">
+        <div className="flex items-center justify-center min-h-screen text-gray-400">Carregando dados FinOps...</div>
       </div>
     )
   }
@@ -115,25 +112,27 @@ function FinOpsPageEnhanced() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Cloud size={32} className={styles.headerIcon} />
+    <div className="p-4 md:p-6">
+      <div className="mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+            <Cloud className="w-6 h-6 text-blue-400" />
+          </div>
           <div>
-            <h1 className={styles.title}>FinOps - AWS Cost Analytics</h1>
-            <p className={styles.subtitle}>Análise completa de custos AWS</p>
+            <h1 className="text-3xl font-bold">FinOps - AWS Cost Analytics</h1>
+            <p className="text-gray-400 text-sm mt-1">Análise completa de custos AWS</p>
           </div>
         </div>
       </div>
 
       {/* Date Filter */}
-      <div className={styles.filterSection}>
-        <div className={styles.filterLabel}>
+      <div className="mb-6 bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-2 text-gray-300">
           <Calendar size={20} />
-          <span>Período de Análise</span>
+          <span className="font-medium">Período de Análise</span>
         </div>
         <select
-          className={styles.filterSelect}
+          className="bg-transparent text-gray-300 outline-none cursor-pointer border border-gray-600 rounded px-3 py-2"
           value={monthsToShow}
           onChange={(e) => setMonthsToShow(parseInt(e.target.value))}
         >
@@ -145,50 +144,50 @@ function FinOpsPageEnhanced() {
       </div>
 
       {/* 🔵 1. VISÃO GERAL (HIGH LEVEL) */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>📊 Visão Geral</h2>
+      <section className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">📊 Visão Geral</h2>
 
         {/* KPI Cards */}
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}>
-              <DollarSign size={24} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <DollarSign size={24} className="text-green-400" />
             </div>
-            <div className={styles.statContent}>
-              <p className={styles.statLabel}>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-400">
                 Custo Total ({monthsToShow === 1 ? 'Mês Atual' : `${monthsToShow} meses`})
               </p>
-              <p className={styles.statValue}>{formatCurrency(totalCost)}</p>
+              <p className="text-2xl font-bold truncate">{formatCurrency(totalCost)}</p>
             </div>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}>
-              <DollarSign size={24} />
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <DollarSign size={24} className="text-blue-400" />
             </div>
-            <div className={styles.statContent}>
-              <p className={styles.statLabel}>Custo Mensal Médio</p>
-              <p className={styles.statValue}>{formatCurrency(avgMonthlyCost)}</p>
-            </div>
-          </div>
-
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}>
-              <DollarSign size={24} />
-            </div>
-            <div className={styles.statContent}>
-              <p className={styles.statLabel}>Custo Diário Estimado</p>
-              <p className={styles.statValue}>{formatCurrency(dailyCost)}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-400">Custo Mensal Médio</p>
+              <p className="text-2xl font-bold truncate">{formatCurrency(avgMonthlyCost)}</p>
             </div>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}>
-              {trend >= 0 ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
+            <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <DollarSign size={24} className="text-purple-400" />
             </div>
-            <div className={styles.statContent}>
-              <p className={styles.statLabel}>Tendência (Mês a Mês)</p>
-              <p className={`${styles.statValue} ${trend >= 0 ? styles.trendUp : styles.trendDown}`}>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-400">Custo Diário Estimado</p>
+              <p className="text-2xl font-bold truncate">{formatCurrency(dailyCost)}</p>
+            </div>
+          </div>
+
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${trend >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+              {trend >= 0 ? <TrendingUp size={24} className="text-green-400" /> : <TrendingDown size={24} className="text-red-400" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-400">Tendência (Mês a Mês)</p>
+              <p className={`text-2xl font-bold truncate ${trend >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                 {trend >= 0 ? '+' : ''}{trend.toFixed(1)}%
               </p>
             </div>
@@ -196,8 +195,8 @@ function FinOpsPageEnhanced() {
         </div>
 
         {/* 📈 Gráfico 1 — Custo Total (linha mês a mês) */}
-        <div className={styles.chartCard}>
-          <h3 className={styles.chartTitle}>📈 Custo Total Mensal (Tendência)</h3>
+        <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6 mb-6">
+          <h3 className="text-xl font-bold mb-4">📈 Custo Total Mensal (Tendência)</h3>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={filteredMonthly}>
               <defs>
@@ -232,8 +231,8 @@ function FinOpsPageEnhanced() {
         </div>
 
         {/* 📊 Gráfico 2 — Custo por Serviço (barras) */}
-        <div className={styles.chartCard}>
-          <h3 className={styles.chartTitle}>📊 Top 10 Serviços por Custo</h3>
+        <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6 mb-6">
+          <h3 className="text-xl font-bold mb-4">📊 Top 10 Serviços por Custo</h3>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={serviceCosts} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
@@ -247,14 +246,14 @@ function FinOpsPageEnhanced() {
 
         {/* 📌 Gráfico 4 — Forecast de Custos */}
         {forecast && forecast.length > 0 && (
-          <div className={styles.chartCard}>
-            <h3 className={styles.chartTitle}>📌 Previsão de Custos</h3>
-            <div className={styles.forecastBox}>
-              <AlertTriangle size={48} className={styles.forecastIcon} />
+          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6 mb-6">
+            <h3 className="text-xl font-bold mb-4">📌 Previsão de Custos</h3>
+            <div className="flex items-center gap-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-6">
+              <AlertTriangle size={48} className="text-yellow-400 flex-shrink-0" />
               <div>
-                <p className={styles.forecastLabel}>Previsão para o Final do Mês</p>
-                <p className={styles.forecastValue}>{formatCurrency(forecast[0]?.cost || 0)}</p>
-                <p className={styles.forecastHint}>Baseado no consumo atual</p>
+                <p className="text-sm text-gray-400 mb-1">Previsão para o Final do Mês</p>
+                <p className="text-3xl font-bold text-yellow-400 mb-1">{formatCurrency(forecast[0]?.cost || 0)}</p>
+                <p className="text-xs text-gray-500">Baseado no consumo atual</p>
               </div>
             </div>
           </div>
@@ -262,50 +261,50 @@ function FinOpsPageEnhanced() {
       </section>
 
       {/* 💳 SAVINGS PLANS */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>💳 Savings Plans</h2>
+      <section className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">💳 Savings Plans</h2>
 
-        <div className={styles.chartCard}>
-          <h3 className={styles.chartTitle}>💳 Savings Plans</h3>
+        <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6">
+          <h3 className="text-xl font-bold mb-4">💳 Savings Plans</h3>
           {spUtilization ? (
             <div>
-              <div className={styles.utilizationBox}>
-                <div className={styles.utilizationPercent}>
-                  <span className={styles.percentValue}>
+              <div className="mb-6 bg-[#2A2A2A] rounded-lg p-6">
+                <div className="text-center mb-4">
+                  <span className="text-5xl font-bold text-[#1B998B]">
                     {spUtilization.utilizationPercent?.toFixed(1) || 0}%
                   </span>
-                  <span className={styles.percentLabel}>Utilização</span>
+                  <span className="block text-sm text-gray-400 mt-2">Utilização</span>
                 </div>
-                <div className={styles.progressBar}>
+                <div className="w-full bg-gray-700 rounded-full h-3">
                   <div
-                    className={styles.progressFill}
+                    className="bg-gradient-to-r from-[#1B998B] to-green-400 h-3 rounded-full transition-all"
                     style={{ width: `${spUtilization.utilizationPercent || 0}%` }}
                   />
                 </div>
               </div>
-              <div className={styles.statsRow}>
-                <div className={styles.statItem}>
-                  <span className={styles.statItemLabel}>Comprometido</span>
-                  <span className={styles.statItemValue}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-[#2A2A2A] rounded-lg">
+                  <span className="block text-sm text-gray-400 mb-2">Comprometido</span>
+                  <span className="text-xl font-bold text-blue-400">
                     {formatCurrency(spUtilization.totalCommitment || 0)}
                   </span>
                 </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statItemLabel}>Utilizado</span>
-                  <span className={styles.statItemValue}>
+                <div className="text-center p-4 bg-[#2A2A2A] rounded-lg">
+                  <span className="block text-sm text-gray-400 mb-2">Utilizado</span>
+                  <span className="text-xl font-bold text-green-400">
                     {formatCurrency(spUtilization.usedCommitment || 0)}
                   </span>
                 </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statItemLabel}>Não Utilizado</span>
-                  <span className={`${styles.statItemValue} ${styles.warning}`}>
+                <div className="text-center p-4 bg-[#2A2A2A] rounded-lg">
+                  <span className="block text-sm text-gray-400 mb-2">Não Utilizado</span>
+                  <span className="text-xl font-bold text-yellow-400">
                     {formatCurrency(spUtilization.unusedCommitment || 0)}
                   </span>
                 </div>
               </div>
             </div>
           ) : (
-            <p className={styles.noData}>Nenhum Savings Plan encontrado</p>
+            <p className="text-center text-gray-400 py-8">Nenhum Savings Plan encontrado</p>
           )}
         </div>
       </section>
