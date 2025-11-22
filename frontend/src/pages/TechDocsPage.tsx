@@ -180,15 +180,15 @@ function TechDocsPage() {
         <div
           className={`flex items-center gap-2 py-2.5 px-3 rounded-lg cursor-pointer transition-all duration-200 relative ${
             selectedDoc?.path === node.path
-              ? 'bg-gradient-to-br from-[#3e5c7626] to-[#3e5c7626] text-[#3e5c76] font-semibold shadow-md shadow-[#3e5c7633]'
+              ? 'bg-gradient-to-br from-[#3e5c7626] to-[#3e5c7626] text-white font-semibold shadow-md shadow-[#3e5c7633]'
               : 'hover:bg-gradient-to-br hover:from-[#3e5c7614] hover:to-[#3e5c7614] hover:translate-x-1'
           }`}
           onClick={() => !node.isDirectory && fetchDocument(node.path)}
         >
           {node.isDirectory ? (
-            <Folder size={16} className="text-[#f59e0b] flex-shrink-0" />
+            <Folder size={16} className="text-white flex-shrink-0" />
           ) : (
-            <FileText size={16} className="text-[#3e5c76] flex-shrink-0" />
+            <FileText size={16} className="text-white flex-shrink-0" />
           )}
           <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">{node.name}</span>
         </div>
@@ -225,14 +225,14 @@ function TechDocsPage() {
             <span>Assistente IA</span>
           </button>
           <button
-            className="flex items-center gap-2 py-2.5 px-5 bg-white/20 backdrop-blur-[10px] text-white border border-white/30 rounded-lg cursor-pointer font-semibold transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:bg-white/30 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
+            className="flex items-center gap-2 py-2.5 px-5 bg-[#1E1E1E] backdrop-blur-[10px] text-white border border-white/30 rounded-lg cursor-pointer font-semibold transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:bg-[#1E1E1E] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
             onClick={() => setShowNewFolderModal(true)}
           >
             <FolderPlus size={20} />
             <span>Nova Pasta</span>
           </button>
           <button
-            className="flex items-center gap-2 py-2.5 px-5 bg-white/20 backdrop-blur-[10px] text-white border border-white/30 rounded-lg cursor-pointer font-semibold transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:bg-white/30 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
+            className="flex items-center gap-2 py-2.5 px-5 bg-[#1E1E1E] backdrop-blur-[10px] text-white border border-white/30 rounded-lg cursor-pointer font-semibold transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:bg-[#1E1E1E] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
             onClick={() => setShowNewDocModal(true)}
           >
             <Plus size={20} />
@@ -242,11 +242,11 @@ function TechDocsPage() {
       </div>
 
       <div className="flex gap-6 flex-1 overflow-hidden">
-        <div className="w-[280px] bg-white rounded-xl p-6 overflow-y-auto border border-[#f0ebd8] shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-          <h3 className="text-sm font-bold text-[#f0ebd8] uppercase m-0 mb-4 tracking-wider bg-gradient-to-br from-[#3e5c76] to-[#3e5c76] bg-clip-text text-transparent">Documentos</h3>
+        <div className="w-[280px] bg-[#1E1E1E] rounded-xl p-6 overflow-y-auto border border-[#f0ebd8] shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <h3 className="text-sm font-bold text-white uppercase m-0 mb-4 tracking-wider bg-gradient-to-br from-[#3e5c76] to-[#3e5c76] bg-clip-text text-transparent">Documentos</h3>
           <div className="flex flex-col gap-1">
             {tree.length === 0 ? (
-              <p className="text-sm text-[#9ca3af] text-center p-4 m-0">Nenhum documento encontrado</p>
+              <p className="text-sm text-white text-center p-4 m-0">Nenhum documento encontrado</p>
             ) : (
               tree.map(node => renderTreeNode(node))
             )}
@@ -270,23 +270,23 @@ function TechDocsPage() {
           </div>
         )}
 
-        <div className="flex-1 bg-white rounded-xl border border-[#f0ebd8] flex flex-col overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-shadow duration-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
+        <div className="flex-1 bg-[#1E1E1E] rounded-xl border border-[#f0ebd8] flex flex-col overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-shadow duration-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
           {selectedDoc ? (
             <>
               <div className="flex justify-between items-center p-6 border-b border-[#e5e7eb]">
-                <h2 className="text-2xl font-semibold text-[#0d1321] m-0">{selectedDoc.name}</h2>
+                <h2 className="text-2xl font-semibold text-white m-0">{selectedDoc.name}</h2>
                 <div className="flex gap-2">
                   {isEditing ? (
                     <>
                       <button
-                        className="flex items-center gap-1.5 py-2 px-4 bg-[#0d1321] text-[#f0ebd8] border border-[#f0ebd8] rounded-md cursor-pointer font-medium text-sm transition-all duration-200 hover:bg-[#0d1321] hover:border-[#f0ebd8]"
+                        className="flex items-center gap-1.5 py-2 px-4 bg-[#0d1321] text-white border border-[#f0ebd8] rounded-md cursor-pointer font-medium text-sm transition-all duration-200 hover:bg-[#0d1321] hover:border-[#f0ebd8]"
                         onClick={handleSave}
                       >
                         <Save size={18} />
                         <span>Salvar</span>
                       </button>
                       <button
-                        className="flex items-center gap-1.5 py-2 px-4 bg-[#0d1321] text-[#f0ebd8] border border-[#f0ebd8] rounded-md cursor-pointer font-medium text-sm transition-all duration-200 hover:bg-[#0d1321] hover:border-[#f0ebd8]"
+                        className="flex items-center gap-1.5 py-2 px-4 bg-[#0d1321] text-white border border-[#f0ebd8] rounded-md cursor-pointer font-medium text-sm transition-all duration-200 hover:bg-[#0d1321] hover:border-[#f0ebd8]"
                         onClick={() => {
                           setIsEditing(false)
                           setEditContent(selectedDoc.content || '')
@@ -299,14 +299,14 @@ function TechDocsPage() {
                   ) : (
                     <>
                       <button
-                        className="flex items-center gap-1.5 py-2 px-4 bg-[#0d1321] text-[#f0ebd8] border border-[#f0ebd8] rounded-md cursor-pointer font-medium text-sm transition-all duration-200 hover:bg-[#0d1321] hover:border-[#f0ebd8]"
+                        className="flex items-center gap-1.5 py-2 px-4 bg-[#0d1321] text-white border border-[#f0ebd8] rounded-md cursor-pointer font-medium text-sm transition-all duration-200 hover:bg-[#0d1321] hover:border-[#f0ebd8]"
                         onClick={() => setIsEditing(true)}
                       >
                         <Edit2 size={18} />
                         <span>Editar</span>
                       </button>
                       <button
-                        className="flex items-center gap-1.5 py-2 px-4 bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] rounded-md cursor-pointer font-medium text-sm transition-all duration-200 hover:bg-[#fee2e2] hover:border-[#fca5a5]"
+                        className="flex items-center gap-1.5 py-2 px-4 bg-[#0d1321] text-white border border-[#f0ebd8] rounded-md cursor-pointer font-medium text-sm transition-all duration-200 hover:bg-[#0d1321] hover:border-[#f0ebd8]"
                         onClick={handleDelete}
                       >
                         <Trash2 size={18} />
@@ -317,16 +317,16 @@ function TechDocsPage() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-hidden flex flex-col">
+              <div className="flex-1 overflow-hidden flex flex-col bg-[#1E1E1E]">
                 {isEditing ? (
                   <textarea
-                    className="flex-1 p-6 border-none font-[Monaco,Menlo,'Ubuntu_Mono',monospace] text-sm leading-relaxed resize-none outline-none"
+                    className="bg-[#1E1E1E] flex-1 p-6 border-none font-[Monaco,Menlo,'Ubuntu_Mono',monospace] text-sm leading-relaxed resize-none outline-none"
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     placeholder="Escreva seu conteúdo em markdown..."
                   />
                 ) : (
-                  <div className="flex-1 p-8 overflow-auto bg-white font-[-apple-system,BlinkMacSystemFont,'Segoe_UI','Roboto','Oxygen','Ubuntu',sans-serif] leading-relaxed text-[#1f2937]">
+                  <div className="flex-1 p-8 overflow-auto bg-[#1E1E1E] font-[-apple-system,BlinkMacSystemFont,'Segoe_UI','Roboto','Oxygen','Ubuntu',sans-serif] leading-relaxed text-white">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw, rehypeSanitize]}
@@ -334,24 +334,24 @@ function TechDocsPage() {
                         h1: ({ node, ...props }) => <h1 className="text-4xl font-bold text-white m-0 mb-6 pb-2 border-b-2 border-[#f0ebd8] leading-tight" {...props} />,
                         h2: ({ node, ...props }) => <h2 className="text-3xl font-semibold text-white mt-8 mb-4 pb-1.5 border-b border-[#f0ebd8] leading-tight" {...props} />,
                         h3: ({ node, ...props }) => <h3 className="text-2xl font-semibold text-white mt-6 mb-3 leading-snug" {...props} />,
-                        h4: ({ node, ...props }) => <h4 className="text-xl font-semibold text-[#f0ebd8] mt-5 mb-2 leading-snug" {...props} />,
-                        p: ({ node, ...props }) => <p className="m-0 mb-4 text-[#f0ebd8] text-base leading-7" {...props} />,
+                        h4: ({ node, ...props }) => <h4 className="text-xl font-semibold text-white mt-5 mb-2 leading-snug" {...props} />,
+                        p: ({ node, ...props }) => <p className="m-0 mb-4 text-white text-base leading-7" {...props} />,
                         code: ({ node, inline, ...props }: any) =>
                           inline ?
                             <code className="bg-[#f3f4f6] text-[#dc2626] py-0.5 px-1.5 rounded-sm font-[Monaco,Menlo,'Ubuntu_Mono',monospace] text-[0.875em] border border-[#e5e7eb]" {...props} /> :
-                            <code className="text-[#f9fafb] font-[Monaco,Menlo,'Ubuntu_Mono',monospace] text-sm leading-relaxed" {...props} />,
+                            <code className="text-white font-[Monaco,Menlo,'Ubuntu_Mono',monospace] text-sm leading-relaxed" {...props} />,
                         pre: ({ node, ...props }) => <pre className="bg-[#0d1321] rounded-lg p-4 overflow-x-auto my-4 border border-[#f0ebd8]" {...props} />,
-                        ul: ({ node, ...props }) => <ul className="my-4 pl-8 text-[#374151]" {...props} />,
-                        ol: ({ node, ...props }) => <ol className="my-4 pl-8 text-[#374151]" {...props} />,
+                        ul: ({ node, ...props }) => <ul className="my-4 pl-8 text-white" {...props} />,
+                        ol: ({ node, ...props }) => <ol className="my-4 pl-8 text-white" {...props} />,
                         li: ({ node, ...props }) => <li className="my-2 leading-7" {...props} />,
-                        a: ({ node, ...props }) => <a className="text-[#3e5c76] no-underline border-b border-transparent transition-all duration-200 hover:border-[#3e5c76] hover:text-[#3e5c76]" {...props} target="_blank" rel="noopener noreferrer" />,
+                        a: ({ node, ...props }) => <a className="text-white no-underline border-b border-transparent transition-all duration-200 hover:border-[#3e5c76] hover:text-[#3e5c76]" {...props} target="_blank" rel="noopener noreferrer" />,
                         blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-[#3e5c76] bg-[#0d1321] py-3 px-5 my-6 rounded-r-md" {...props} />,
                         table: ({ node, ...props }) => <table className="w-full border-collapse my-6 border border-[#e5e7eb] rounded-lg overflow-hidden" {...props} />,
                         thead: ({ node, ...props }) => <thead className="bg-[#f9fafb]" {...props} />,
-                        tbody: ({ node, ...props }) => <tbody className="bg-white" {...props} />,
+                        tbody: ({ node, ...props }) => <tbody className="bg-[#1E1E1E]" {...props} />,
                         tr: ({ node, ...props }) => <tr className="border-b border-[#e5e7eb] last:border-b-0 [tbody_&]:hover:bg-[#f9fafb]" {...props} />,
-                        th: ({ node, ...props }) => <th className="py-3 px-4 text-left font-semibold text-[#1f2937] border-b-2 border-[#d1d5db]" {...props} />,
-                        td: ({ node, ...props }) => <td className="py-3 px-4 text-[#374151]" {...props} />,
+                        th: ({ node, ...props }) => <th className="py-3 px-4 text-left font-semibold text-white border-b-2 border-[#d1d5db]" {...props} />,
+                        td: ({ node, ...props }) => <td className="py-3 px-4 text-white" {...props} />,
                         hr: ({ node, ...props }) => <hr className="border-none border-t-2 border-[#e5e7eb] my-8" {...props} />,
                         img: ({ node, ...props }) => <img className="max-w-full h-auto rounded-lg my-4 shadow-md" {...props} />,
                       }}
@@ -363,7 +363,7 @@ function TechDocsPage() {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-[#9ca3af]">
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-white">
               <FileText size={64} className="opacity-50" />
               <p className="text-lg m-0">Selecione um documento para visualizar</p>
             </div>
@@ -373,8 +373,8 @@ function TechDocsPage() {
 
       {showNewDocModal && (
         <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[1000]">
-          <div className="bg-white p-8 rounded-xl w-[90%] max-w-[500px] shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]">
-            <h3 className="text-xl font-semibold text-[#1f2937] m-0 mb-6">Novo Documento</h3>
+          <div className="bg-[#1E1E1E] p-8 rounded-xl w-[90%] max-w-[500px] shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]">
+            <h3 className="text-xl font-semibold text-white m-0 mb-6">Novo Documento</h3>
             <input
               type="text"
               className="w-full py-3 px-3 border border-[#d1d5db] rounded-lg text-base mb-6 outline-none transition-colors duration-200 focus:border-[#3e5c76]"
@@ -391,7 +391,7 @@ function TechDocsPage() {
                 Criar
               </button>
               <button
-                className="py-2.5 px-6 bg-[#f3f4f6] text-[#374151] border border-[#d1d5db] rounded-lg cursor-pointer font-medium transition-all duration-200 hover:bg-[#e5e7eb]"
+                className="py-2.5 px-6 bg-[#f3f4f6] text-white border border-[#d1d5db] rounded-lg cursor-pointer font-medium transition-all duration-200 hover:bg-[#e5e7eb]"
                 onClick={() => {
                   setShowNewDocModal(false)
                   setNewDocPath('')
@@ -406,8 +406,8 @@ function TechDocsPage() {
 
       {showNewFolderModal && (
         <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[1000]">
-          <div className="bg-white p-8 rounded-xl w-[90%] max-w-[500px] shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]">
-            <h3 className="text-xl font-semibold text-[#1f2937] m-0 mb-6">Nova Pasta</h3>
+          <div className="bg-[#1E1E1E] p-8 rounded-xl w-[90%] max-w-[500px] shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]">
+            <h3 className="text-xl font-semibold text-white m-0 mb-6">Nova Pasta</h3>
             <input
               type="text"
               className="w-full py-3 px-3 border border-[#d1d5db] rounded-lg text-base mb-6 outline-none transition-colors duration-200 focus:border-[#3e5c76]"
@@ -424,7 +424,7 @@ function TechDocsPage() {
                 Criar
               </button>
               <button
-                className="py-2.5 px-6 bg-[#f3f4f6] text-[#374151] border border-[#d1d5db] rounded-lg cursor-pointer font-medium transition-all duration-200 hover:bg-[#e5e7eb]"
+                className="py-2.5 px-6 bg-[#f3f4f6] text-white border border-[#d1d5db] rounded-lg cursor-pointer font-medium transition-all duration-200 hover:bg-[#e5e7eb]"
                 onClick={() => {
                   setShowNewFolderModal(false)
                   setNewFolderPath('')

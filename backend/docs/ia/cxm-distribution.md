@@ -1,9 +1,3 @@
-# Documentação de Arquitetura
-
-Esta documentação foi gerada a partir de múltiplas seções do repositório.
-
----
-
 # Documentação de Architecture - cxm-distribution
 
 O repositório **cxm-distribution** consiste em um serviço de agendamento e lembrete das distribuições. Abaixo serão detalhados os arquivos presentes no repositório e suas interações.

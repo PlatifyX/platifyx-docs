@@ -1,7 +1,7 @@
 import { TrendingUp, TrendingDown, Activity, CheckCircle, AlertCircle, Server, GitBranch } from 'lucide-react'
 
 function DashboardPage() {
-  // Remover dados mockados - estas métricas devem vir de APIs reais
+
   const metrics: any[] = []
   const services: any[] = []
   const recentDeployments: any[] = []
@@ -67,9 +67,9 @@ function DashboardPage() {
 
       <div className="grid grid-cols-[1.5fr_1fr] gap-6 items-start max-[1200px]:grid-cols-1">
         {/* Services Section */}
-        <section className="bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-border">
+        <section className="bg-[#1E1E1E] rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-border">
           <div className="flex justify-between items-center mb-6 pb-4 border-b-2 border-border">
-            <h2 className="flex items-center gap-3 text-xl font-bold text-[#0d1321] m-0">
+            <h2 className="flex items-center gap-3 text-xl font-bold text-white m-0">
               <Server size={20} />
               Serviços em Produção
             </h2>
@@ -124,11 +124,11 @@ function DashboardPage() {
         </section>
 
         {/* Recent Deployments */}
-        <section className="bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-border">
+        <section className="bg-[#1E1E1E] rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-border">
           <div className="flex justify-between items-center mb-6 pb-4 border-b-2 border-border">
-            <h2 className="flex items-center gap-3 text-xl font-bold text-[#0d1321] m-0">
+            <h2 className="flex items-center gap-3 text-xl font-bold text-white m-0">
               <GitBranch size={20} />
-              Deployments Recentes
+              Deployments
             </h2>
           </div>
           {recentDeployments.length > 0 ? (
@@ -142,7 +142,7 @@ function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-3 mb-1.5 flex-wrap">
                       <span className="text-[0.9375rem] font-bold text-white font-['Monaco','Menlo','Ubuntu_Mono',monospace]">{deploy.service}</span>
-                      <span className="text-[0.8125rem] font-semibold text-[#3e5c76] font-['Monaco','Menlo','Ubuntu_Mono',monospace] bg-[#0d1321] py-0.5 px-2 rounded">{deploy.version}</span>
+                      <span className="text-[0.8125rem] font-semibold text-white font-['Monaco','Menlo','Ubuntu_Mono',monospace] bg-[#0d1321] py-0.5 px-2 rounded">{deploy.version}</span>
                     </div>
                     <div className="flex items-center gap-2 text-[0.8125rem] text-border">
                       <span className="font-medium">{deploy.author}</span>

@@ -362,7 +362,7 @@ function ServicesPage() {
                              (serviceStatus[service.name]?.prodStatus?.pods && serviceStatus[service.name]?.prodStatus?.pods!.length > 0)
 
               return (
-                <div key={service.id} className="bg-surface border border-border rounded-xl overflow-hidden transition-all duration-200 hover:border-primary hover:shadow-xl">
+                <div key={service.id} className="bg-[#1E1E1E] border border-border rounded-xl overflow-hidden transition-all duration-200 hover:border-primary hover:shadow-xl">
                   {/* Card Header */}
                   <div className="p-5 border-b border-border bg-background/50">
                     <div className="flex items-start justify-between mb-3">
@@ -502,7 +502,7 @@ function ServicesPage() {
                           {serviceMetrics[service.name]?.stageBuild && (
                               <div className="p-3 bg-background rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-semibold text-text-secondary">STAGING BUILD</span>
+                                  <span className="text-xs font-semibold text-text-secondary">STAGING</span>
                                   <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
                                     serviceMetrics[service.name]?.stageBuild?.status === 'succeeded' ? 'bg-success/10 text-success' :
                                     serviceMetrics[service.name]?.stageBuild?.status === 'failed' ? 'bg-error/10 text-error' :
@@ -527,7 +527,7 @@ function ServicesPage() {
                             {serviceMetrics[service.name]?.mainBuild && (
                               <div className="p-3 bg-background rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-semibold text-text-secondary">PRODUCTION BUILD</span>
+                                  <span className="text-xs font-semibold text-text-secondary">PRODUCTION</span>
                                   <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
                                     serviceMetrics[service.name]?.mainBuild?.status === 'succeeded' ? 'bg-success/10 text-success' :
                                     serviceMetrics[service.name]?.mainBuild?.status === 'failed' ? 'bg-error/10 text-error' :

@@ -52,8 +52,6 @@ function IntegrationCard({ integration, onConfigure, onToggle, onDelete }: Integ
         return 'Monitoramento de métricas e alertas'
       case 'vault':
         return 'Gerenciamento seguro de secrets e credenciais'
-      case 'awssecrets':
-        return 'Gerenciamento de secrets na AWS'
       default:
         return 'Integração externa'
     }
@@ -99,15 +97,13 @@ function IntegrationCard({ integration, onConfigure, onToggle, onDelete }: Integ
         return '/logos/prometheus.png'
       case 'vault':
         return '/logos/vault.png'
-      case 'awssecrets':
-        return '/logos/aws-secrets.png'
       default:
-        return '/logos/platifyx.png'
+        return '/logos/platifyx-logo-white.png'
     }
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+    <div className="bg-[#1E1E1E] rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-start justify-between mb-4">
         <div className="w-12 h-12 flex items-center justify-center bg-gray-50 rounded-lg">
           <img
@@ -126,8 +122,8 @@ function IntegrationCard({ integration, onConfigure, onToggle, onDelete }: Integ
       </div>
 
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">{integration.name}</h3>
-        <p className="text-sm text-gray-600">{getIntegrationDescription(integration.type)}</p>
+        <h3 className="text-lg font-semibold text-white mb-1">{integration.name}</h3>
+        <p className="text-sm text-white-600">{getIntegrationDescription(integration.type)}</p>
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
@@ -140,7 +136,7 @@ function IntegrationCard({ integration, onConfigure, onToggle, onDelete }: Integ
             <span>Configurar</span>
           </button>
           <button
-            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+            className="p-1.5 text-white hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
             onClick={onDelete}
             title="Deletar integração"
           >
