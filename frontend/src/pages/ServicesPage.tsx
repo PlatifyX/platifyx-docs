@@ -275,7 +275,7 @@ function ServicesPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-text">{stats.withStage}</div>
-                <div className="text-sm text-text-secondary">Ambientes Stage</div>
+                <div className="text-sm text-text-secondary">Ambientes Staging</div>
               </div>
             </div>
           </div>
@@ -287,7 +287,7 @@ function ServicesPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-text">{stats.withProd}</div>
-                <div className="text-sm text-text-secondary">Ambientes Prod</div>
+                <div className="text-sm text-text-secondary">Ambientes Production</div>
               </div>
             </div>
           </div>
