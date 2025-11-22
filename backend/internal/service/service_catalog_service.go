@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
 	"github.com/PlatifyX/platifyx-core/internal/repository"
@@ -342,6 +343,7 @@ func (s *ServiceCatalogService) getDeploymentStatus(clientset *kubernetes.Client
 	}
 
 	dep := deployment.Items[0]
+	namespace := dep.Namespace
 
 	status := &domain.DeploymentStatus{
 		Environment:       environment,
@@ -363,7 +365,77 @@ func (s *ServiceCatalogService) getDeploymentStatus(clientset *kubernetes.Client
 		status.Image = dep.Spec.Template.Spec.Containers[0].Image
 	}
 
+	// Get pods for this deployment
+	pods, err := s.getPodsForDeployment(clientset, namespace, deploymentName)
+	if err != nil {
+		s.log.Warnw("Failed to get pods for deployment", "deployment", deploymentName, "error", err)
+	} else {
+		status.Pods = pods
+	}
+
 	return status, nil
+}
+
+// getPodsForDeployment gets pods related to a deployment
+func (s *ServiceCatalogService) getPodsForDeployment(clientset *kubernetes.Clientset, namespace, deploymentName string) ([]domain.PodInfo, error) {
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("app=%s", deploymentName),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var podInfos []domain.PodInfo
+	for _, pod := range pods.Items {
+		// Calculate ready containers
+		readyContainers := 0
+		totalContainers := len(pod.Status.ContainerStatuses)
+		for _, cs := range pod.Status.ContainerStatuses {
+			if cs.Ready {
+				readyContainers++
+			}
+		}
+
+		// Calculate total restarts
+		var totalRestarts int32
+		for _, cs := range pod.Status.ContainerStatuses {
+			totalRestarts += cs.RestartCount
+		}
+
+		// Calculate age
+		age := time.Since(pod.CreationTimestamp.Time)
+		ageStr := formatDuration(age)
+
+		podInfo := domain.PodInfo{
+			Name:      pod.Name,
+			Status:    string(pod.Status.Phase),
+			Ready:     fmt.Sprintf("%d/%d", readyContainers, totalContainers),
+			Restarts:  totalRestarts,
+			Age:       ageStr,
+			Node:      pod.Spec.NodeName,
+			Namespace: pod.Namespace,
+		}
+		podInfos = append(podInfos, podInfo)
+	}
+
+	return podInfos, nil
+}
+
+// formatDuration formats a duration into a human-readable string (e.g., "2d", "5h", "30m")
+func formatDuration(d time.Duration) string {
+	days := int(d.Hours() / 24)
+	if days > 0 {
+		return fmt.Sprintf("%dd", days)
+	}
+	hours := int(d.Hours())
+	if hours > 0 {
+		return fmt.Sprintf("%dh", hours)
+	}
+	minutes := int(d.Minutes())
+	if minutes > 0 {
+		return fmt.Sprintf("%dm", minutes)
+	}
+	return fmt.Sprintf("%ds", int(d.Seconds()))
 }
 
 // GetServiceMetrics returns aggregated metrics from SonarQube and last build from Azure DevOps

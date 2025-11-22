@@ -34,12 +34,24 @@ type ServiceStatus struct {
 
 // DeploymentStatus represents the status of a deployment in K8s
 type DeploymentStatus struct {
-	Environment       string `json:"environment"`
-	Status            string `json:"status"` // Running, Failed, Pending
-	Replicas          int32  `json:"replicas"`
-	AvailableReplicas int32  `json:"availableReplicas"`
-	Image             string `json:"image"`
-	LastDeployed      string `json:"lastDeployed,omitempty"`
+	Environment       string     `json:"environment"`
+	Status            string     `json:"status"` // Running, Failed, Pending
+	Replicas          int32      `json:"replicas"`
+	AvailableReplicas int32      `json:"availableReplicas"`
+	Image             string     `json:"image"`
+	LastDeployed      string     `json:"lastDeployed,omitempty"`
+	Pods              []PodInfo  `json:"pods,omitempty"`
+}
+
+// PodInfo represents basic information about a Kubernetes pod
+type PodInfo struct {
+	Name      string `json:"name"`
+	Status    string `json:"status"` // Running, Pending, Failed, etc.
+	Ready     string `json:"ready"`  // e.g., "1/1", "0/1"
+	Restarts  int32  `json:"restarts"`
+	Age       string `json:"age"`
+	Node      string `json:"node,omitempty"`
+	Namespace string `json:"namespace"`
 }
 
 // SonarQubeStats represents quality metrics from SonarQube
