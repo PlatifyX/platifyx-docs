@@ -139,6 +139,9 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			ci.GET("/releases/:id", handlers.AzureDevOpsHandler.GetRelease)
 			ci.POST("/releases/approve", handlers.AzureDevOpsHandler.ApproveRelease)
 			ci.POST("/releases/reject", handlers.AzureDevOpsHandler.RejectRelease)
+
+			ci.GET("/repositories", handlers.AzureDevOpsHandler.ListRepositories)
+			ci.GET("/repositories/stats", handlers.AzureDevOpsHandler.GetRepositoriesStats)
 		}
 
 		quality := v1.Group("/quality")

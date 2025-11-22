@@ -382,3 +382,58 @@ func (s *AzureDevOpsService) GetRepositoryURL(repositoryName string) (string, er
 
 	return url, nil
 }
+
+// GetRepositories fetches all repositories from all projects
+func (s *AzureDevOpsService) GetRepositories() ([]azuredevops.Repository, error) {
+	cacheKey := fmt.Sprintf("azure:repositories:%s", s.config.Organization)
+
+	// Try to get from cache first
+	if s.cacheClient != nil {
+		var cachedRepos []azuredevops.Repository
+		err := s.cacheClient.GetJSON(cacheKey, &cachedRepos)
+		if err == nil {
+			s.log.Info("Returning repositories from cache")
+			return cachedRepos, nil
+		}
+		s.log.Debugw("Cache miss for repositories", "error", err)
+	}
+
+	s.log.Info("Fetching Azure DevOps repositories from all projects")
+
+	repos, err := s.client.ListAllRepositories()
+	if err != nil {
+		s.log.Errorw("Failed to fetch repositories", "error", err)
+		return nil, err
+	}
+
+	// Store in cache (10 minutes TTL)
+	if s.cacheClient != nil {
+		err = s.cacheClient.Set(cacheKey, repos, 10*time.Minute)
+		if err != nil {
+			s.log.Warnw("Failed to cache repositories", "error", err)
+		} else {
+			s.log.Info("Cached repositories list")
+		}
+	}
+
+	s.log.Infow("Fetched repositories successfully from all projects", "count", len(repos))
+	return repos, nil
+}
+
+// GetRepositoriesStats returns statistics about repositories
+func (s *AzureDevOpsService) GetRepositoriesStats() (map[string]interface{}, error) {
+	repos, err := s.GetRepositories()
+	if err != nil {
+		return nil, err
+	}
+
+	totalSize := 0
+	for _, repo := range repos {
+		totalSize += repo.Size
+	}
+
+	return map[string]interface{}{
+		"totalRepositories": len(repos),
+		"totalSize":         totalSize,
+	}, nil
+}

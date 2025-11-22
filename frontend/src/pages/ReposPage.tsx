@@ -58,7 +58,7 @@ const providerInfo = {
     icon: GitBranch,
     integrationType: 'azure-devops',
     color: '#0078D4',
-    available: false
+    available: true
   }
 }
 
@@ -79,11 +79,19 @@ function ReposPage() {
     setLoading(true)
     setError(null)
 
+    // Determine the correct endpoint based on provider
+    const getEndpoint = (type: 'stats' | 'repositories') => {
+      if (provider === 'azure-repos') {
+        return type === 'stats' ? 'ci/repositories/stats' : 'ci/repositories'
+      }
+      return type === 'stats' ? 'code/stats' : 'code/repositories'
+    }
+
     try {
       if (activeTab === 'overview') {
         const params = new URLSearchParams()
         if (selectedIntegration) params.append('integration', selectedIntegration)
-        const statsRes = await fetch(buildApiUrl(`code/stats?${params.toString()}`))
+        const statsRes = await fetch(buildApiUrl(`${getEndpoint('stats')}?${params.toString()}`))
         if (!statsRes.ok) {
           if (statsRes.status === 404) {
             setStats(null)
@@ -104,7 +112,7 @@ function ReposPage() {
       if (activeTab === 'repositories' || activeTab === 'overview') {
         const params = new URLSearchParams()
         if (selectedIntegration) params.append('integration', selectedIntegration)
-        const reposRes = await fetch(buildApiUrl(`code/repositories?${params.toString()}`))
+        const reposRes = await fetch(buildApiUrl(`${getEndpoint('repositories')}?${params.toString()}`))
         if (!reposRes.ok) {
           if (reposRes.status === 404) {
             setRepositories([])
