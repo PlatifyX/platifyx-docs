@@ -15,6 +15,7 @@ import (
 
 type ServiceCatalogService struct {
 	serviceRepo        *repository.ServiceRepository
+	integrationRepo    *repository.IntegrationRepository
 	kubeService        *KubernetesService
 	azureDevOpsService *AzureDevOpsService
 	githubService      *GitHubService
@@ -23,6 +24,7 @@ type ServiceCatalogService struct {
 
 func NewServiceCatalogService(
 	serviceRepo *repository.ServiceRepository,
+	integrationRepo *repository.IntegrationRepository,
 	kubeService *KubernetesService,
 	azureDevOpsService *AzureDevOpsService,
 	githubService *GitHubService,
@@ -30,6 +32,7 @@ func NewServiceCatalogService(
 ) *ServiceCatalogService {
 	return &ServiceCatalogService{
 		serviceRepo:        serviceRepo,
+		integrationRepo:    integrationRepo,
 		kubeService:        kubeService,
 		azureDevOpsService: azureDevOpsService,
 		githubService:      githubService,
@@ -194,19 +197,55 @@ func (s *ServiceCatalogService) fetchServiceMetadata(squad, application, namespa
 		}
 	}
 
-	// If GitHub failed or not available, try Azure DevOps
-	if fileContent == "" && s.azureDevOpsService != nil {
-		s.log.Infow("Trying to fetch from Azure DevOps", "service", serviceName)
+	// If GitHub failed or not available, try ALL Azure DevOps integrations
+	if fileContent == "" && s.integrationRepo != nil {
+		s.log.Infow("Trying to fetch from Azure DevOps integrations", "service", serviceName)
 
-		fileContent, err = s.azureDevOpsService.GetFileContent(serviceName, "ci/pipeline.yml", "main")
+		// Get all Azure DevOps integrations
+		azureIntegrations, err := s.integrationRepo.GetAllByType("azuredevops")
 		if err != nil {
-			// Try refs/heads/main
-			fileContent, err = s.azureDevOpsService.GetFileContent(serviceName, "ci/pipeline.yml", "refs/heads/main")
-		}
+			s.log.Warnw("Failed to get Azure DevOps integrations", "error", err)
+		} else {
+			// Try each integration
+			for _, integration := range azureIntegrations {
+				s.log.Infow("Trying Azure DevOps integration",
+					"service", serviceName,
+					"integration", integration.Name,
+				)
 
-		if err == nil {
-			repoURL, _ = s.azureDevOpsService.GetRepositoryURL(serviceName)
-			repositoryType = "azuredevops"
+				// Create a temporary Azure DevOps service for this integration
+				azureService, err := NewAzureDevOpsServiceFromIntegration(&integration)
+				if err != nil {
+					s.log.Warnw("Failed to create Azure DevOps service from integration",
+						"integration", integration.Name,
+						"error", err,
+					)
+					continue
+				}
+
+				// Try to fetch the file
+				fileContent, err = azureService.GetFileContent(serviceName, "ci/pipeline.yml", "main")
+				if err != nil {
+					// Try refs/heads/main
+					fileContent, err = azureService.GetFileContent(serviceName, "ci/pipeline.yml", "refs/heads/main")
+				}
+
+				if err == nil {
+					repoURL, _ = azureService.GetRepositoryURL(serviceName)
+					repositoryType = "azuredevops"
+					s.log.Infow("Successfully found repository in Azure DevOps",
+						"service", serviceName,
+						"integration", integration.Name,
+					)
+					break
+				} else {
+					s.log.Debugw("Repository not found in this Azure DevOps integration",
+						"service", serviceName,
+						"integration", integration.Name,
+						"error", err.Error(),
+					)
+				}
+			}
 		}
 	}
 
