@@ -15,7 +15,7 @@ echo "✅ Usando hash bcrypt pré-testado"
 # Atualizar ou criar usuário no banco
 echo "💾 Configurando usuário no banco de dados..."
 
-psql -U platifyx -d platifyx <<SQL
+export PGPASSWORD=platifyx123 && psql -U platifyx -p 5432 -h localhost -d platifyx <<SQL
 -- Remover usuário existente se houver
 DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE email = 'admin@platifyx.com');
 DELETE FROM users WHERE email = 'admin@platifyx.com';

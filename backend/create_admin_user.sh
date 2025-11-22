@@ -7,8 +7,12 @@ set -e
 
 echo "🔐 Criando usuário admin com senha hashada..."
 
+# Criar diretório temporário fora de /tmp para evitar problemas com Go
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf $TEMP_DIR" EXIT
+
 # Criar arquivo Go temporário para gerar hash
-cat > /tmp/gen_hash.go <<'EOF'
+cat > "$TEMP_DIR/gen_hash.go" <<'EOF'
 package main
 
 import (
@@ -28,11 +32,19 @@ func main() {
 }
 EOF
 
-# Gerar hash bcrypt
+# Criar módulo Go temporário
 echo "📝 Gerando hash bcrypt para senha 'admin123'..."
-PASSWORD_HASH=$(cd /tmp && go run gen_hash.go 2>/dev/null)
+ORIGINAL_DIR=$(pwd)
+cd "$TEMP_DIR"
 
-if [ -z "$PASSWORD_HASH" ]; then
+go mod init temp_hash_gen 2>/dev/null || true
+go mod tidy 2>/dev/null || true
+
+PASSWORD_HASH=$(go run gen_hash.go 2>/dev/null)
+
+cd "$ORIGINAL_DIR"
+
+if [ -z "$PASSWORD_HASH" ] || [[ ! "$PASSWORD_HASH" =~ ^\$2[ab]\$ ]]; then
     echo "❌ Erro ao gerar hash bcrypt"
     exit 1
 fi
@@ -42,7 +54,7 @@ echo "✅ Hash gerado: ${PASSWORD_HASH:0:20}..."
 # Atualizar ou criar usuário no banco
 echo "💾 Atualizando usuário no banco de dados..."
 
-psql -U platifyx -d platifyx <<SQL
+export PGPASSWORD=platifyx123 && psql -U platifyx -p 5432 -h localhost -d platifyx <<SQL
 -- Primeiro, tentar atualizar usuário existente
 UPDATE users
 SET password_hash = '$PASSWORD_HASH',
@@ -98,6 +110,3 @@ echo "   Senha: admin123"
 echo ""
 echo "🔗 Acesse: http://localhost:7000/login"
 echo ""
-
-# Limpar arquivo temporário
-rm -f /tmp/gen_hash.go
