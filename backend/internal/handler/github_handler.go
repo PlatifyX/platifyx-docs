@@ -35,6 +35,7 @@ func (h *GitHubHandler) getService(integrationName string) (*service.GitHubServi
 
 func (h *GitHubHandler) GetStats(c *gin.Context) {
 	integrationName := c.Query("integration")
+	h.log.Infow("GetStats called", "integration", integrationName)
 	cacheKey := service.BuildKey("github", "stats")
 	if integrationName != "" {
 		cacheKey = service.BuildKey("github", "stats:"+integrationName)
