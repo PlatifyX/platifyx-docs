@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Server, Box, Layers, Network, RefreshCw } from 'lucide-react'
+import { Server, Box, Layers, Network, RefreshCw, AlertCircle } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
 
 interface Pod {
@@ -38,6 +38,7 @@ interface ClusterInfo {
 function KubernetesPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'pods' | 'deployments' | 'nodes'>('overview')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const [clusterInfo, setClusterInfo] = useState<ClusterInfo | null>(null)
   const [pods, setPods] = useState<Pod[]>([])
@@ -46,15 +47,22 @@ function KubernetesPage() {
 
   const fetchData = async () => {
     setLoading(true)
+    setError(null)
 
     try {
       const clusterRes = await fetch(buildApiUrl('kubernetes/cluster'))
       if (!clusterRes.ok) {
-        // Se não houver integração do Kubernetes, trata como sem integração
-        setClusterInfo(null)
-        setPods([])
-        setDeployments([])
-        setNodes([])
+        // 404 = sem integração configurada
+        if (clusterRes.status === 404) {
+          setClusterInfo(null)
+          setPods([])
+          setDeployments([])
+          setNodes([])
+          setError(null)
+        } else {
+          // Outros erros (503, 500, etc.) = problema no serviço
+          setError(`Erro ao buscar dados do Kubernetes (${clusterRes.status})`)
+        }
         setLoading(false)
         return
       }
@@ -86,7 +94,8 @@ function KubernetesPage() {
         }
       }
     } catch (err: any) {
-      // Em caso de erro de rede ou outros, também trata como sem integração
+      // Erro de rede ou outros erros
+      setError(`Erro de conexão: ${err.message || 'Não foi possível conectar ao backend'}`)
       setClusterInfo(null)
       setPods([])
       setDeployments([])
@@ -272,11 +281,26 @@ function KubernetesPage() {
           <div className="text-center py-15 px-5 text-lg text-text-secondary">Carregando...</div>
         )}
 
-        {!loading && !clusterInfo && (
+        {!loading && error && (
+          <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
+            <AlertCircle size={64} className="text-error mb-4" style={{ opacity: 0.7 }} />
+            <h2 className="text-2xl font-semibold text-text mb-2">Erro ao carregar dados</h2>
+            <p className="text-base text-text-secondary max-w-[500px] mb-4">{error}</p>
+            <button
+              className="flex items-center gap-2 py-2 px-4 bg-primary text-white border-none rounded-lg text-sm font-semibold cursor-pointer transition-all hover:bg-primary-dark"
+              onClick={fetchData}
+            >
+              <RefreshCw size={16} />
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && !clusterInfo && (
           <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
             <Server size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-            <h2>Nenhuma integração</h2>
-            <p>Configure uma integração do Kubernetes para visualizar clusters, pods e deployments</p>
+            <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>
+            <p className="text-base text-text-secondary max-w-[500px]">Configure uma integração do Kubernetes para visualizar clusters, pods e deployments</p>
           </div>
         )}
 

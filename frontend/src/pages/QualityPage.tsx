@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Shield } from 'lucide-react'
+import { Shield, AlertCircle, RefreshCw } from 'lucide-react'
 import QualityStatsCard from '../components/Quality/QualityStatsCard'
 import ProjectsTab from '../components/Quality/ProjectsTab'
 import IssuesTab from '../components/Quality/IssuesTab'
@@ -43,19 +43,25 @@ function QualityPage() {
 
       const response = await fetch(buildApiUrl(`quality/stats?${params.toString()}`))
       if (!response.ok) {
-        // Se não houver integração, não mostra como erro
-        setStats(null)
-        setError(null)
+        // 404 = sem integração configurada
+        if (response.status === 404) {
+          setStats(null)
+          setError(null)
+        } else {
+          // Outros erros (503, 500, etc.) = problema no serviço
+          setError(`Erro ao buscar estatísticas (${response.status})`)
+          setStats(null)
+        }
         setLoading(false)
         return
       }
       const data = await response.json()
       setStats(data)
       setError(null)
-    } catch (err) {
-      // Em caso de erro de rede ou outros, também trata como sem integração
+    } catch (err: any) {
+      // Erro de rede ou outros erros
+      setError(`Erro de conexão: ${err.message || 'Não foi possível conectar ao backend'}`)
       setStats(null)
-      setError(null)
     } finally {
       setLoading(false)
     }
@@ -81,7 +87,22 @@ function QualityPage() {
         <QualityStatsCard stats={stats} />
       )}
 
-      {!loading && !stats && !error && (
+      {!loading && error && (
+        <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
+          <AlertCircle size={64} className="text-error mb-4" style={{ opacity: 0.7 }} />
+          <h2 className="text-2xl font-semibold text-text mb-2">Erro ao carregar dados</h2>
+          <p className="text-base text-text-secondary max-w-[500px] mb-4">{error}</p>
+          <button
+            className="flex items-center gap-2 py-2 px-4 bg-primary text-white border-none rounded-lg text-sm font-semibold cursor-pointer transition-all hover:bg-primary-dark"
+            onClick={fetchStats}
+          >
+            <RefreshCw size={16} />
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && !stats && (
         <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
           <Shield size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
           <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>

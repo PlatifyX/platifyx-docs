@@ -38,20 +38,30 @@ interface Stats {
 function GitHubPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'repositories'>('overview')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const [stats, setStats] = useState<Stats | null>(null)
   const [repositories, setRepositories] = useState<Repository[]>([])
 
   const fetchData = async () => {
     setLoading(true)
+    setError(null)
 
     try {
       if (activeTab === 'overview') {
         const statsRes = await fetch(buildApiUrl('github/stats'))
         if (!statsRes.ok) {
-          // Se não houver integração do GitHub, trata como sem integração
-          setStats(null)
-          setRepositories([])
+          // 404 = sem integração configurada
+          if (statsRes.status === 404) {
+            setStats(null)
+            setRepositories([])
+            setError(null)
+          } else {
+            // Outros erros (503, 500, etc.) = problema no serviço
+            setError(`Erro ao buscar estatísticas do GitHub (${statsRes.status})`)
+            setStats(null)
+            setRepositories([])
+          }
           setLoading(false)
           return
         }
@@ -62,11 +72,23 @@ function GitHubPage() {
       if (activeTab === 'repositories' || activeTab === 'overview') {
         const reposRes = await fetch(buildApiUrl('github/repositories'))
         if (!reposRes.ok) {
-          // Se não houver integração do GitHub, trata como sem integração
-          setRepositories([])
-          if (activeTab === 'repositories') {
-            setLoading(false)
-            return
+          // 404 = sem integração configurada
+          if (reposRes.status === 404) {
+            setRepositories([])
+            if (activeTab === 'repositories') {
+              setStats(null)
+              setError(null)
+              setLoading(false)
+              return
+            }
+          } else {
+            // Outros erros (503, 500, etc.) = problema no serviço
+            setError(`Erro ao buscar repositórios (${reposRes.status})`)
+            setRepositories([])
+            if (activeTab === 'repositories') {
+              setLoading(false)
+              return
+            }
           }
         } else {
           const data = await reposRes.json()
@@ -74,7 +96,8 @@ function GitHubPage() {
         }
       }
     } catch (err: any) {
-      // Em caso de erro de rede ou outros, também trata como sem integração
+      // Erro de rede ou outros erros
+      setError(`Erro de conexão: ${err.message || 'Não foi possível conectar ao backend'}`)
       setStats(null)
       setRepositories([])
     } finally {
@@ -268,7 +291,22 @@ function GitHubPage() {
       <div className="min-h-[400px]">
         {loading && <div className="text-center py-[60px] px-5 text-lg text-text-secondary">Carregando...</div>}
 
-        {!loading && !stats && activeTab === 'overview' && (
+        {!loading && error && (
+          <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
+            <AlertCircle size={64} className="text-error mb-4" style={{ opacity: 0.7 }} />
+            <h2 className="text-2xl font-semibold text-text mb-2">Erro ao carregar dados</h2>
+            <p className="text-base text-text-secondary max-w-[500px] mb-4">{error}</p>
+            <button
+              className="flex items-center gap-2 py-2 px-4 bg-primary text-white border-none rounded-lg text-sm font-semibold cursor-pointer transition-all hover:bg-primary-dark"
+              onClick={fetchData}
+            >
+              <RefreshCw size={16} />
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && !stats && activeTab === 'overview' && (
           <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
             <Github size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
             <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>
@@ -276,7 +314,7 @@ function GitHubPage() {
           </div>
         )}
 
-        {!loading && repositories.length === 0 && activeTab === 'repositories' && (
+        {!loading && !error && repositories.length === 0 && activeTab === 'repositories' && (
           <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
             <Github size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
             <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>

@@ -49,6 +49,7 @@ interface LokiApp {
 
 function ObservabilityPage() {
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const [overviewStats, setOverviewStats] = useState<OverviewStats>({})
   const [prometheusAlerts, setPrometheusAlerts] = useState<PrometheusAlert[]>([])
@@ -88,6 +89,7 @@ function ObservabilityPage() {
 
   const fetchData = async () => {
     setLoading(true)
+    setError(null)
 
     try {
       // Fetch Prometheus stats, Grafana stats, Prometheus alerts, Grafana config, and Grafana dashboards
@@ -102,13 +104,35 @@ function ObservabilityPage() {
       fetchLokiApps()
 
       const stats: OverviewStats = {}
+      let hasAnyIntegration = false
+      let hasError = false
+      const errorStatuses: number[] = []
 
+      // Check Prometheus
       if (prometheusStatsRes.ok) {
         stats.prometheus = await prometheusStatsRes.json()
+        hasAnyIntegration = true
+      } else if (prometheusStatsRes.status !== 404) {
+        hasError = true
+        errorStatuses.push(prometheusStatsRes.status)
       }
 
+      // Check Grafana
       if (grafanaStatsRes.ok) {
         stats.grafana = await grafanaStatsRes.json()
+        hasAnyIntegration = true
+      } else if (grafanaStatsRes.status !== 404) {
+        hasError = true
+        errorStatuses.push(grafanaStatsRes.status)
+      }
+
+      // Se todas as integrações falharam com erro (não 404), mostra erro
+      if (hasError && !hasAnyIntegration) {
+        setError(`Erro ao buscar dados de observabilidade (${errorStatuses.join(', ')})`)
+        setOverviewStats({})
+        setPrometheusAlerts([])
+        setLoading(false)
+        return
       }
 
       setOverviewStats(stats)
@@ -137,7 +161,8 @@ function ObservabilityPage() {
         }
       }
     } catch (err: any) {
-      // Em caso de erro de rede ou outros, também trata como sem integração
+      // Erro de rede ou outros erros
+      setError(`Erro de conexão: ${err.message || 'Não foi possível conectar ao backend'}`)
       setOverviewStats({})
       setPrometheusAlerts([])
     } finally {
@@ -303,7 +328,22 @@ function ObservabilityPage() {
       <div className="min-h-[400px]">
         {loading && <div className="text-center py-[60px] px-5 text-lg text-text-secondary">Carregando...</div>}
 
-        {!loading && !overviewStats.prometheus && !overviewStats.grafana && lokiApps.length === 0 && (
+        {!loading && error && (
+          <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
+            <AlertCircle size={64} className="text-error mb-4" style={{ opacity: 0.7 }} />
+            <h2 className="text-2xl font-semibold text-text mb-2">Erro ao carregar dados</h2>
+            <p className="text-base text-text-secondary max-w-[500px] mb-4">{error}</p>
+            <button
+              className="flex items-center gap-2 py-2 px-4 bg-primary text-white border-none rounded-lg text-sm font-semibold cursor-pointer transition-all hover:bg-primary-dark"
+              onClick={fetchData}
+            >
+              <RefreshCw size={16} />
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && !overviewStats.prometheus && !overviewStats.grafana && lokiApps.length === 0 && (
           <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
             <Layers size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
             <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>
