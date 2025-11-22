@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Github, AlertCircle, RefreshCw, ExternalLink, Star, GitFork } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
+import IntegrationSelector from '../components/Common/IntegrationSelector'
 
 interface Repository {
   id: number
@@ -39,6 +40,7 @@ function GitHubPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'repositories'>('overview')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedIntegration, setSelectedIntegration] = useState<string>('')
 
   const [stats, setStats] = useState<Stats | null>(null)
   const [repositories, setRepositories] = useState<Repository[]>([])
@@ -49,7 +51,9 @@ function GitHubPage() {
 
     try {
       if (activeTab === 'overview') {
-        const statsRes = await fetch(buildApiUrl('github/stats'))
+        const params = new URLSearchParams()
+        if (selectedIntegration) params.append('integration', selectedIntegration)
+        const statsRes = await fetch(buildApiUrl(`github/stats?${params.toString()}`))
         if (!statsRes.ok) {
           // 404 = sem integração configurada
           if (statsRes.status === 404) {
@@ -70,7 +74,9 @@ function GitHubPage() {
       }
 
       if (activeTab === 'repositories' || activeTab === 'overview') {
-        const reposRes = await fetch(buildApiUrl('github/repositories'))
+        const params = new URLSearchParams()
+        if (selectedIntegration) params.append('integration', selectedIntegration)
+        const reposRes = await fetch(buildApiUrl(`github/repositories?${params.toString()}`))
         if (!reposRes.ok) {
           // 404 = sem integração configurada
           if (reposRes.status === 404) {
@@ -107,7 +113,7 @@ function GitHubPage() {
 
   useEffect(() => {
     fetchData()
-  }, [activeTab])
+  }, [activeTab, selectedIntegration])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -268,6 +274,12 @@ function GitHubPage() {
           <span>Atualizar</span>
         </button>
       </div>
+
+      <IntegrationSelector
+        integrationType="github"
+        selectedIntegration={selectedIntegration}
+        onIntegrationChange={setSelectedIntegration}
+      />
 
       <div className="flex gap-2 border-b-2 border-border mb-6">
         <button

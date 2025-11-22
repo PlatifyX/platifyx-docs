@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Server, Box, Layers, Network, RefreshCw, AlertCircle } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
+import IntegrationSelector from '../components/Common/IntegrationSelector'
 
 interface Pod {
   name: string
@@ -39,6 +40,7 @@ function KubernetesPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'pods' | 'deployments' | 'nodes'>('overview')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedIntegration, setSelectedIntegration] = useState<string>('')
 
   const [clusterInfo, setClusterInfo] = useState<ClusterInfo | null>(null)
   const [pods, setPods] = useState<Pod[]>([])
@@ -50,7 +52,10 @@ function KubernetesPage() {
     setError(null)
 
     try {
-      const clusterRes = await fetch(buildApiUrl('kubernetes/cluster'))
+      const params = new URLSearchParams()
+      if (selectedIntegration) params.append('integration', selectedIntegration)
+
+      const clusterRes = await fetch(buildApiUrl(`kubernetes/cluster?${params.toString()}`))
       if (!clusterRes.ok) {
         // 404 = sem integração configurada
         if (clusterRes.status === 404) {
@@ -71,7 +76,9 @@ function KubernetesPage() {
       setClusterInfo(data)
 
       if (activeTab === 'pods' || activeTab === 'overview') {
-        const podsRes = await fetch(buildApiUrl('kubernetes/pods'))
+        const params = new URLSearchParams()
+        if (selectedIntegration) params.append('integration', selectedIntegration)
+        const podsRes = await fetch(buildApiUrl(`kubernetes/pods?${params.toString()}`))
         if (podsRes.ok) {
           const data = await podsRes.json()
           setPods(data.pods || [])
@@ -79,7 +86,9 @@ function KubernetesPage() {
       }
 
       if (activeTab === 'deployments' || activeTab === 'overview') {
-        const deploymentsRes = await fetch(buildApiUrl('kubernetes/deployments'))
+        const params = new URLSearchParams()
+        if (selectedIntegration) params.append('integration', selectedIntegration)
+        const deploymentsRes = await fetch(buildApiUrl(`kubernetes/deployments?${params.toString()}`))
         if (deploymentsRes.ok) {
           const data = await deploymentsRes.json()
           setDeployments(data.deployments || [])
@@ -87,7 +96,9 @@ function KubernetesPage() {
       }
 
       if (activeTab === 'nodes' || activeTab === 'overview') {
-        const nodesRes = await fetch(buildApiUrl('kubernetes/nodes'))
+        const params = new URLSearchParams()
+        if (selectedIntegration) params.append('integration', selectedIntegration)
+        const nodesRes = await fetch(buildApiUrl(`kubernetes/nodes?${params.toString()}`))
         if (nodesRes.ok) {
           const data = await nodesRes.json()
           setNodes(data.nodes || [])
@@ -107,7 +118,7 @@ function KubernetesPage() {
 
   useEffect(() => {
     fetchData()
-  }, [activeTab])
+  }, [activeTab, selectedIntegration])
 
   const renderOverview = () => (
     <div>
@@ -248,6 +259,12 @@ function KubernetesPage() {
           <span>Atualizar</span>
         </button>
       </div>
+
+      <IntegrationSelector
+        integrationType="kubernetes"
+        selectedIntegration={selectedIntegration}
+        onIntegrationChange={setSelectedIntegration}
+      />
 
       <div className="flex gap-2 border-b-2 border-border mb-6">
         <button

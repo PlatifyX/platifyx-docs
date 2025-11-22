@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { DollarSign, TrendingUp, TrendingDown, Server, Activity, Package, Filter } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
+import IntegrationSelector from '../components/Common/IntegrationSelector'
 
 interface FinOpsStats {
   totalCost: number
@@ -35,17 +36,19 @@ function FinOpsPage() {
   const [resources, setResources] = useState<CloudResource[]>([])
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [providerFilter, setProviderFilter] = useState('')
+  const [selectedIntegration, setSelectedIntegration] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchStats()
     fetchResources()
-  }, [providerFilter])
+  }, [providerFilter, selectedIntegration])
 
   const fetchStats = async () => {
     try {
       const queryParams = new URLSearchParams()
       if (providerFilter) queryParams.append('provider', providerFilter)
+      if (selectedIntegration) queryParams.append('integration', selectedIntegration)
 
       console.log('Fetching stats from:', buildApiUrl(`finops/stats?${queryParams}`))
       const response = await fetch(buildApiUrl(`finops/stats?${queryParams}`))
@@ -71,6 +74,7 @@ function FinOpsPage() {
     try {
       const queryParams = new URLSearchParams()
       if (providerFilter) queryParams.append('provider', providerFilter)
+      if (selectedIntegration) queryParams.append('integration', selectedIntegration)
 
       console.log('Fetching resources from:', buildApiUrl(`finops/resources?${queryParams}`))
       const response = await fetch(buildApiUrl(`finops/resources?${queryParams}`))
@@ -136,6 +140,12 @@ function FinOpsPage() {
           </div>
         </div>
       </div>
+
+      <IntegrationSelector
+        integrationType="aws"
+        selectedIntegration={selectedIntegration}
+        onIntegrationChange={setSelectedIntegration}
+      />
 
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">

@@ -4,6 +4,7 @@ import QualityStatsCard from '../components/Quality/QualityStatsCard'
 import ProjectsTab from '../components/Quality/ProjectsTab'
 import IssuesTab from '../components/Quality/IssuesTab'
 import QualityFilters, { QualityFilterValues } from '../components/Quality/QualityFilters'
+import IntegrationSelector from '../components/Common/IntegrationSelector'
 import { buildApiUrl } from '../config/api'
 
 type TabType = 'projects' | 'issues'
@@ -71,6 +72,13 @@ function QualityPage() {
     setFilters(newFilters)
   }
 
+  const handleIntegrationChange = (integration: string) => {
+    handleFilterChange({
+      ...filters,
+      integration
+    })
+  }
+
   return (
     <div className="max-w-[1400px] mx-auto">
       <div className="mb-8">
@@ -82,6 +90,12 @@ function QualityPage() {
           </div>
         </div>
       </div>
+
+      <IntegrationSelector
+        integrationType="sonarqube"
+        selectedIntegration={filters.integration}
+        onIntegrationChange={handleIntegrationChange}
+      />
 
       {!loading && stats && !error && (
         <QualityStatsCard stats={stats} />
