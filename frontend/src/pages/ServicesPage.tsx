@@ -316,27 +316,27 @@ function ServicesPage() {
                       <div className={styles.metric}>
                         <Bug size={14} style={{ color: 'var(--color-error)' }} />
                         <span className={styles.metricLabel}>Bugs</span>
-                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name].sonarqube.bugs)}</span>
+                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name]?.sonarqube?.bugs || 0)}</span>
                       </div>
                       <div className={styles.metric}>
                         <Shield size={14} style={{ color: 'var(--color-error)' }} />
                         <span className={styles.metricLabel}>Vulnerabilidades</span>
-                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name].sonarqube.vulnerabilities)}</span>
+                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name]?.sonarqube?.vulnerabilities || 0)}</span>
                       </div>
                       <div className={styles.metric}>
                         <Code size={14} style={{ color: 'var(--color-warning)' }} />
                         <span className={styles.metricLabel}>Code Smells</span>
-                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name].sonarqube.codeSmells)}</span>
+                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name]?.sonarqube?.codeSmells || 0)}</span>
                       </div>
                       <div className={styles.metric}>
                         <AlertTriangle size={14} style={{ color: 'var(--color-warning)' }} />
                         <span className={styles.metricLabel}>Security Hotspots</span>
-                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name].sonarqube.securityHotspots)}</span>
+                        <span className={styles.metricValue}>{formatNumber(serviceMetrics[service.name]?.sonarqube?.securityHotspots || 0)}</span>
                       </div>
                       <div className={styles.metric}>
                         <TrendingUp size={14} style={{ color: 'var(--color-success)' }} />
                         <span className={styles.metricLabel}>Cobertura</span>
-                        <span className={styles.metricValue}>{serviceMetrics[service.name].sonarqube.coverage.toFixed(1)}%</span>
+                        <span className={styles.metricValue}>{serviceMetrics[service.name]?.sonarqube?.coverage?.toFixed(1) || '0.0'}%</span>
                       </div>
                     </div>
                   </div>
@@ -349,22 +349,22 @@ function ServicesPage() {
                     <div className={styles.buildInfo}>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Status:</span>
-                        <span className={`${styles.buildStatus} ${styles[`status${serviceMetrics[service.name].stageBuild.status}`]}`}>
-                          {serviceMetrics[service.name].stageBuild.status}
+                        <span className={`${styles.buildStatus} ${styles[`status${serviceMetrics[service.name]?.stageBuild?.status}`]}`}>
+                          {serviceMetrics[service.name]?.stageBuild?.status}
                         </span>
                       </div>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Build:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name].stageBuild.buildNumber}</span>
+                        <span className={styles.buildValue}>{serviceMetrics[service.name]?.stageBuild?.buildNumber}</span>
                       </div>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Branch:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name].stageBuild.sourceBranch}</span>
+                        <span className={styles.buildValue}>{serviceMetrics[service.name]?.stageBuild?.sourceBranch}</span>
                       </div>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Finished:</span>
                         <span className={styles.buildValue}>
-                          {new Date(serviceMetrics[service.name].stageBuild.finishTime).toLocaleString('pt-BR')}
+                          {serviceMetrics[service.name]?.stageBuild?.finishTime && new Date(serviceMetrics[service.name]?.stageBuild?.finishTime!).toLocaleString('pt-BR')}
                         </span>
                       </div>
                     </div>
@@ -378,22 +378,22 @@ function ServicesPage() {
                     <div className={styles.buildInfo}>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Status:</span>
-                        <span className={`${styles.buildStatus} ${styles[`status${serviceMetrics[service.name].mainBuild.status}`]}`}>
-                          {serviceMetrics[service.name].mainBuild.status}
+                        <span className={`${styles.buildStatus} ${styles[`status${serviceMetrics[service.name]?.mainBuild?.status}`]}`}>
+                          {serviceMetrics[service.name]?.mainBuild?.status}
                         </span>
                       </div>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Build:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name].mainBuild.buildNumber}</span>
+                        <span className={styles.buildValue}>{serviceMetrics[service.name]?.mainBuild?.buildNumber}</span>
                       </div>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Branch:</span>
-                        <span className={styles.buildValue}>{serviceMetrics[service.name].mainBuild.sourceBranch}</span>
+                        <span className={styles.buildValue}>{serviceMetrics[service.name]?.mainBuild?.sourceBranch}</span>
                       </div>
                       <div className={styles.buildRow}>
                         <span className={styles.buildLabel}>Finished:</span>
                         <span className={styles.buildValue}>
-                          {new Date(serviceMetrics[service.name].mainBuild.finishTime).toLocaleString('pt-BR')}
+                          {serviceMetrics[service.name]?.mainBuild?.finishTime && new Date(serviceMetrics[service.name]?.mainBuild?.finishTime!).toLocaleString('pt-BR')}
                         </span>
                       </div>
                     </div>

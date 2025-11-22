@@ -43,12 +43,20 @@ function QualityPage() {
       if (filters.project) params.append('project', filters.project)
 
       const response = await fetch(buildApiUrl(`quality/stats?${params.toString()}`))
-      if (!response.ok) throw new Error('Failed to fetch stats')
+      if (!response.ok) {
+        // Se não houver integração, não mostra como erro
+        setStats(null)
+        setError(null)
+        setLoading(false)
+        return
+      }
       const data = await response.json()
       setStats(data)
       setError(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load statistics')
+      // Em caso de erro de rede ou outros, também trata como sem integração
+      setStats(null)
+      setError(null)
     } finally {
       setLoading(false)
     }
@@ -74,12 +82,11 @@ function QualityPage() {
         <QualityStatsCard stats={stats} />
       )}
 
-      {error && (
-        <div className={styles.error}>
-          <p>⚠️ {error}</p>
-          <p className={styles.errorHint}>
-            Verifique se as credenciais do SonarQube estão configuradas no backend
-          </p>
+      {!loading && !stats && !error && (
+        <div className={styles.emptyState}>
+          <Shield size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+          <h2>Nenhuma integração</h2>
+          <p>Configure uma integração do SonarQube para visualizar métricas de qualidade de código</p>
         </div>
       )}
 

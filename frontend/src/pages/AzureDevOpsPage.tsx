@@ -51,11 +51,20 @@ function AzureDevOpsPage() {
       if (filters.endDate) params.append('endDate', filters.endDate)
 
       const response = await fetch(buildApiUrl(`ci/stats?${params.toString()}`))
-      if (!response.ok) throw new Error('Failed to fetch stats')
+      if (!response.ok) {
+        // Se não houver integração, não mostra como erro
+        setStats(null)
+        setError(null)
+        setLoading(false)
+        return
+      }
       const data = await response.json()
       setStats(data)
+      setError(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load stats')
+      // Em caso de erro de rede ou outros, também trata como sem integração
+      setStats(null)
+      setError(null)
     } finally {
       setLoading(false)
     }
@@ -98,12 +107,11 @@ function AzureDevOpsPage() {
         <StatsCard stats={stats} />
       )}
 
-      {error && (
-        <div className={styles.error}>
-          <p>⚠️ {error}</p>
-          <p className={styles.errorHint}>
-            Verifique se as credenciais estão configuradas no backend
-          </p>
+      {!loading && !stats && !error && (
+        <div className={styles.emptyState}>
+          <GitBranch size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+          <h2>Nenhuma integração</h2>
+          <p>Configure uma integração de CI/CD (Azure DevOps, GitHub Actions, Jenkins) para visualizar pipelines e builds</p>
         </div>
       )}
 

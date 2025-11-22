@@ -51,21 +51,35 @@ function GitHubPage() {
     try {
       if (activeTab === 'overview') {
         const statsRes = await fetch(buildApiUrl('github/stats'))
-        if (statsRes.ok) {
-          const data = await statsRes.json()
-          setStats(data)
+        if (!statsRes.ok) {
+          // Se não houver integração do GitHub, trata como sem integração
+          setStats(null)
+          setRepositories([])
+          setLoading(false)
+          return
         }
+        const data = await statsRes.json()
+        setStats(data)
       }
 
       if (activeTab === 'repositories' || activeTab === 'overview') {
         const reposRes = await fetch(buildApiUrl('github/repositories'))
-        if (reposRes.ok) {
+        if (!reposRes.ok) {
+          // Se não houver integração do GitHub, trata como sem integração
+          setRepositories([])
+          if (activeTab === 'repositories') {
+            setLoading(false)
+            return
+          }
+        } else {
           const data = await reposRes.json()
           setRepositories(data.repositories || [])
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Erro ao buscar dados do GitHub')
+      // Em caso de erro de rede ou outros, também trata como sem integração
+      setStats(null)
+      setRepositories([])
     } finally {
       setLoading(false)
     }
@@ -256,21 +270,26 @@ function GitHubPage() {
       </div>
 
       <div className={styles.content}>
-        {error && (
-          <div className={styles.error}>
-            <AlertCircle size={20} />
-            <span>{error}</span>
+        {loading && <div className={styles.loading}>Carregando...</div>}
+
+        {!loading && !stats && activeTab === 'overview' && (
+          <div className={styles.emptyState}>
+            <Github size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+            <h2>Nenhuma integração</h2>
+            <p>Configure uma integração do GitHub para visualizar repositórios e estatísticas</p>
           </div>
         )}
 
-        {loading && !error && <div className={styles.loading}>Carregando...</div>}
-
-        {!loading && !error && (
-          <>
-            {activeTab === 'overview' && renderOverview()}
-            {activeTab === 'repositories' && renderRepositories()}
-          </>
+        {!loading && repositories.length === 0 && activeTab === 'repositories' && (
+          <div className={styles.emptyState}>
+            <Github size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+            <h2>Nenhuma integração</h2>
+            <p>Configure uma integração do GitHub para visualizar repositórios</p>
+          </div>
         )}
+
+        {!loading && stats && activeTab === 'overview' && renderOverview()}
+        {!loading && repositories.length > 0 && activeTab === 'repositories' && renderRepositories()}
       </div>
     </div>
   )

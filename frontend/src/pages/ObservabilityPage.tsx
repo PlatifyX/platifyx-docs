@@ -175,7 +175,9 @@ function ObservabilityPage() {
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Erro ao buscar dados de observabilidade')
+      // Em caso de erro de rede ou outros, também trata como sem integração
+      setOverviewStats({})
+      setPrometheusAlerts([])
     } finally {
       setLoading(false)
     }
@@ -330,16 +332,17 @@ function ObservabilityPage() {
       </div>
 
       <div className={styles.content}>
-        {error && (
-          <div className={styles.error}>
-            <AlertCircle size={20} />
-            <span>{error}</span>
+        {loading && <div className={styles.loading}>Carregando...</div>}
+
+        {!loading && !overviewStats.prometheus && !overviewStats.grafana && lokiApps.length === 0 && (
+          <div className={styles.emptyState}>
+            <Layers size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+            <h2>Nenhuma integração</h2>
+            <p>Configure integrações de Prometheus, Grafana ou Loki para monitorar métricas, dashboards e logs</p>
           </div>
         )}
 
-        {loading && !error && <div className={styles.loading}>Carregando...</div>}
-
-        {!loading && !error && renderOverview()}
+        {!loading && (overviewStats.prometheus || overviewStats.grafana || lokiApps.length > 0) && renderOverview()}
       </div>
     </div>
   )

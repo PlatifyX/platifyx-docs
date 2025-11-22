@@ -52,10 +52,18 @@ function KubernetesPage() {
 
     try {
       const clusterRes = await fetch(buildApiUrl('kubernetes/cluster'))
-      if (clusterRes.ok) {
-        const data = await clusterRes.json()
-        setClusterInfo(data)
+      if (!clusterRes.ok) {
+        // Se não houver integração do Kubernetes, trata como sem integração
+        setClusterInfo(null)
+        setPods([])
+        setDeployments([])
+        setNodes([])
+        setLoading(false)
+        return
       }
+
+      const data = await clusterRes.json()
+      setClusterInfo(data)
 
       if (activeTab === 'pods' || activeTab === 'overview') {
         const podsRes = await fetch(buildApiUrl('kubernetes/pods'))
@@ -81,7 +89,11 @@ function KubernetesPage() {
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Erro ao buscar dados do cluster')
+      // Em caso de erro de rede ou outros, também trata como sem integração
+      setClusterInfo(null)
+      setPods([])
+      setDeployments([])
+      setNodes([])
     } finally {
       setLoading(false)
     }
@@ -259,18 +271,19 @@ function KubernetesPage() {
       </div>
 
       <div className={styles.content}>
-        {error && (
-          <div className={styles.error}>
-            <AlertCircle size={20} />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {loading && !error && (
+        {loading && (
           <div className={styles.loading}>Carregando...</div>
         )}
 
-        {!loading && !error && (
+        {!loading && !clusterInfo && (
+          <div className={styles.emptyState}>
+            <Server size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+            <h2>Nenhuma integração</h2>
+            <p>Configure uma integração do Kubernetes para visualizar clusters, pods e deployments</p>
+          </div>
+        )}
+
+        {!loading && clusterInfo && (
           <>
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'pods' && renderPods()}
