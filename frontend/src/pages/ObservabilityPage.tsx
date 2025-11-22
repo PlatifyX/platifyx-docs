@@ -47,6 +47,25 @@ interface LokiApp {
   environment?: string
 }
 
+interface LokiLogEntry {
+  timestamp: string
+  line: string
+  labels: { [key: string]: string }
+}
+
+interface LokiStream {
+  stream: { [key: string]: string }
+  values: string[][] // [[timestamp, line], ...]
+}
+
+interface LokiQueryResult {
+  status: string
+  data: {
+    resultType: string
+    result: LokiStream[]
+  }
+}
+
 function ObservabilityPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -57,6 +76,9 @@ function ObservabilityPage() {
   const [dashboardUid, setDashboardUid] = useState<string>('')
   const [lokiApps, setLokiApps] = useState<LokiApp[]>([])
   const [loadingLokiApps, setLoadingLokiApps] = useState(false)
+  const [selectedApp, setSelectedApp] = useState<string | null>(null)
+  const [logs, setLogs] = useState<LokiLogEntry[]>([])
+  const [loadingLogs, setLoadingLogs] = useState(false)
 
   const parseAppName = (appName: string): LokiApp => {
     const parts = appName.split('-')
@@ -84,6 +106,43 @@ function ObservabilityPage() {
       console.error('Failed to fetch Loki apps:', err)
     } finally {
       setLoadingLokiApps(false)
+    }
+  }
+
+  const fetchLogsForApp = async (appName: string) => {
+    setSelectedApp(appName)
+    setLoadingLogs(true)
+    setLogs([])
+
+    try {
+      const response = await fetch(buildApiUrl(`observability/logs/apps/${appName}?limit=100&duration=1h`))
+      if (response.ok) {
+        const data: LokiQueryResult = await response.json()
+
+        // Parse logs from Loki format
+        const parsedLogs: LokiLogEntry[] = []
+        if (data.data && data.data.result) {
+          data.data.result.forEach(stream => {
+            stream.values.forEach(([timestamp, line]) => {
+              parsedLogs.push({
+                timestamp: new Date(parseInt(timestamp) / 1000000).toISOString(),
+                line,
+                labels: stream.stream
+              })
+            })
+          })
+        }
+
+        // Sort by timestamp descending (newest first)
+        parsedLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        setLogs(parsedLogs)
+      } else {
+        console.error('Failed to fetch logs:', response.status)
+      }
+    } catch (err) {
+      console.error('Failed to fetch logs for app:', err)
+    } finally {
+      setLoadingLogs(false)
     }
   }
 
@@ -273,7 +332,11 @@ function ObservabilityPage() {
                 </thead>
                 <tbody>
                   {lokiApps.map((app, idx) => (
-                    <tr key={idx} className="hover:bg-background">
+                    <tr
+                      key={idx}
+                      className={`hover:bg-background cursor-pointer transition-colors ${selectedApp === app.name ? 'bg-primary/10' : ''}`}
+                      onClick={() => fetchLogsForApp(app.name)}
+                    >
                       <td className="py-3.5 px-4 border-b border-border text-sm text-text last:border-b-0 flex items-center font-medium">
                         <FileText size={16} style={{ marginRight: '8px' }} />
                         {app.name}
@@ -299,6 +362,55 @@ function ObservabilityPage() {
         ) : (
           <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
             <p>Nenhuma aplicação com logs encontrada</p>
+          </div>
+        )}
+
+        {selectedApp && (
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-text flex items-center gap-2">
+                <FileText size={20} />
+                Logs de {selectedApp}
+              </h3>
+              <button
+                onClick={() => setSelectedApp(null)}
+                className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text border border-border rounded-lg hover:bg-background transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+
+            {loadingLogs ? (
+              <div className="text-center py-12 text-text-secondary">
+                Carregando logs...
+              </div>
+            ) : logs.length > 0 ? (
+              <div className="bg-surface border border-border rounded-xl overflow-hidden">
+                <div className="max-h-[600px] overflow-y-auto p-4 font-mono text-xs">
+                  {logs.map((log, idx) => (
+                    <div key={idx} className="mb-2 hover:bg-background/50 p-2 rounded transition-colors">
+                      <div className="flex gap-4">
+                        <span className="text-text-secondary whitespace-nowrap">
+                          {new Date(log.timestamp).toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          })}
+                        </span>
+                        <span className="text-text break-all flex-1">{log.line}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-text-secondary bg-surface border border-border rounded-xl">
+                Nenhum log encontrado para esta aplicação nas últimas 1 hora
+              </div>
+            )}
           </div>
         )}
       </div>
