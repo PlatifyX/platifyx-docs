@@ -421,6 +421,8 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, log *logg
 			auth.POST("/refresh", handlers.AuthHandler.RefreshToken)
 			auth.GET("/me", handlers.AuthHandler.Me)
 			auth.POST("/change-password", handlers.AuthHandler.ChangePassword)
+			auth.POST("/forgot-password", handlers.AuthHandler.ForgotPassword)
+			auth.POST("/reset-password", handlers.AuthHandler.ResetPassword)
 
 			// SSO Login
 			auth.GET("/sso/:provider", handlers.SSOHandler.LoginWithSSO)

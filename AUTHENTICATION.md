@@ -14,19 +14,28 @@ O PlatifyX agora possui um sistema completo de autenticação com JWT (JSON Web 
    - Feedback de erros em tempo real
    - Loading state durante autenticação
    - Credenciais padrão visíveis em desenvolvimento
+   - Link para "Esqueci minha senha"
 
-2. **Contexto de Autenticação** (`AuthContext`)
+2. **Recuperação de Senha** (`/forgot-password` e `/reset-password`)
+   - Página de solicitação de reset de senha
+   - Página de redefinição com token
+   - Validação de força de senha
+   - Indicadores visuais de requisitos de senha
+   - Token com expiração de 1 hora
+   - Tokens de uso único (não podem ser reutilizados)
+
+3. **Contexto de Autenticação** (`AuthContext`)
    - Gerenciamento global do estado de autenticação
    - Verificação automática de sessão ao carregar a aplicação
    - Métodos `login()` e `logout()`
    - Hook `useAuth()` para acesso fácil em qualquer componente
 
-3. **Proteção de Rotas** (`PrivateRoute`)
+4. **Proteção de Rotas** (`PrivateRoute`)
    - Todas as rotas principais estão protegidas
    - Redirecionamento automático para `/login` se não autenticado
    - Loading state durante verificação de autenticação
 
-4. **Header Atualizado**
+5. **Header Atualizado**
    - Exibe nome do usuário logado
    - Menu dropdown com opções de perfil
    - Botão de logout
@@ -42,6 +51,8 @@ O backend já possui toda a infraestrutura necessária:
    - `POST /refresh` - Renovação de token
    - `GET /me` - Obter dados do usuário autenticado
    - `POST /change-password` - Alteração de senha
+   - `POST /forgot-password` - Solicitar reset de senha
+   - `POST /reset-password` - Redefinir senha com token
 
 2. **Sistema RBAC (Role-Based Access Control)**
    - 4 roles padrão: Admin, Platform Engineer, Developer, Viewer
@@ -52,6 +63,7 @@ O backend já possui toda a infraestrutura necessária:
    - Tabela `users` com suporte a SSO
    - Tabela `sessions` para gerenciamento de tokens
    - Tabela `roles` e `permissions` para RBAC
+   - Tabela `password_reset_tokens` para tokens de recuperação de senha
 
 ## Fluxo de Autenticação
 
@@ -70,6 +82,34 @@ O backend já possui toda a infraestrutura necessária:
 6. Frontend armazena token e redireciona para /home
    ↓
 7. Todas as requisições subsequentes incluem o token no header
+```
+
+## Fluxo de Recuperação de Senha
+
+```
+1. Usuário clica em "Esqueceu a senha?" na página de login
+   ↓
+2. Sistema redireciona para /forgot-password
+   ↓
+3. Usuário insere seu email e clica em "Enviar link de reset"
+   ↓
+4. Backend gera token único com expiração de 1 hora
+   ↓
+5. Backend armazena token na tabela password_reset_tokens
+   ↓
+6. Sistema exibe mensagem de sucesso (em dev, mostra link direto)
+   ↓
+7. Usuário clica no link de reset (em produção, receberia por email)
+   ↓
+8. Sistema redireciona para /reset-password?token=XXX
+   ↓
+9. Usuário define nova senha (com validação de força)
+   ↓
+10. Backend valida token e redefine senha
+   ↓
+11. Token é marcado como usado e todas as sessões são invalidadas
+   ↓
+12. Sistema redireciona para /login com mensagem de sucesso
 ```
 
 ## Credenciais Padrão
@@ -219,7 +259,8 @@ location.reload()
 
 ## Próximos Passos
 
-- [ ] Implementar "Esqueci minha senha"
+- [x] Implementar "Esqueci minha senha" ✅
+- [ ] Configurar envio de email para reset de senha (atualmente usa link direto em dev)
 - [ ] Adicionar autenticação de dois fatores (2FA)
 - [ ] Implementar SSO com Google/Microsoft
 - [ ] Adicionar rate limiting no endpoint de login

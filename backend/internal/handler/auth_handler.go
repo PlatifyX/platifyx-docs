@@ -182,3 +182,69 @@ func (h *AuthHandler) GetPermissions(c *gin.Context) {
 
 	c.JSON(http.StatusOK, permissions)
 }
+
+// ForgotPassword godoc
+// @Summary Forgot Password
+// @Description Request password reset token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body domain.ResetPasswordRequest true "Email for password reset"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /auth/forgot-password [post]
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var req domain.ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
+	token, err := h.authService.ForgotPassword(req, ipAddress, userAgent)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Em desenvolvimento, retorna o token para facilitar testes
+	// Em produção, isso seria enviado por email
+	response := gin.H{"message": "Password reset email sent"}
+	if token != "" {
+		// Apenas para desenvolvimento - remover em produção
+		response["token"] = token
+		response["reset_url"] = "http://localhost:7000/reset-password?token=" + token
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ResetPassword godoc
+// @Summary Reset Password
+// @Description Reset password using token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body domain.ConfirmResetPasswordRequest true "Reset password request"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /auth/reset-password [post]
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req domain.ConfirmResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
+	if err := h.authService.ResetPassword(req, ipAddress, userAgent); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset successfully"})
+}
