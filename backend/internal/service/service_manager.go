@@ -27,12 +27,13 @@ type ServiceManager struct {
 	UserService            *UserService
 	AuthService            *AuthService
 	// User Management Repositories (exposed for handlers)
-	UserRepository    *repository.UserRepository
-	RoleRepository    *repository.RoleRepository
-	TeamRepository    *repository.TeamRepository
-	SSORepository     *repository.SSORepository
-	AuditRepository   *repository.AuditRepository
-	SessionRepository *repository.SessionRepository
+	UserRepository          *repository.UserRepository
+	RoleRepository          *repository.RoleRepository
+	TeamRepository          *repository.TeamRepository
+	SSORepository           *repository.SSORepository
+	AuditRepository         *repository.AuditRepository
+	SessionRepository       *repository.SessionRepository
+	PasswordResetRepository *repository.PasswordResetRepository
 }
 
 func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *ServiceManager {
@@ -47,6 +48,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	ssoRepo := repository.NewSSORepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	sessionRepo := repository.NewSessionRepository(db)
+	passwordResetRepo := repository.NewPasswordResetRepository(db)
 
 	// Initialize integration service
 	integrationService := NewIntegrationService(integrationRepo, log)
@@ -170,7 +172,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 
 	// Initialize User Management services
 	userService := NewUserService(userRepo, auditRepo)
-	authService := NewAuthService(userRepo, sessionRepo, auditRepo, cfg.JWTSecret)
+	authService := NewAuthService(userRepo, sessionRepo, auditRepo, passwordResetRepo, cfg.JWTSecret)
 
 	return &ServiceManager{
 		CacheService:           cacheService,
@@ -188,11 +190,12 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		TemplateService:        templateService,
 		UserService:            userService,
 		AuthService:            authService,
-		UserRepository:         userRepo,
-		RoleRepository:         roleRepo,
-		TeamRepository:         teamRepo,
-		SSORepository:          ssoRepo,
-		AuditRepository:        auditRepo,
-		SessionRepository:      sessionRepo,
+		UserRepository:          userRepo,
+		RoleRepository:          roleRepo,
+		TeamRepository:          teamRepo,
+		SSORepository:           ssoRepo,
+		AuditRepository:         auditRepo,
+		SessionRepository:       sessionRepo,
+		PasswordResetRepository: passwordResetRepo,
 	}
 }

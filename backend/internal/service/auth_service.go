@@ -20,23 +20,26 @@ var (
 )
 
 type AuthService struct {
-	userRepo    *repository.UserRepository
-	sessionRepo *repository.SessionRepository
-	auditRepo   *repository.AuditRepository
-	jwtSecret   string
+	userRepo          *repository.UserRepository
+	sessionRepo       *repository.SessionRepository
+	auditRepo         *repository.AuditRepository
+	passwordResetRepo *repository.PasswordResetRepository
+	jwtSecret         string
 }
 
 func NewAuthService(
 	userRepo *repository.UserRepository,
 	sessionRepo *repository.SessionRepository,
 	auditRepo *repository.AuditRepository,
+	passwordResetRepo *repository.PasswordResetRepository,
 	jwtSecret string,
 ) *AuthService {
 	return &AuthService{
-		userRepo:    userRepo,
-		sessionRepo: sessionRepo,
-		auditRepo:   auditRepo,
-		jwtSecret:   jwtSecret,
+		userRepo:          userRepo,
+		sessionRepo:       sessionRepo,
+		auditRepo:         auditRepo,
+		passwordResetRepo: passwordResetRepo,
+		jwtSecret:         jwtSecret,
 	}
 }
 
@@ -288,4 +291,153 @@ func (s *AuthService) logAudit(userID *string, userEmail, action, resource strin
 // CleanupExpiredSessions limpa sessões expiradas
 func (s *AuthService) CleanupExpiredSessions() (int64, error) {
 	return s.sessionRepo.DeleteExpiredSessions()
+}
+
+// ForgotPassword cria um token de reset de senha
+func (s *AuthService) ForgotPassword(req domain.ResetPasswordRequest, ipAddress, userAgent string) (string, error) {
+	// Buscar usuário por email
+	user, err := s.userRepo.GetByEmail(req.Email)
+	if err != nil {
+		// Não revelar se o email existe ou não (por segurança)
+		// Retornar sucesso mesmo se o email não existir
+		return "", nil
+	}
+
+	// Verificar se é um usuário SSO
+	if user.IsSSO {
+		return "", errors.New("SSO users cannot reset password through this method")
+	}
+
+	// Gerar token de reset (random string de 32 bytes)
+	token, err := s.generateRandomToken(32)
+	if err != nil {
+		return "", err
+	}
+
+	// Criar registro de reset token (expira em 1 hora)
+	resetToken := &domain.PasswordResetToken{
+		UserID:    user.ID,
+		Token:     token,
+		ExpiresAt: time.Now().Add(1 * time.Hour),
+		Used:      false,
+		IPAddress: &ipAddress,
+		UserAgent: &userAgent,
+	}
+
+	if err := s.passwordResetRepo.Create(resetToken); err != nil {
+		return "", err
+	}
+
+	// Log de auditoria
+	s.logAudit(&user.ID, user.Email, "user.password_reset_requested", "user", &user.ID, ipAddress, userAgent, "success")
+
+	// TODO: Enviar email com o link de reset
+	// Por enquanto, retornamos o token para teste
+	// Em produção, isso seria enviado por email e não retornado
+	return token, nil
+}
+
+// ResetPassword redefine a senha usando um token de reset
+func (s *AuthService) ResetPassword(req domain.ConfirmResetPasswordRequest, ipAddress, userAgent string) error {
+	// Verificar se o token é válido
+	valid, err := s.passwordResetRepo.IsValid(req.Token)
+	if err != nil || !valid {
+		return errors.New("invalid or expired reset token")
+	}
+
+	// Buscar o token
+	resetToken, err := s.passwordResetRepo.GetByToken(req.Token)
+	if err != nil {
+		return errors.New("invalid reset token")
+	}
+
+	// Buscar usuário
+	user, err := s.userRepo.GetByID(resetToken.UserID)
+	if err != nil {
+		return err
+	}
+
+	// Hash da nova senha
+	newPasswordHash, err := s.hashPassword(req.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	// Atualizar senha
+	if err := s.userRepo.UpdatePassword(user.ID, newPasswordHash); err != nil {
+		return err
+	}
+
+	// Marcar token como usado
+	s.passwordResetRepo.MarkAsUsed(req.Token)
+
+	// Invalidar todas as sessões do usuário (força novo login)
+	s.sessionRepo.DeleteUserSessions(user.ID)
+
+	// Log de auditoria
+	s.logAudit(&user.ID, user.Email, "user.password_reset_completed", "user", &user.ID, ipAddress, userAgent, "success")
+
+	return nil
+}
+
+// CleanupExpiredResetTokens limpa tokens de reset expirados
+func (s *AuthService) CleanupExpiredResetTokens() (int64, error) {
+	return s.passwordResetRepo.DeleteExpiredTokens()
+}
+
+// LoginWithSSO autentica um usuário via SSO (não requer senha)
+func (s *AuthService) LoginWithSSO(userID, ipAddress, userAgent string) (*domain.LoginResponse, error) {
+	// Buscar usuário
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	// Verificar se o usuário está ativo
+	if !user.IsActive {
+		s.logAudit(&user.ID, user.Email, "user.sso_login", "user", &user.ID, ipAddress, userAgent, "failure")
+		return nil, ErrUserNotActive
+	}
+
+	// Gerar tokens
+	token, refreshToken, expiresIn, err := s.generateTokens(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Criar sessão
+	session := &domain.Session{
+		UserID:       user.ID,
+		Token:        token,
+		RefreshToken: &refreshToken,
+		IPAddress:    &ipAddress,
+		UserAgent:    &userAgent,
+		ExpiresAt:    time.Now().Add(time.Duration(expiresIn) * time.Second),
+	}
+
+	if err := s.sessionRepo.Create(session); err != nil {
+		return nil, err
+	}
+
+	// Atualizar último login
+	s.userRepo.UpdateLastLogin(user.ID)
+
+	// Log de auditoria
+	s.logAudit(&user.ID, user.Email, "user.sso_login", "user", &user.ID, ipAddress, userAgent, "success")
+
+	// Carregar roles e teams
+	user.Roles, _ = s.userRepo.GetUserRoles(user.ID)
+	user.Teams, _ = s.userRepo.GetUserTeams(user.ID)
+
+	return &domain.LoginResponse{
+		User:         *user,
+		Token:        token,
+		RefreshToken: refreshToken,
+		ExpiresIn:    expiresIn,
+	}, nil
+}
+
+// CreateSession cria uma sessão sem fazer login completo (usado por SSO)
+func (s *AuthService) CreateSession(session *domain.Session) error {
+	return s.sessionRepo.Create(session)
 }
