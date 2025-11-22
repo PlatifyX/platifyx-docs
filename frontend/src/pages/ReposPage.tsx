@@ -71,6 +71,7 @@ function ReposPage() {
 
   const [stats, setStats] = useState<Stats | null>(null)
   const [repositories, setRepositories] = useState<Repository[]>([])
+  const [projectStats, setProjectStats] = useState<Record<string, number>>({})
 
   const currentProvider = providerInfo[provider]
   const ProviderIcon = currentProvider.icon
@@ -152,7 +153,21 @@ function ReposPage() {
             total: data.total,
             firstRepo: data.repositories?.[0]
           })
-          setRepositories(data.repositories || [])
+          const repos = data.repositories || []
+          setRepositories(repos)
+
+          // Calculate project stats for Azure Repos
+          if (provider === 'azure-repos') {
+            const stats: Record<string, number> = {}
+            repos.forEach((repo: Repository) => {
+              const projectName = repo.owner.login
+              stats[projectName] = (stats[projectName] || 0) + 1
+            })
+            setProjectStats(stats)
+            console.log('📊 [ReposPage] Project stats:', stats)
+          } else {
+            setProjectStats({})
+          }
         }
       }
     } catch (err: any) {
@@ -209,7 +224,7 @@ function ReposPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-5">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-5 mb-8">
         <div className="flex items-center gap-4 p-5 bg-surface border border-border rounded-xl transition-all duration-200 hover:border-primary hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
             <ProviderIcon size={20} />
@@ -229,6 +244,39 @@ function ReposPage() {
           </div>
         </div>
       </div>
+
+      {/* Projects Stats - Only for Azure Repos */}
+      {provider === 'azure-repos' && Object.keys(projectStats).length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-text mb-4 flex items-center gap-2">
+            <GitBranch size={20} className="text-primary" />
+            Repositórios por Projeto
+          </h2>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+            {Object.entries(projectStats)
+              .sort(([, a], [, b]) => b - a)
+              .map(([projectName, count]) => (
+                <div
+                  key={projectName}
+                  className="bg-surface border border-border rounded-lg p-4 flex items-center justify-between transition-all duration-200 hover:border-primary hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <GitBranch size={18} className="text-primary" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-text">{projectName}</span>
+                      <span className="text-xs text-text-secondary">
+                        {count} {count === 1 ? 'repositório' : 'repositórios'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-primary">{count}</div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 
