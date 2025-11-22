@@ -73,8 +73,6 @@ interface ServiceStatus {
   prodStatus?: DeploymentStatus
 }
 
-type TabType = 'info' | 'quality' | 'ci' | 'pods'
-
 function ServicesPage() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
@@ -85,21 +83,12 @@ function ServicesPage() {
   const [loadingMetrics, setLoadingMetrics] = useState(false)
   const [filter, setFilter] = useState('')
   const [squadFilter, setSquadFilter] = useState('all')
-  const [activeCardTab, setActiveCardTab] = useState<Record<string, TabType>>({})
 
   const formatNumber = (num: number): string => {
     if (num >= 1000) {
       return `${(num / 1000).toFixed(1)}K`
     }
     return num.toString()
-  }
-
-  const setCardTab = (serviceName: string, tab: TabType) => {
-    setActiveCardTab(prev => ({ ...prev, [serviceName]: tab }))
-  }
-
-  const getCardTab = (serviceName: string): TabType => {
-    return activeCardTab[serviceName] || 'info'
   }
 
   const fetchServices = async () => {
@@ -369,7 +358,6 @@ function ServicesPage() {
         {!loading && !error && filteredServices.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredServices.map(service => {
-              const activeTab = getCardTab(service.name)
               const hasPods = (serviceStatus[service.name]?.stageStatus?.pods && serviceStatus[service.name]?.stageStatus?.pods!.length > 0) ||
                              (serviceStatus[service.name]?.prodStatus?.pods && serviceStatus[service.name]?.prodStatus?.pods!.length > 0)
 
@@ -408,55 +396,14 @@ function ServicesPage() {
                     </div>
                   </div>
 
-                  {/* Tabs */}
-                  <div className="flex border-b border-border bg-background/30">
-                    <button
-                      className={`flex-1 px-4 py-2.5 text-xs font-semibold transition-colors ${
-                        activeTab === 'info'
-                          ? 'bg-primary/10 text-primary border-b-2 border-primary'
-                          : 'text-text-secondary hover:text-text hover:bg-background/50'
-                      }`}
-                      onClick={() => setCardTab(service.name, 'info')}
-                    >
-                      Info
-                    </button>
-                    <button
-                      className={`flex-1 px-4 py-2.5 text-xs font-semibold transition-colors ${
-                        activeTab === 'quality'
-                          ? 'bg-primary/10 text-primary border-b-2 border-primary'
-                          : 'text-text-secondary hover:text-text hover:bg-background/50'
-                      }`}
-                      onClick={() => setCardTab(service.name, 'quality')}
-                    >
-                      Qualidade
-                    </button>
-                    <button
-                      className={`flex-1 px-4 py-2.5 text-xs font-semibold transition-colors ${
-                        activeTab === 'ci'
-                          ? 'bg-primary/10 text-primary border-b-2 border-primary'
-                          : 'text-text-secondary hover:text-text hover:bg-background/50'
-                      }`}
-                      onClick={() => setCardTab(service.name, 'ci')}
-                    >
-                      CI/CD
-                    </button>
-                    {hasPods && (
-                      <button
-                        className={`flex-1 px-4 py-2.5 text-xs font-semibold transition-colors ${
-                          activeTab === 'pods'
-                            ? 'bg-primary/10 text-primary border-b-2 border-primary'
-                            : 'text-text-secondary hover:text-text hover:bg-background/50'
-                        }`}
-                        onClick={() => setCardTab(service.name, 'pods')}
-                      >
-                        Pods
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Tab Content */}
-                  <div className="p-5 min-h-[200px]">
-                    {activeTab === 'info' && (
+                  {/* Card Content */}
+                  <div className="p-5">
+                    {/* Info Section */}
+                    <div className="mb-5">
+                      <h4 className="text-xs font-bold text-text-secondary uppercase mb-3 flex items-center gap-2">
+                        <Activity size={14} />
+                        Informações
+                      </h4>
                       <div className="space-y-3">
                         <div className="flex justify-between text-sm">
                           <span className="text-text-secondary">Aplicação:</span>
@@ -488,17 +435,21 @@ function ServicesPage() {
                           </div>
                         )}
                       </div>
-                    )}
+                    </div>
 
-                    {activeTab === 'quality' && (
-                      <div>
-                        {loadingMetrics && !serviceMetrics[service.name] ? (
-                          <div className="flex items-center justify-center py-8 text-text-secondary">
-                            <RefreshCw size={20} className="animate-spin mr-2" />
-                            <span className="text-sm">Carregando métricas...</span>
-                          </div>
-                        ) : serviceMetrics[service.name]?.sonarqube ? (
-                          <div className="grid grid-cols-2 gap-3">
+                    {/* Quality Section */}
+                    <div className="mb-5 pb-5 border-t border-border pt-5">
+                      <h4 className="text-xs font-bold text-text-secondary uppercase mb-3 flex items-center gap-2">
+                        <Shield size={14} />
+                        Qualidade
+                      </h4>
+                      {loadingMetrics && !serviceMetrics[service.name] ? (
+                        <div className="flex items-center justify-center py-8 text-text-secondary">
+                          <RefreshCw size={20} className="animate-spin mr-2" />
+                          <span className="text-sm">Carregando métricas...</span>
+                        </div>
+                      ) : serviceMetrics[service.name]?.sonarqube ? (
+                        <div className="grid grid-cols-2 gap-3">
                             <div className="p-3 bg-background rounded-lg border border-border">
                               <div className="flex items-center gap-2 mb-1">
                                 <Bug size={16} className="text-error" />
@@ -527,25 +478,28 @@ function ServicesPage() {
                               </div>
                               <div className="text-2xl font-bold text-text">{serviceMetrics[service.name]?.sonarqube?.coverage?.toFixed(1) || '0.0'}%</div>
                             </div>
-                          </div>
-                        ) : (
-                          <div className="text-center py-8 text-text-secondary text-sm">
-                            Nenhuma métrica de qualidade disponível
-                          </div>
-                        )}
-                      </div>
-                    )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-text-secondary text-sm">
+                          Nenhuma métrica de qualidade disponível
+                        </div>
+                      )}
+                    </div>
 
-                    {activeTab === 'ci' && (
-                      <div className="space-y-3">
-                        {loadingMetrics && !serviceMetrics[service.name] ? (
-                          <div className="flex items-center justify-center py-8 text-text-secondary">
-                            <RefreshCw size={20} className="animate-spin mr-2" />
-                            <span className="text-sm">Carregando builds...</span>
-                          </div>
-                        ) : (
-                          <>
-                            {serviceMetrics[service.name]?.stageBuild && (
+                    {/* CI/CD Section */}
+                    <div className="mb-5 pb-5 border-t border-border pt-5">
+                      <h4 className="text-xs font-bold text-text-secondary uppercase mb-3 flex items-center gap-2">
+                        <GitBranch size={14} />
+                        CI/CD
+                      </h4>
+                      {loadingMetrics && !serviceMetrics[service.name] ? (
+                        <div className="flex items-center justify-center py-8 text-text-secondary">
+                          <RefreshCw size={20} className="animate-spin mr-2" />
+                          <span className="text-sm">Carregando builds...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {serviceMetrics[service.name]?.stageBuild && (
                               <div className="p-3 bg-background rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-xs font-semibold text-text-secondary">STAGE BUILD</span>
@@ -595,18 +549,23 @@ function ServicesPage() {
                               </div>
                             )}
 
-                            {!serviceMetrics[service.name]?.stageBuild && !serviceMetrics[service.name]?.mainBuild && (
-                              <div className="text-center py-8 text-text-secondary text-sm">
-                                Nenhum build disponível
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )}
+                          {!serviceMetrics[service.name]?.stageBuild && !serviceMetrics[service.name]?.mainBuild && (
+                            <div className="text-center py-8 text-text-secondary text-sm">
+                              Nenhum build disponível
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
-                    {activeTab === 'pods' && (
-                      <div className="space-y-3">
+                    {/* Pods Section */}
+                    {hasPods && (
+                      <div className="pb-5 border-t border-border pt-5">
+                        <h4 className="text-xs font-bold text-text-secondary uppercase mb-3 flex items-center gap-2">
+                          <Container size={14} />
+                          Pods Kubernetes
+                        </h4>
+                        <div className="space-y-3">
                         {serviceStatus[service.name]?.stageStatus?.pods && serviceStatus[service.name]?.stageStatus?.pods!.length > 0 && (
                           <div>
                             <div className="text-xs font-semibold text-text-secondary mb-2 flex items-center gap-2">
@@ -680,6 +639,7 @@ function ServicesPage() {
                             </div>
                           </div>
                         )}
+                        </div>
                       </div>
                     )}
                   </div>
