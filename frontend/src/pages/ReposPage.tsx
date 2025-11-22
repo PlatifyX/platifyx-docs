@@ -183,8 +183,15 @@ function ReposPage() {
 
   useEffect(() => {
     console.log('🔄 [ReposPage] Provider or tab changed:', { provider, activeTab, selectedIntegration })
+    // Clear selected integration when provider changes to avoid filter mismatch
+    setSelectedIntegration('')
     fetchData()
-  }, [activeTab, selectedIntegration, provider])
+  }, [activeTab, provider])
+
+  useEffect(() => {
+    console.log('🔄 [ReposPage] Integration changed:', { selectedIntegration })
+    fetchData()
+  }, [selectedIntegration])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
