@@ -838,17 +838,20 @@ func (h *AzureDevOpsHandler) ListRepositories(c *gin.Context) {
 		return
 	}
 
-	h.log.Infow("Fetching repositories from all integrations", "integrationCount", len(configs))
+	h.log.Infow("Fetching repositories from all integrations", "integrationCount", len(configs), "filter", filterIntegration)
 
 	var allRepositories []map[string]interface{}
 	for integrationName, config := range configs {
+		h.log.Infow("Processing integration", "integration", integrationName, "filter", filterIntegration, "willSkip", filterIntegration != "" && integrationName != filterIntegration)
+
 		// Skip if integration filter is set and doesn't match
 		if filterIntegration != "" && integrationName != filterIntegration {
+			h.log.Infow("Skipping integration (filter mismatch)", "integration", integrationName, "filter", filterIntegration)
 			continue
 		}
 
-		h.log.Infow("Fetching repositories from integration", "integration", integrationName, "organization", config.Organization)
-		svc := service.NewAzureDevOpsService(*config, h.log)
+		h.log.Infow("Fetching repositories from integration", "integration", integrationName, "organization", config.Organization, "project", config.Project)
+		svc := service.NewAzureDevOpsServiceWithCache(*config, h.integrationService.GetCacheService().GetRedisClient(), h.log)
 		repos, err := svc.GetRepositories()
 		if err != nil {
 			h.log.Errorw("Failed to fetch repositories from integration", "integration", integrationName, "error", err)
