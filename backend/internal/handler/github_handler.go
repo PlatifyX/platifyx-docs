@@ -35,7 +35,10 @@ func (h *GitHubHandler) getService(integrationName string) (*service.GitHubServi
 
 func (h *GitHubHandler) GetStats(c *gin.Context) {
 	integrationName := c.Query("integration")
-	cacheKey := service.BuildKey("github", "stats", integrationName)
+	cacheKey := service.BuildKey("github", "stats")
+	if integrationName != "" {
+		cacheKey = service.BuildKey("github", "stats:"+integrationName)
+	}
 
 	// Try cache first
 	if h.cache != nil {
@@ -107,7 +110,10 @@ func (h *GitHubHandler) GetAuthenticatedUser(c *gin.Context) {
 
 func (h *GitHubHandler) ListRepositories(c *gin.Context) {
 	integrationName := c.Query("integration")
-	cacheKey := service.BuildKey("github", "repositories", integrationName)
+	cacheKey := service.BuildKey("github", "repositories")
+	if integrationName != "" {
+		cacheKey = service.BuildKey("github", "repositories:"+integrationName)
+	}
 
 	// Try cache first
 	if h.cache != nil {
