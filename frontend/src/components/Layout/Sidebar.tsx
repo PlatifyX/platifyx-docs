@@ -34,10 +34,9 @@ const navItems: NavItem[] = [
   { path: '/quality', label: 'Qualidade', icon: <Shield size={20} /> },
   { path: '/finops', label: 'FinOps', icon: <DollarSign size={20} /> },
   { path: '/analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
-  { path: '/techdocs', label: 'TechDocs', icon: <FileText size={20} /> },
+  { path: '/techdocs', label: 'Documentação', icon: <FileText size={20} /> },
   { path: '/diagrams', label: 'Diagramas', icon: <Network size={20} /> },
-  { path: '/templates', label: 'Templates', icon: <FileText size={20} /> },
-  { path: '/infrastructure-templates', label: 'Infra Templates', icon: <Boxes size={20} /> },
+  { path: '/infrastructure-templates', label: 'Templates', icon: <Boxes size={20} /> },
   { path: '/integrations', label: 'Integrações', icon: <Plug size={20} /> },
   { path: '/settings', label: 'Configurações', icon: <Settings size={20} /> },
 ]
@@ -51,10 +50,10 @@ function Sidebar() {
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center gap-3 py-2.5 px-3 rounded-lg no-underline transition-all text-sm font-medium ${
+              `flex items-center gap-3 py-2.5 px-3 rounded-lg no-underline transition-all text-sm font-medium text-white ${
                 isActive
-                  ? 'bg-primary text-white hover:bg-primary-dark'
-                  : 'text-muted-foreground hover:bg-surface-light hover:text-foreground'
+                  ? 'bg-primary hover:bg-primary-dark'
+                  : 'hover:bg-surface-light'
               }`
             }
           >

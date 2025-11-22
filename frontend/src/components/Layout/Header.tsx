@@ -5,7 +5,7 @@ function Header() {
     <header className="h-16 bg-surface border-b border-border flex items-center px-6 gap-6 fixed top-0 left-0 right-0 z-[100]">
       <div className="flex items-center min-w-[200px]">
         <img
-          src="public/logos/platifyx.png"
+          src="public/logos/platifyx-name-white.png"
           alt="PlatifyX"
           className="h-8 w-auto"
         />

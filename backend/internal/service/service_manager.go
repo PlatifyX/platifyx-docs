@@ -51,13 +51,6 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	// Initialize integration service
 	integrationService := NewIntegrationService(integrationRepo, log)
 
-	// Get Azure DevOps config from database
-	var azureDevOpsService *AzureDevOpsService
-	azureDevOpsConfig, err := integrationService.GetAzureDevOpsConfig()
-	if err == nil && azureDevOpsConfig != nil {
-		azureDevOpsService = NewAzureDevOpsService(*azureDevOpsConfig, log)
-	}
-
 	// Get Kubernetes config from database
 	var kubernetesService *KubernetesService
 	k8sConfig, err := integrationService.GetKubernetesConfig()
@@ -91,20 +84,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		sonarQubeService = NewSonarQubeService(*sonarQubeConfig, log)
 	}
 
-	// Initialize ServiceCatalog service
-	var serviceCatalogService *ServiceCatalogService
-	if kubernetesService != nil {
-		serviceCatalogService = NewServiceCatalogService(serviceRepo, integrationRepo, kubernetesService, azureDevOpsService, githubService, log)
-	}
-
-	// Initialize FinOps service
-	finOpsService := NewFinOpsService(integrationService, log)
-
-	// Initialize AI services
-	aiService := NewAIService(integrationService, log)
-	diagramService := NewDiagramService(aiService, log)
-
-	// Initialize Cache Service (Redis)
+	// Initialize Cache Service (Redis) - must be before ServiceCatalog and AzureDevOps
 	var cacheService *CacheService
 	var redisClient *cache.RedisClient
 	if cfg.RedisEnabled && cfg.CacheEnabled {
@@ -133,6 +113,32 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 			"cacheEnabled", cfg.CacheEnabled,
 		)
 	}
+
+	// Get Azure DevOps config from database (with cache support)
+	var azureDevOpsService *AzureDevOpsService
+	azureDevOpsConfig, err := integrationService.GetAzureDevOpsConfig()
+	if err == nil && azureDevOpsConfig != nil {
+		if redisClient != nil {
+			azureDevOpsService = NewAzureDevOpsServiceWithCache(*azureDevOpsConfig, redisClient, log)
+			log.Info("Azure DevOps service initialized with cache")
+		} else {
+			azureDevOpsService = NewAzureDevOpsService(*azureDevOpsConfig, log)
+			log.Info("Azure DevOps service initialized without cache")
+		}
+	}
+
+	// Initialize ServiceCatalog service (with cache support)
+	var serviceCatalogService *ServiceCatalogService
+	if kubernetesService != nil {
+		serviceCatalogService = NewServiceCatalogService(serviceRepo, integrationRepo, kubernetesService, azureDevOpsService, githubService, redisClient, log)
+	}
+
+	// Initialize FinOps service
+	finOpsService := NewFinOpsService(integrationService, log)
+
+	// Initialize AI services
+	aiService := NewAIService(integrationService, log)
+	diagramService := NewDiagramService(aiService, log)
 
 	techDocsService := NewTechDocsService("docs", aiService, diagramService, githubService, redisClient, log)
 

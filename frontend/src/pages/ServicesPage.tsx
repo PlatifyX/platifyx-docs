@@ -362,7 +362,7 @@ function ServicesPage() {
                              (serviceStatus[service.name]?.prodStatus?.pods && serviceStatus[service.name]?.prodStatus?.pods!.length > 0)
 
               return (
-                <div key={service.id} className="bg-surface border border-border rounded-xl overflow-hidden transition-all duration-200 hover:border-primary hover:shadow-xl">
+                <div key={service.id} className="bg-[#1E1E1E] border border-border rounded-xl overflow-hidden transition-all duration-200 hover:border-primary hover:shadow-xl">
                   {/* Card Header */}
                   <div className="p-5 border-b border-border bg-background/50">
                     <div className="flex items-start justify-between mb-3">
@@ -372,16 +372,16 @@ function ServicesPage() {
                       </div>
                       <div className="flex items-center gap-2 ml-2">
                         {service.hasStage && (
-                          <span className="px-2 py-1 bg-warning/10 text-warning rounded text-xs font-semibold">Stage</span>
+                          <span className="px-2 py-1 bg-warning/10 text-warning rounded text-xs font-semibold">Staging</span>
                         )}
                         {service.hasProd && (
-                          <span className="px-2 py-1 bg-success/10 text-success rounded text-xs font-semibold">Prod</span>
+                          <span className="px-2 py-1 bg-success/10 text-success rounded text-xs font-semibold">Production</span>
                         )}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-md text-xs font-medium">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-surface text-text-secondary rounded-md text-xs font-medium border border-border">
                         <Users size={14} />
                         <span>{service.squad}</span>
                       </div>
@@ -410,7 +410,7 @@ function ServicesPage() {
                           <span className="text-text font-medium">{service.application}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-text-secondary">Versão:</span>
+                          <span className="text-text-secondary">Versão da linguagem:</span>
                           <span className="text-text font-mono">{service.version}</span>
                         </div>
                         <div className="flex justify-between text-sm">
@@ -502,7 +502,7 @@ function ServicesPage() {
                           {serviceMetrics[service.name]?.stageBuild && (
                               <div className="p-3 bg-background rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-semibold text-text-secondary">STAGE BUILD</span>
+                                  <span className="text-xs font-semibold text-text-secondary">STAGING</span>
                                   <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
                                     serviceMetrics[service.name]?.stageBuild?.status === 'succeeded' ? 'bg-success/10 text-success' :
                                     serviceMetrics[service.name]?.stageBuild?.status === 'failed' ? 'bg-error/10 text-error' :
@@ -527,7 +527,7 @@ function ServicesPage() {
                             {serviceMetrics[service.name]?.mainBuild && (
                               <div className="p-3 bg-background rounded-lg border border-border">
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-semibold text-text-secondary">PROD BUILD</span>
+                                  <span className="text-xs font-semibold text-text-secondary">PRODUCTION</span>
                                   <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
                                     serviceMetrics[service.name]?.mainBuild?.status === 'succeeded' ? 'bg-success/10 text-success' :
                                     serviceMetrics[service.name]?.mainBuild?.status === 'failed' ? 'bg-error/10 text-error' :
@@ -563,14 +563,14 @@ function ServicesPage() {
                       <div className="pb-5 border-t border-border pt-5">
                         <h4 className="text-xs font-bold text-text-secondary uppercase mb-3 flex items-center gap-2">
                           <Container size={14} />
-                          Pods Kubernetes
+                           Infraestrutura
                         </h4>
                         <div className="space-y-3">
                         {serviceStatus[service.name]?.stageStatus?.pods && serviceStatus[service.name]?.stageStatus?.pods!.length > 0 && (
                           <div>
                             <div className="text-xs font-semibold text-text-secondary mb-2 flex items-center gap-2">
                               <Container size={14} className="text-warning" />
-                              STAGE PODS ({serviceStatus[service.name]?.stageStatus?.pods!.length})
+                              STAGING ({serviceStatus[service.name]?.stageStatus?.pods!.length})
                             </div>
                             <div className="space-y-2">
                               {serviceStatus[service.name]?.stageStatus?.pods!.map((pod, idx) => (
@@ -607,7 +607,7 @@ function ServicesPage() {
                           <div className={serviceStatus[service.name]?.stageStatus?.pods && serviceStatus[service.name]?.stageStatus?.pods!.length > 0 ? 'pt-3 mt-3 border-t border-border' : ''}>
                             <div className="text-xs font-semibold text-text-secondary mb-2 flex items-center gap-2">
                               <Container size={14} className="text-success" />
-                              PROD PODS ({serviceStatus[service.name]?.prodStatus?.pods!.length})
+                              PRODUCTION ({serviceStatus[service.name]?.prodStatus?.pods!.length})
                             </div>
                             <div className="space-y-2">
                               {serviceStatus[service.name]?.prodStatus?.pods!.map((pod, idx) => (

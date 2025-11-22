@@ -9,7 +9,7 @@ const integrationTypes = [
   {
     id: 'azuredevops',
     name: 'Azure DevOps',
-    description: 'Conecte com pipelines, builds e releases',
+    description: 'Integração com Azure DevOps para Azure Repos, Azure Boards e Azure Pipelines',
     logo: '/logos/azuredevops.png',
   },
   {
@@ -23,12 +23,14 @@ const integrationTypes = [
     name: 'Microsoft Azure',
     description: 'Gerenciamento de custos e recursos da nuvem Azure',
     logo: '/logos/azure.png',
+    disabled: true,
   },
   {
     id: 'gcp',
     name: 'Google Cloud Platform',
     description: 'Gerenciamento de custos e recursos do GCP',
     logo: '/logos/gcp.png',
+    disabled: true,
   },
   {
     id: 'aws',
@@ -47,36 +49,42 @@ const integrationTypes = [
     name: 'Google Gemini',
     description: 'Integração com Gemini Pro e outros modelos do Google',
     logo: '/logos/gemini.png',
+    disabled: true,
   },
   {
     id: 'claude',
     name: 'Anthropic Claude',
     description: 'Integração com Claude 3 Opus, Sonnet e Haiku',
     logo: '/logos/claude.png',
+    disabled: true,
   },
   {
     id: 'jira',
     name: 'Jira',
     description: 'Gerenciamento de projetos, issues, sprints e boards',
     logo: '/logos/jira.png',
+    disabled: true,
   },
   {
     id: 'slack',
     name: 'Slack',
     description: 'Notificações e comunicação via Slack',
     logo: '/logos/slack.png',
+    disabled: true,
   },
   {
     id: 'teams',
     name: 'Microsoft Teams',
     description: 'Notificações e comunicação via Teams',
     logo: '/logos/teams.png',
+    disabled: true,
   },
   {
     id: 'argocd',
     name: 'ArgoCD',
     description: 'GitOps e deploy contínuo com ArgoCD',
     logo: '/logos/argocd.png',
+    disabled: true,
   },
   {
     id: 'prometheus',
@@ -88,19 +96,14 @@ const integrationTypes = [
     id: 'loki',
     name: 'Grafana Loki',
     description: 'Agregação e visualização de logs',
-    logo: '/logos/loki.png',
+    logo: '/logos/prometheus.png',
   },
   {
     id: 'vault',
     name: 'HashiCorp Vault',
-    description: 'Gerenciamento seguro de secrets e credenciais',
+    description: 'Gerenciamento de secrets',
     logo: '/logos/vault.png',
-  },
-  {
-    id: 'awssecrets',
-    name: 'AWS Secrets Manager',
-    description: 'Gerenciamento de secrets na AWS',
-    logo: '/logos/aws-secrets.png',
+    disabled: true,
   },
   {
     id: 'kubernetes',
@@ -113,11 +116,12 @@ const integrationTypes = [
     name: 'Grafana',
     description: 'Visualização de métricas e dashboards',
     logo: '/logos/grafana.png',
+    disabled: true,
   },
   {
     id: 'github',
     name: 'GitHub',
-    description: 'Integração com repositórios e GitHub Actions',
+    description: 'Integração com repositórios, GitHub Actions e Projetos',
     logo: '/logos/github.png',
   },
   {
