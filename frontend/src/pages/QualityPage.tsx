@@ -4,7 +4,6 @@ import QualityStatsCard from '../components/Quality/QualityStatsCard'
 import ProjectsTab from '../components/Quality/ProjectsTab'
 import IssuesTab from '../components/Quality/IssuesTab'
 import QualityFilters, { QualityFilterValues } from '../components/Quality/QualityFilters'
-import styles from './QualityPage.module.css'
 import { buildApiUrl } from '../config/api'
 
 type TabType = 'projects' | 'issues'
@@ -67,13 +66,13 @@ function QualityPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <Shield size={32} className={styles.headerIcon} />
+    <div className="max-w-[1400px] mx-auto">
+      <div className="mb-8">
+        <div className="flex items-center gap-4">
+          <Shield size={32} className="text-primary" />
           <div>
-            <h1 className={styles.title}>Qualidade de Código</h1>
-            <p className={styles.subtitle}>Análise estática, bugs e vulnerabilidades</p>
+            <h1 className="text-[32px] font-bold text-text mb-1">Qualidade de Código</h1>
+            <p className="text-base text-text-secondary">Análise estática, bugs e vulnerabilidades</p>
           </div>
         </div>
       </div>
@@ -83,31 +82,35 @@ function QualityPage() {
       )}
 
       {!loading && !stats && !error && (
-        <div className={styles.emptyState}>
+        <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
           <Shield size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-          <h2>Nenhuma integração</h2>
-          <p>Configure uma integração do SonarQube para visualizar métricas de qualidade de código</p>
+          <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>
+          <p className="text-base text-text-secondary max-w-[500px]">Configure uma integração do SonarQube para visualizar métricas de qualidade de código</p>
         </div>
       )}
 
       <QualityFilters onFilterChange={handleFilterChange} initialFilters={filters} />
 
-      <div className={styles.tabs}>
+      <div className="flex gap-2 border-b-2 border-border mb-6">
         <button
-          className={`${styles.tab} ${activeTab === 'projects' ? styles.tabActive : ''}`}
+          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold text-text-secondary cursor-pointer relative transition-all duration-200 hover:text-text ${
+            activeTab === 'projects' ? 'text-primary after:content-[""] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary' : ''
+          }`}
           onClick={() => setActiveTab('projects')}
         >
           Projetos
         </button>
         <button
-          className={`${styles.tab} ${activeTab === 'issues' ? styles.tabActive : ''}`}
+          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold text-text-secondary cursor-pointer relative transition-all duration-200 hover:text-text ${
+            activeTab === 'issues' ? 'text-primary after:content-[""] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary' : ''
+          }`}
           onClick={() => setActiveTab('issues')}
         >
           Issues
         </button>
       </div>
 
-      <div className={styles.tabContent}>
+      <div className="min-h-[400px]">
         {activeTab === 'projects' && <ProjectsTab filters={filters} />}
         {activeTab === 'issues' && <IssuesTab filters={filters} />}
       </div>

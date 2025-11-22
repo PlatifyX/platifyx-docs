@@ -7,9 +7,53 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#3e5c76',
-        'primary-dark': '#2d4456',
+        primary: {
+          DEFAULT: '#3e5c76',
+          dark: '#2d4456',
+        },
         secondary: '#3e5c76',
+        background: '#0d1321',
+        surface: {
+          DEFAULT: '#0d1321',
+          light: '#1a2332',
+        },
+        text: {
+          DEFAULT: '#ffffff',
+          secondary: '#f0ebd8',
+        },
+        border: '#f0ebd8',
+        success: '#10b981',
+        warning: '#f59e0b',
+        error: '#ef4444',
+      },
+      spacing: {
+        'sidebar': '260px',
+        'header': '64px',
+      },
+      animation: {
+        'slide-in-right': 'slide-in-right 0.3s ease-out',
+        'fade-in': 'fade-in 0.2s ease-out',
+        'scale-in': 'scale-in 0.2s ease-out',
+        'slide-down': 'slide-down 0.3s ease-out',
+        'spin': 'spin 1s linear infinite',
+      },
+      keyframes: {
+        'slide-in-right': {
+          from: { opacity: '0', transform: 'translateX(100%)' },
+          to: { opacity: '1', transform: 'translateX(0)' },
+        },
+        'fade-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+        'scale-in': {
+          from: { opacity: '0', transform: 'scale(0.95)' },
+          to: { opacity: '1', transform: 'scale(1)' },
+        },
+        'slide-down': {
+          from: { opacity: '0', transform: 'translateY(-10px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
       },
     },
   },
