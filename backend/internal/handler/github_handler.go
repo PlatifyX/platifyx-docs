@@ -22,8 +22,8 @@ func NewGitHubHandler(integrationSvc *service.IntegrationService, cache *service
 	}
 }
 
-func (h *GitHubHandler) getService() (*service.GitHubService, error) {
-	config, err := h.integrationService.GetGitHubConfig()
+func (h *GitHubHandler) getService(integrationName string) (*service.GitHubService, error) {
+	config, err := h.integrationService.GetGitHubConfigByName(integrationName)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,8 @@ func (h *GitHubHandler) getService() (*service.GitHubService, error) {
 }
 
 func (h *GitHubHandler) GetStats(c *gin.Context) {
-	cacheKey := service.BuildKey("github", "stats")
+	integrationName := c.Query("integration")
+	cacheKey := service.BuildKey("github", "stats", integrationName)
 
 	// Try cache first
 	if h.cache != nil {
@@ -47,7 +48,7 @@ func (h *GitHubHandler) GetStats(c *gin.Context) {
 	}
 
 	// Cache MISS
-	svc, err := h.getService()
+	svc, err := h.getService(integrationName)
 	if err != nil {
 		h.log.Errorw("Failed to get GitHub service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -57,7 +58,7 @@ func (h *GitHubHandler) GetStats(c *gin.Context) {
 	}
 
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": "GitHub integration not configured",
 		})
 		return
@@ -76,7 +77,7 @@ func (h *GitHubHandler) GetStats(c *gin.Context) {
 }
 
 func (h *GitHubHandler) GetAuthenticatedUser(c *gin.Context) {
-	svc, err := h.getService()
+	svc, err := h.getService("")
 	if err != nil {
 		h.log.Errorw("Failed to get GitHub service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -105,7 +106,8 @@ func (h *GitHubHandler) GetAuthenticatedUser(c *gin.Context) {
 }
 
 func (h *GitHubHandler) ListRepositories(c *gin.Context) {
-	cacheKey := service.BuildKey("github", "repositories")
+	integrationName := c.Query("integration")
+	cacheKey := service.BuildKey("github", "repositories", integrationName)
 
 	// Try cache first
 	if h.cache != nil {
@@ -118,7 +120,7 @@ func (h *GitHubHandler) ListRepositories(c *gin.Context) {
 	}
 
 	// Cache MISS
-	svc, err := h.getService()
+	svc, err := h.getService(integrationName)
 	if err != nil {
 		h.log.Errorw("Failed to get GitHub service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -128,7 +130,7 @@ func (h *GitHubHandler) ListRepositories(c *gin.Context) {
 	}
 
 	if svc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": "GitHub integration not configured",
 		})
 		return
@@ -159,7 +161,7 @@ func (h *GitHubHandler) ListRepositories(c *gin.Context) {
 }
 
 func (h *GitHubHandler) GetRepository(c *gin.Context) {
-	svc, err := h.getService()
+	svc, err := h.getService("")
 	if err != nil {
 		h.log.Errorw("Failed to get GitHub service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -191,7 +193,7 @@ func (h *GitHubHandler) GetRepository(c *gin.Context) {
 }
 
 func (h *GitHubHandler) ListCommits(c *gin.Context) {
-	svc, err := h.getService()
+	svc, err := h.getService("")
 	if err != nil {
 		h.log.Errorw("Failed to get GitHub service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -227,7 +229,7 @@ func (h *GitHubHandler) ListCommits(c *gin.Context) {
 }
 
 func (h *GitHubHandler) ListPullRequests(c *gin.Context) {
-	svc, err := h.getService()
+	svc, err := h.getService("")
 	if err != nil {
 		h.log.Errorw("Failed to get GitHub service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -263,7 +265,7 @@ func (h *GitHubHandler) ListPullRequests(c *gin.Context) {
 }
 
 func (h *GitHubHandler) ListIssues(c *gin.Context) {
-	svc, err := h.getService()
+	svc, err := h.getService("")
 	if err != nil {
 		h.log.Errorw("Failed to get GitHub service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -299,7 +301,7 @@ func (h *GitHubHandler) ListIssues(c *gin.Context) {
 }
 
 func (h *GitHubHandler) ListBranches(c *gin.Context) {
-	svc, err := h.getService()
+	svc, err := h.getService("")
 	if err != nil {
 		h.log.Errorw("Failed to get GitHub service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -334,7 +336,7 @@ func (h *GitHubHandler) ListBranches(c *gin.Context) {
 }
 
 func (h *GitHubHandler) ListWorkflowRuns(c *gin.Context) {
-	svc, err := h.getService()
+	svc, err := h.getService("")
 	if err != nil {
 		h.log.Errorw("Failed to get GitHub service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -369,7 +371,7 @@ func (h *GitHubHandler) ListWorkflowRuns(c *gin.Context) {
 }
 
 func (h *GitHubHandler) GetOrganization(c *gin.Context) {
-	svc, err := h.getService()
+	svc, err := h.getService("")
 	if err != nil {
 		h.log.Errorw("Failed to get GitHub service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{

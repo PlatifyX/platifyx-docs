@@ -440,6 +440,37 @@ func (s *IntegrationService) GetAllGitHubConfigs() (map[string]*domain.GitHubCon
 	return configs, nil
 }
 
+func (s *IntegrationService) GetGitHubConfigByName(name string) (*domain.GitHubConfig, error) {
+	if name == "" {
+		// If no name provided, return the first one (backward compatibility)
+		return s.GetGitHubConfig()
+	}
+
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGitHub))
+	if err != nil {
+		s.log.Errorw("Failed to fetch GitHub integrations", "error", err)
+		return nil, err
+	}
+
+	for _, integration := range integrations {
+		if integration.Name == name && integration.Enabled {
+			var config domain.GitHubIntegrationConfig
+			if err := json.Unmarshal(integration.Config, &config); err != nil {
+				s.log.Errorw("Failed to unmarshal GitHub config", "error", err, "integration", integration.Name)
+				return nil, err
+			}
+
+			return &domain.GitHubConfig{
+				Token:        config.Token,
+				Organization: config.Organization,
+			}, nil
+		}
+	}
+
+	// Integration with this name not found
+	return nil, nil
+}
+
 func (s *IntegrationService) GetJiraConfig() (*domain.JiraConfig, error) {
 	integration, err := s.repo.GetByType(string(domain.IntegrationTypeJira))
 	if err != nil {
