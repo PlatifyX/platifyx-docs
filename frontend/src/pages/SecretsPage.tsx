@@ -178,33 +178,6 @@ function SecretsPage() {
           )}
         </div>
       </div>
-
-      <div className="bg-surface rounded-lg border border-border p-6">
-        <h3 className="text-lg font-bold text-white mb-4">ℹ️ Informações Importantes</h3>
-        <div className="space-y-3 text-sm text-muted">
-          <div className="flex gap-3">
-            <span className="text-primary font-bold">•</span>
-            <p>
-              <strong className="text-white">AWS Secrets Manager:</strong> Utilize as mesmas
-              credenciais AWS configuradas para FinOps para gerenciar secrets de forma segura.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <span className="text-primary font-bold">•</span>
-            <p>
-              <strong className="text-white">HashiCorp Vault:</strong> Solução enterprise para
-              gerenciamento de secrets com suporte a múltiplos backends e controle de acesso granular.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <span className="text-red-400 font-bold">⚠️</span>
-            <p className="text-red-400">
-              <strong>Atenção:</strong> Nunca compartilhe ou exponha valores de secrets. Utilize
-              sempre permissões adequadas e auditoria de acesso.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
