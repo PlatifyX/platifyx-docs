@@ -1,7 +1,9 @@
 package service
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
@@ -275,8 +277,8 @@ func (s *FinOpsService) GetAWSCostsByMonth(integrationName string) ([]map[string
 		}
 	} else {
 		awsConfigs, err = s.integrationService.GetAllAWSConfigs()
-		if err != nil {
-			return nil, err
+	if err != nil {
+		return nil, err
 		}
 	}
 
@@ -293,7 +295,12 @@ func (s *FinOpsService) GetAWSCostsByMonth(integrationName string) ([]map[string
 		for _, item := range monthlyData {
 			month := ""
 			if m, ok := item["month"].(string); ok {
-				month = m
+				parts := strings.Split(m, "-")
+				if len(parts) >= 2 {
+					month = fmt.Sprintf("%s-%s", parts[0], parts[1])
+				} else {
+					month = m
+				}
 			}
 			cost := 0.0
 			if c, ok := item["cost"].(float64); ok {
@@ -338,8 +345,8 @@ func (s *FinOpsService) GetAWSCostsByService(months int, integrationName string)
 		}
 	} else {
 		awsConfigs, err = s.integrationService.GetAllAWSConfigs()
-		if err != nil {
-			return nil, err
+	if err != nil {
+		return nil, err
 		}
 	}
 
@@ -395,8 +402,8 @@ func (s *FinOpsService) GetAWSCostForecast(integrationName string) ([]map[string
 		}
 	} else {
 		awsConfigs, err = s.integrationService.GetAllAWSConfigs()
-		if err != nil {
-			return nil, err
+	if err != nil {
+		return nil, err
 		}
 	}
 

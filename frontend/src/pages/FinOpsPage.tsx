@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, TrendingDown, Server, Activity, Package, Filter, AlertTriangle } from 'lucide-react'
+import { DollarSign, Package, Filter, AlertTriangle } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
 import { buildApiUrl } from '../config/api'
 import IntegrationSelector from '../components/Common/IntegrationSelector'
@@ -182,13 +182,49 @@ function FinOpsPage() {
   const calculateTrends = () => {
     if (monthlyCosts.length < 2) return null
 
-    const sorted = [...monthlyCosts].sort((a, b) => a.month.localeCompare(b.month))
-    const lastMonth = sorted[sorted.length - 1]?.cost || 0
+    const normalizeMonth = (monthStr: string): string => {
+      if (!monthStr) return ''
+      const parts = monthStr.split('-')
+      if (parts.length >= 2) {
+        return `${parts[0]}-${parts[1].padStart(2, '0')}`
+      }
+      return monthStr
+    }
+
+    const sorted = [...monthlyCosts].sort((a, b) => {
+      const monthA = normalizeMonth(a.month || '')
+      const monthB = normalizeMonth(b.month || '')
+      return monthA.localeCompare(monthB)
+    })
+
+    const lastMonthData = sorted[sorted.length - 1]
+    const lastMonth = lastMonthData?.cost || 0
     const prevMonth = sorted[sorted.length - 2]?.cost || 0
-    const lastYear = sorted.length >= 13 ? sorted[sorted.length - 13]?.cost || 0 : null
+
+    let lastYear: number | null = null
+    if (lastMonthData?.month) {
+      const lastMonthStr = normalizeMonth(lastMonthData.month)
+      const parts = lastMonthStr.split('-')
+      if (parts.length >= 2) {
+        const year = parseInt(parts[0])
+        const month = parts[1]
+        const previousYear = year - 1
+        const previousYearMonth = `${previousYear}-${month}`
+        
+        const previousYearData = sorted.find(item => {
+          if (!item.month) return false
+          const normalizedItemMonth = normalizeMonth(item.month)
+          return normalizedItemMonth === previousYearMonth
+        })
+        
+        if (previousYearData) {
+          lastYear = previousYearData.cost || 0
+        }
+      }
+    }
 
     const momChange = prevMonth > 0 ? ((lastMonth - prevMonth) / prevMonth) * 100 : 0
-    const yoyChange = lastYear && lastYear > 0 ? ((lastMonth - lastYear) / lastYear) * 100 : null
+    const yoyChange = lastYear !== null ? ((lastMonth - lastYear) / (lastYear || 1)) * 100 : null
 
     return {
       momChange,
@@ -317,70 +353,6 @@ function FinOpsPage() {
         </div>
       )}
 
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <DollarSign size={24} className="text-green-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm text-gray-400">Custo Mensal</div>
-              <div className="text-2xl font-bold truncate">{formatCurrency(stats.monthlyCost)}</div>
-            </div>
-          </div>
-          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Activity size={24} className="text-blue-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm text-gray-400">Custo Diário</div>
-              <div className="text-2xl font-bold truncate">{formatCurrency(stats.dailyCost)}</div>
-            </div>
-          </div>
-          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${stats.costTrend >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-              {stats.costTrend >= 0 ? (
-                <TrendingUp size={24} className="text-green-400" />
-              ) : (
-                <TrendingDown size={24} className="text-red-400" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm text-gray-400">Tendência</div>
-              <div className={`text-2xl font-bold truncate ${stats.costTrend >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {stats.costTrend >= 0 ? '+' : ''}{stats.costTrend.toFixed(1)}%
-              </div>
-            </div>
-          </div>
-          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Package size={24} className="text-purple-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm text-gray-400">Total de Recursos</div>
-              <div className="text-2xl font-bold truncate">{stats.totalResources}</div>
-            </div>
-          </div>
-          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Server size={24} className="text-green-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm text-gray-400">Recursos Ativos</div>
-              <div className="text-2xl font-bold truncate">{stats.activeResources}</div>
-            </div>
-          </div>
-          <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-4 flex items-center gap-4">
-            <div className="w-12 h-12 bg-gray-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Server size={24} className="text-gray-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm text-gray-400">Recursos Inativos</div>
-              <div className="text-2xl font-bold truncate">{stats.inactiveResources}</div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="border-b border-gray-700 mb-6">
         <nav className="flex space-x-8">
@@ -528,13 +500,13 @@ function FinOpsPage() {
                     </div>
                   </div>
 
-                  {trends.yoyChange !== null && (
+                  {trends.yoyChange !== null && trends.lastYear !== null && (
                     <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6">
                       <h3 className="text-lg font-bold mb-4">Comparação Ano a Ano (YoY)</h3>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <span className="text-gray-400">Mês Ano Passado:</span>
-                          <span className="text-gray-200 font-semibold">{formatCurrency(trends.lastYear || 0)}</span>
+                          <span className="text-gray-200 font-semibold">{formatCurrency(trends.lastYear)}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-gray-400">Mês Atual:</span>
