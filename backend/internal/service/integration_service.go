@@ -762,6 +762,88 @@ func (s *IntegrationService) GetAWSSecretsService() (*AWSSecretsService, error) 
 	return NewAWSSecretsService(*config, s.log)
 }
 
+// GetAWSConfigByID retorna a configuração AWS de uma integração específica por ID
+func (s *IntegrationService) GetAWSConfigByID(integrationID int) (*domain.AWSSecretsConfig, error) {
+	integration, err := s.repo.GetByID(integrationID)
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, fmt.Errorf("integration not found")
+	}
+
+	if integration.Type != string(domain.IntegrationTypeAWS) && integration.Type != string(domain.IntegrationTypeAWSSecrets) {
+		return nil, fmt.Errorf("integration is not an AWS integration")
+	}
+
+	if !integration.Enabled {
+		return nil, fmt.Errorf("integration is disabled")
+	}
+
+	var config domain.AWSCloudIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse AWS config: %w", err)
+	}
+
+	return &domain.AWSSecretsConfig{
+		AccessKeyID:     config.AccessKeyID,
+		SecretAccessKey: config.SecretAccessKey,
+		Region:          config.Region,
+	}, nil
+}
+
+// GetAWSSecretsServiceByID cria um serviço AWS Secrets a partir de uma integração específica
+func (s *IntegrationService) GetAWSSecretsServiceByID(integrationID int) (*AWSSecretsService, error) {
+	config, err := s.GetAWSConfigByID(integrationID)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewAWSSecretsService(*config, s.log)
+}
+
+// GetVaultConfigByID retorna a configuração Vault de uma integração específica por ID
+func (s *IntegrationService) GetVaultConfigByID(integrationID int) (*domain.VaultConfig, error) {
+	integration, err := s.repo.GetByID(integrationID)
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil {
+		return nil, fmt.Errorf("integration not found")
+	}
+
+	if integration.Type != string(domain.IntegrationTypeVault) {
+		return nil, fmt.Errorf("integration is not a Vault integration")
+	}
+
+	if !integration.Enabled {
+		return nil, fmt.Errorf("integration is disabled")
+	}
+
+	var config domain.VaultIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse Vault config: %w", err)
+	}
+
+	return &domain.VaultConfig{
+		Address:   config.Address,
+		Token:     config.Token,
+		Namespace: config.Namespace,
+	}, nil
+}
+
+// GetVaultServiceByID cria um serviço Vault a partir de uma integração específica
+func (s *IntegrationService) GetVaultServiceByID(integrationID int) (*VaultService, error) {
+	config, err := s.GetVaultConfigByID(integrationID)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewVaultService(*config, s.log), nil
+}
+
 // AI Provider methods
 func (s *IntegrationService) GetOpenAIConfig() (*domain.OpenAIIntegrationConfig, error) {
 	integration, err := s.repo.GetByType(string(domain.IntegrationTypeOpenAI))

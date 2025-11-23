@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/PlatifyX/platifyx-core/internal/service"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
@@ -20,12 +22,34 @@ func NewVaultHandler(svc *service.IntegrationService, log *logger.Logger) *Vault
 	}
 }
 
-func (h *VaultHandler) GetStats(c *gin.Context) {
-	vaultService, err := h.service.GetVaultService()
+func (h *VaultHandler) getIntegrationID(c *gin.Context) (int, error) {
+	integrationID := c.Query("integration_id")
+	if integrationID == "" {
+		return 0, fmt.Errorf("integration_id parameter is required")
+	}
+
+	id, err := strconv.Atoi(integrationID)
 	if err != nil {
-		h.log.Errorw("Failed to get Vault service", "error", err)
+		return 0, fmt.Errorf("invalid integration_id")
+	}
+
+	return id, nil
+}
+
+func (h *VaultHandler) GetStats(c *gin.Context) {
+	integrationID, err := h.getIntegrationID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	vaultService, err := h.service.GetVaultServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get Vault service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Vault integration not configured",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -43,11 +67,19 @@ func (h *VaultHandler) GetStats(c *gin.Context) {
 }
 
 func (h *VaultHandler) GetHealth(c *gin.Context) {
-	vaultService, err := h.service.GetVaultService()
+	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
-		h.log.Errorw("Failed to get Vault service", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	vaultService, err := h.service.GetVaultServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get Vault service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Vault integration not configured",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -65,11 +97,19 @@ func (h *VaultHandler) GetHealth(c *gin.Context) {
 }
 
 func (h *VaultHandler) ReadKVSecret(c *gin.Context) {
-	vaultService, err := h.service.GetVaultService()
+	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
-		h.log.Errorw("Failed to get Vault service", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	vaultService, err := h.service.GetVaultServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get Vault service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Vault integration not configured",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -97,11 +137,19 @@ func (h *VaultHandler) ReadKVSecret(c *gin.Context) {
 }
 
 func (h *VaultHandler) ListKVSecrets(c *gin.Context) {
-	vaultService, err := h.service.GetVaultService()
+	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
-		h.log.Errorw("Failed to get Vault service", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	vaultService, err := h.service.GetVaultServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get Vault service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Vault integration not configured",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -131,11 +179,19 @@ func (h *VaultHandler) ListKVSecrets(c *gin.Context) {
 }
 
 func (h *VaultHandler) WriteKVSecret(c *gin.Context) {
-	vaultService, err := h.service.GetVaultService()
+	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
-		h.log.Errorw("Failed to get Vault service", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	vaultService, err := h.service.GetVaultServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get Vault service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Vault integration not configured",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -143,6 +199,7 @@ func (h *VaultHandler) WriteKVSecret(c *gin.Context) {
 	var req struct {
 		MountPath  string                 `json:"mountPath"`
 		SecretPath string                 `json:"secretPath"`
+		Path       string                 `json:"path"`
 		Data       map[string]interface{} `json:"data"`
 	}
 
@@ -153,14 +210,24 @@ func (h *VaultHandler) WriteKVSecret(c *gin.Context) {
 		return
 	}
 
-	if req.MountPath == "" || req.SecretPath == "" || req.Data == nil {
+	mountPath := req.MountPath
+	if mountPath == "" {
+		mountPath = "secret"
+	}
+
+	secretPath := req.SecretPath
+	if secretPath == "" {
+		secretPath = req.Path
+	}
+
+	if secretPath == "" || req.Data == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "mountPath, secretPath, and data are required",
+			"error": "path and data are required",
 		})
 		return
 	}
 
-	if err := vaultService.WriteKVSecret(req.MountPath, req.SecretPath, req.Data); err != nil {
+	if err := vaultService.WriteKVSecret(mountPath, secretPath, req.Data); err != nil {
 		h.log.Errorw("Failed to write KV secret", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -174,21 +241,29 @@ func (h *VaultHandler) WriteKVSecret(c *gin.Context) {
 }
 
 func (h *VaultHandler) DeleteKVSecret(c *gin.Context) {
-	vaultService, err := h.service.GetVaultService()
+	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
-		h.log.Errorw("Failed to get Vault service", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Vault integration not configured",
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
 		})
 		return
 	}
 
-	mountPath := c.Query("mount")
+	vaultService, err := h.service.GetVaultServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get Vault service", "error", err, "integration_id", integrationID)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	mountPath := c.DefaultQuery("mount", "secret")
 	secretPath := c.Query("path")
 
-	if mountPath == "" || secretPath == "" {
+	if secretPath == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "mount and path query parameters are required",
+			"error": "path query parameter is required",
 		})
 		return
 	}
