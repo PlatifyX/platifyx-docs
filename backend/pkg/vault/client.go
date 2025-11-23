@@ -173,6 +173,11 @@ func (c *Client) ListSecrets(path string) ([]string, error) {
 
 // ListKVSecrets lists secrets in a KV v2 mount
 func (c *Client) ListKVSecrets(mountPath, secretPath string) ([]string, error) {
-	fullPath := fmt.Sprintf("%s/metadata/%s", mountPath, secretPath)
+	var fullPath string
+	if secretPath == "" {
+		fullPath = fmt.Sprintf("%s/metadata", mountPath)
+	} else {
+		fullPath = fmt.Sprintf("%s/metadata/%s", mountPath, secretPath)
+	}
 	return c.ListSecrets(fullPath)
 }

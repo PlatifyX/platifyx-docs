@@ -170,7 +170,14 @@ export class SecretsApi {
       throw new Error(error.error || 'Failed to list Vault secrets')
     }
     const data = await response.json()
-    return data.keys || []
+    const keys: string[] = data.keys || []
+
+    // Convert keys to VaultSecretListItem format
+    // Keys ending with "/" are folders, others are secrets
+    return keys.map((key: string) => ({
+      path: key,
+      isFolder: key.endsWith('/')
+    }))
   }
 
   static async readVaultSecret(integrationId: number, path: string, mount: string = 'secret'): Promise<VaultSecret> {
@@ -189,11 +196,11 @@ export class SecretsApi {
     return response.json()
   }
 
-  static async writeVaultSecret(integrationId: number, path: string, data: Record<string, any>): Promise<void> {
+  static async writeVaultSecret(integrationId: number, path: string, data: Record<string, any>, mount: string = 'secret'): Promise<void> {
     const response = await fetch(buildApiUrl(`vault/kv/write?integration_id=${integrationId}`), {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ path, data }),
+      body: JSON.stringify({ path, data, mountPath: mount }),
     })
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Failed to write Vault secret' }))
