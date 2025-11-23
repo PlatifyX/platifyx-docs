@@ -96,7 +96,7 @@ const integrationTypes = [
     id: 'loki',
     name: 'Grafana Loki',
     description: 'Agregação e visualização de logs',
-    logo: '/logos/prometheus.png',
+    logo: '/logos/grafana.png',
   },
   {
     id: 'vault',

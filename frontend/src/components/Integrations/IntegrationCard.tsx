@@ -50,6 +50,8 @@ function IntegrationCard({ integration, onConfigure, onToggle, onDelete }: Integ
         return 'GitOps e deploy contínuo com ArgoCD'
       case 'prometheus':
         return 'Monitoramento de métricas e alertas'
+      case 'loki':
+        return 'Agregação e visualização de logs'
       case 'vault':
         return 'Gerenciamento seguro de secrets e credenciais'
       default:
@@ -95,6 +97,8 @@ function IntegrationCard({ integration, onConfigure, onToggle, onDelete }: Integ
         return '/logos/argocd.png'
       case 'prometheus':
         return '/logos/prometheus.png'
+      case 'loki':
+        return '/logos/grafana.png'
       case 'vault':
         return '/logos/vault.png'
       default:
