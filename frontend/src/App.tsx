@@ -17,6 +17,10 @@ import InfrastructureTemplatesPage from './pages/InfrastructureTemplatesPage'
 import QualityPage from './pages/QualityPage'
 import FinOpsPage from './pages/FinOpsPage'
 import TechDocsPage from './pages/TechDocsPage'
+import AutonomousPage from './pages/AutonomousPage'
+import MaturityPage from './pages/MaturityPage'
+import ServicePlaybookPage from './pages/ServicePlaybookPage'
+import BoardsPage from './pages/BoardsPage'
 import ObservabilityPage from './pages/ObservabilityPage'
 import SettingsPage from './pages/SettingsPage'
 import SecretsPage from './pages/SecretsPage'
@@ -113,6 +117,34 @@ function App() {
             <PrivateRoute>
               <Layout>
                 <FinOpsPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/autonomous" element={
+            <PrivateRoute>
+              <Layout>
+                <AutonomousPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/maturity" element={
+            <PrivateRoute>
+              <Layout>
+                <MaturityPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/playbook" element={
+            <PrivateRoute>
+              <Layout>
+                <ServicePlaybookPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/boards" element={
+            <PrivateRoute>
+              <Layout>
+                <BoardsPage />
               </Layout>
             </PrivateRoute>
           } />

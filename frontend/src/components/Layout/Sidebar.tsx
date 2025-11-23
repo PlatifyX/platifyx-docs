@@ -15,7 +15,9 @@ import {
   Network,
   Boxes,
   Workflow,
-  Key
+  Key,
+  Zap,
+  LayoutGrid
 } from 'lucide-react'
 
 interface NavItem {
@@ -31,9 +33,13 @@ const navItems: NavItem[] = [
   { path: '/kubernetes', label: 'Kubernetes', icon: <Server size={20} /> },
   { path: '/repos', label: 'Repositórios', icon: <Workflow size={20} /> },
   { path: '/ci', label: 'CI/CD', icon: <GitBranch size={20} /> },
+  { path: '/boards', label: 'Boards', icon: <LayoutGrid size={20} /> },
   { path: '/observability', label: 'Observabilidade', icon: <Activity size={20} /> },
   { path: '/quality', label: 'Qualidade', icon: <Shield size={20} /> },
   { path: '/finops', label: 'FinOps', icon: <DollarSign size={20} /> },
+  { path: '/autonomous', label: 'Engenharia IA', icon: <Zap size={20} /> },
+  { path: '/maturity', label: 'Maturidade', icon: <BarChart3 size={20} /> },
+  { path: '/playbook', label: 'Playbooks', icon: <Zap size={20} /> },
   { path: '/secrets', label: 'Secrets', icon: <Key size={20} /> },
   { path: '/techdocs', label: 'Documentação', icon: <FileText size={20} /> },
   { path: '/infrastructure-templates', label: 'Templates', icon: <Boxes size={20} /> },

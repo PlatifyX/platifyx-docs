@@ -21,11 +21,18 @@ type ServiceManager struct {
 	TechDocsService        *TechDocsService
 	ServiceTemplateService *ServiceTemplateService
 	ServiceCatalogService  *ServiceCatalogService
-	AIService              *AIService
-	DiagramService         *DiagramService
-	TemplateService        *TemplateService
-	UserService            *UserService
-	AuthService            *AuthService
+	AIService                        *AIService
+	DiagramService                   *DiagramService
+	TemplateService                  *TemplateService
+	UserService                      *UserService
+	AuthService                      *AuthService
+	AutonomousRecommendationsService *AutonomousRecommendationsService
+	TroubleshootingAssistantService   *TroubleshootingAssistantService
+	AutonomousActionsService         *AutonomousActionsService
+	MaturityService                  *MaturityService
+	AutoDocsService                  *AutoDocsService
+	ServicePlaybookService           *ServicePlaybookService
+	BoardsService                    *BoardsService
 	// User Management Repositories (exposed for handlers)
 	UserRepository          *repository.UserRepository
 	RoleRepository          *repository.RoleRepository
@@ -174,6 +181,69 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	userService := NewUserService(userRepo, auditRepo)
 	authService := NewAuthService(userRepo, sessionRepo, auditRepo, passwordResetRepo, cfg.JWTSecret)
 
+	// Initialize Autonomous Engineering services
+	autonomousRecommendationsService := NewAutonomousRecommendationsService(
+		aiService,
+		kubernetesService,
+		finOpsService,
+		azureDevOpsService,
+		log,
+	)
+
+	troubleshootingAssistantService := NewTroubleshootingAssistantService(
+		aiService,
+		kubernetesService,
+		azureDevOpsService,
+		log,
+	)
+
+	autonomousActionsService := NewAutonomousActionsService(
+		kubernetesService,
+		azureDevOpsService,
+		log,
+	)
+
+	maturityService := NewMaturityService(
+		kubernetesService,
+		azureDevOpsService,
+		sonarQubeService,
+		finOpsService,
+		aiService,
+		log,
+	)
+
+	autoDocsService := NewAutoDocsService(
+		techDocsService,
+		aiService,
+		diagramService,
+		githubService,
+		azureDevOpsService,
+		integrationService,
+		kubernetesService,
+		redisClient,
+		log,
+	)
+
+	servicePlaybookService := NewServicePlaybookService(
+		templateService,
+		techDocsService,
+		autoDocsService,
+		maturityService,
+		kubernetesService,
+		azureDevOpsService,
+		githubService,
+		integrationService,
+		redisClient,
+		log,
+	)
+
+	boardsService := NewBoardsService(
+		azureDevOpsService,
+		githubService,
+		integrationService,
+		log,
+	)
+
 	return &ServiceManager{
 		CacheService:           cacheService,
 		MetricsService:         NewMetricsService(),
@@ -188,9 +258,16 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		AIService:              aiService,
 		DiagramService:         diagramService,
 		TemplateService:        templateService,
-		UserService:            userService,
-		AuthService:            authService,
-		UserRepository:          userRepo,
+		UserService:                      userService,
+		AuthService:                      authService,
+		AutonomousRecommendationsService: autonomousRecommendationsService,
+		TroubleshootingAssistantService:   troubleshootingAssistantService,
+		AutonomousActionsService:         autonomousActionsService,
+		MaturityService:                  maturityService,
+		AutoDocsService:                  autoDocsService,
+		ServicePlaybookService:           servicePlaybookService,
+		BoardsService:                    boardsService,
+		UserRepository:                  userRepo,
 		RoleRepository:          roleRepo,
 		TeamRepository:          teamRepo,
 		SSORepository:           ssoRepo,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FileText, Folder, Plus, Edit2, Trash2, Save, X, FolderPlus, Sparkles } from 'lucide-react'
+import { FileText, Folder, Plus, Edit2, Trash2, Save, X, FolderPlus, Sparkles, Zap, Loader2, CheckCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -34,6 +34,13 @@ function TechDocsPage() {
   const [newDocPath, setNewDocPath] = useState('')
   const [newFolderPath, setNewFolderPath] = useState('')
   const [showAIAssistant, setShowAIAssistant] = useState(false)
+  const [showAutoGenModal, setShowAutoGenModal] = useState(false)
+  const [repoUrl, setRepoUrl] = useState('')
+  const [repoSource, setRepoSource] = useState('github')
+  const [serviceName, setServiceName] = useState('')
+  const [selectedDocTypes, setSelectedDocTypes] = useState<string[]>([])
+  const [generationProgress, setGenerationProgress] = useState<any>(null)
+  const [generating, setGenerating] = useState(false)
 
   useEffect(() => {
     fetchTree()
@@ -145,6 +152,67 @@ function TechDocsPage() {
     }
   }
 
+  const handleGenerateDocs = async () => {
+    if (!repoUrl || !serviceName) {
+      alert('Por favor, preencha a URL do repositório e o nome do serviço')
+      return
+    }
+
+    try {
+      setGenerating(true)
+      const response = await fetch(buildApiUrl('autodocs/generate'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          repositoryUrl: repoUrl,
+          repositorySource: repoSource,
+          serviceName: serviceName,
+          docTypes: selectedDocTypes.length > 0 ? selectedDocTypes : undefined
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to start generation')
+
+      const progress = await response.json()
+      setGenerationProgress(progress)
+
+      // Poll for progress updates
+      const pollInterval = setInterval(async () => {
+        try {
+          const progressResponse = await fetch(buildApiUrl(`autodocs/progress/${progress.id}`), {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          })
+          if (progressResponse.ok) {
+            const updatedProgress = await progressResponse.json()
+            setGenerationProgress(updatedProgress)
+
+            if (updatedProgress.status === 'completed' || updatedProgress.status === 'failed') {
+              clearInterval(pollInterval)
+              setGenerating(false)
+            }
+          }
+        } catch (err) {
+          console.error('Error polling progress:', err)
+        }
+      }, 2000)
+
+      // Cleanup after 5 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval)
+        setGenerating(false)
+      }, 5 * 60 * 1000)
+    } catch (err) {
+      console.error('Error generating docs:', err)
+      alert('Erro ao gerar documentação')
+      setGenerating(false)
+    }
+  }
+
   const handleCreateFolder = async () => {
     if (!newFolderPath.trim()) {
       alert('Por favor, insira um caminho para a pasta')
@@ -217,6 +285,13 @@ function TechDocsPage() {
           </div>
         </div>
         <div className="flex gap-3 relative z-10 flex-wrap">
+          <button
+            className="flex items-center gap-2 py-2.5 px-5 bg-gradient-to-br from-[#1B998B] to-[#15887a] text-white border-none rounded-lg cursor-pointer font-medium transition-all duration-200 shadow-[0_2px_4px_rgba(27,153,139,0.2)] hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(27,153,139,0.3)]"
+            onClick={() => setShowAutoGenModal(true)}
+          >
+            <Zap size={20} />
+            <span>Gerar Documentação Automática</span>
+          </button>
           <button
             className="flex items-center gap-2 py-2.5 px-5 bg-gradient-to-br from-[#3e5c76] to-[#3e5c76] text-white border-none rounded-lg cursor-pointer font-medium transition-all duration-200 shadow-[0_2px_4px_rgba(62,92,118,0.2)] hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(62,92,118,0.3)]"
             onClick={() => setShowAIAssistant(!showAIAssistant)}

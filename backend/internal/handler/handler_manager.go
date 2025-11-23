@@ -31,6 +31,11 @@ type HandlerManager struct {
 	SettingsHandler        *SettingsHandler
 	AuthHandler            *AuthHandler
 	SSOHandler             *SSOHandler
+	AutonomousHandler      *AutonomousHandler
+	MaturityHandler        *MaturityHandler
+	AutoDocsHandler        *AutoDocsHandler
+	ServicePlaybookHandler *ServicePlaybookHandler
+	BoardsHandler          *BoardsHandler
 }
 
 func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *HandlerManager {
@@ -60,5 +65,10 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		SettingsHandler:        NewSettingsHandler(services.UserService, services.UserRepository, services.RoleRepository, services.TeamRepository, services.AuditRepository, services.SSORepository),
 		AuthHandler:            NewAuthHandler(services.AuthService, services.UserService),
 		SSOHandler:             NewSSOHandler(services.SSORepository, services.UserRepository, services.AuthService, services.CacheService),
+		AutonomousHandler:      NewAutonomousHandler(services.AutonomousRecommendationsService, services.TroubleshootingAssistantService, services.AutonomousActionsService, log),
+		MaturityHandler:        NewMaturityHandler(services.MaturityService, log),
+		AutoDocsHandler:        NewAutoDocsHandler(services.AutoDocsService, log),
+		ServicePlaybookHandler: NewServicePlaybookHandler(services.ServicePlaybookService, log),
+		BoardsHandler:          NewBoardsHandler(services.BoardsService, log),
 	}
 }

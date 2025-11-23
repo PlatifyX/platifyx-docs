@@ -246,6 +246,40 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 			ai.GET("/providers", handlers.AIHandler.GetProviders)
 		}
 
+		autonomous := v1.Group("/autonomous")
+		{
+			autonomous.GET("/recommendations", handlers.AutonomousHandler.GetRecommendations)
+			autonomous.POST("/troubleshoot", handlers.AutonomousHandler.Troubleshoot)
+			autonomous.POST("/actions/execute", handlers.AutonomousHandler.ExecuteAction)
+			autonomous.GET("/actions/config", handlers.AutonomousHandler.GetConfig)
+			autonomous.PUT("/actions/config", handlers.AutonomousHandler.UpdateConfig)
+		}
+
+		maturity := v1.Group("/maturity")
+		{
+			maturity.GET("/service/metrics", handlers.MaturityHandler.GetServiceMetrics)
+			maturity.GET("/team/:team/scorecard", handlers.MaturityHandler.GetTeamScorecard)
+			maturity.GET("/teams/scorecards", handlers.MaturityHandler.GetAllTeamScorecards)
+		}
+
+		autodocs := v1.Group("/autodocs")
+		{
+			autodocs.POST("/generate", handlers.AutoDocsHandler.GenerateAutoDocs)
+			autodocs.GET("/progress/:id", handlers.AutoDocsHandler.GetProgress)
+		}
+
+		playbook := v1.Group("/playbook")
+		{
+			playbook.POST("/service/create", handlers.ServicePlaybookHandler.CreateService)
+			playbook.GET("/service/progress/:id", handlers.ServicePlaybookHandler.GetProgress)
+		}
+
+		boards := v1.Group("/boards")
+		{
+			boards.GET("/unified", handlers.BoardsHandler.GetUnifiedBoard)
+			boards.GET("/source/:source", handlers.BoardsHandler.GetBoardBySource)
+		}
+
 		integrations := v1.Group("/integrations")
 		{
 			integrations.GET("", handlers.IntegrationHandler.List)
