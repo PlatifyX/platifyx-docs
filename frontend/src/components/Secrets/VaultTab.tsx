@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Key, Plus, Eye, EyeOff, Trash2, RefreshCw, Search, Lock, Folder, FileKey, ChevronRight } from 'lucide-react'
+import { Key, Plus, Eye, EyeOff, Trash2, RefreshCw, Search, Lock, Folder, FileKey, ChevronRight, X } from 'lucide-react'
 import { SecretsApi, type VaultSecretListItem, type VaultStats } from '../../services/secretsApi'
 
 interface VaultTabProps {
   integrationId: number
+}
+
+interface KeyValuePair {
+  key: string
+  value: string
 }
 
 function VaultTab({ integrationId }: VaultTabProps) {
@@ -18,7 +23,7 @@ function VaultTab({ integrationId }: VaultTabProps) {
   const [secretData, setSecretData] = useState<Record<string, any>>({})
   const [showSecretValues, setShowSecretValues] = useState(false)
   const [newSecretPath, setNewSecretPath] = useState('')
-  const [newSecretData, setNewSecretData] = useState('{}')
+  const [newKeyValuePairs, setNewKeyValuePairs] = useState<KeyValuePair[]>([{ key: '', value: '' }])
 
   useEffect(() => {
     loadData()
@@ -38,6 +43,34 @@ function VaultTab({ integrationId }: VaultTabProps) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const keyValuePairsToJson = (pairs: KeyValuePair[]): Record<string, string> | null => {
+    const validPairs = pairs.filter(p => p.key.trim() !== '')
+    if (validPairs.length === 0) {
+      return null
+    }
+    const obj: Record<string, string> = {}
+    validPairs.forEach(pair => {
+      obj[pair.key] = pair.value
+    })
+    return obj
+  }
+
+  const addNewKeyValuePair = () => {
+    setNewKeyValuePairs([...newKeyValuePairs, { key: '', value: '' }])
+  }
+
+  const removeNewKeyValuePair = (index: number) => {
+    if (newKeyValuePairs.length > 1) {
+      setNewKeyValuePairs(newKeyValuePairs.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateNewKeyValuePair = (index: number, field: 'key' | 'value', value: string) => {
+    const updated = [...newKeyValuePairs]
+    updated[index][field] = value
+    setNewKeyValuePairs(updated)
   }
 
   const handleNavigateToFolder = (path: string) => {
@@ -71,13 +104,18 @@ function VaultTab({ integrationId }: VaultTabProps) {
       return
     }
 
+    const data = keyValuePairsToJson(newKeyValuePairs)
+    if (!data) {
+      alert('Adicione pelo menos um par chave-valor')
+      return
+    }
+
     try {
-      const data = JSON.parse(newSecretData)
       const fullPath = currentPath ? `${currentPath}/${newSecretPath}` : newSecretPath
       await SecretsApi.writeVaultSecret(integrationId, fullPath, data)
       setShowCreateModal(false)
       setNewSecretPath('')
-      setNewSecretData('{}')
+      setNewKeyValuePairs([{ key: '', value: '' }])
       await loadData()
     } catch (error: any) {
       console.error('Error creating secret:', error)
@@ -282,7 +320,7 @@ function VaultTab({ integrationId }: VaultTabProps) {
 
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-surface border border-border rounded-lg p-6 w-full max-w-md">
+          <div className="bg-surface border border-border rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-white mb-4">Criar Novo Secret</h3>
             <div className="space-y-4">
               <div>
@@ -303,21 +341,67 @@ function VaultTab({ integrationId }: VaultTabProps) {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Data (JSON) *
-                </label>
-                <textarea
-                  value={newSecretData}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewSecretData(e.target.value)}
-                  rows={6}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-white focus:outline-none focus:border-primary font-mono text-sm"
-                  placeholder='{"key": "value"}'
-                />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-white">
+                    Pares Chave-Valor *
+                  </label>
+                  <button
+                    onClick={addNewKeyValuePair}
+                    className="flex items-center gap-1 px-3 py-1 bg-primary hover:bg-primary-dark rounded-lg text-white text-sm transition-colors"
+                  >
+                    <Plus size={16} />
+                    Adicionar Campo
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {newKeyValuePairs.map((pair, index) => (
+                    <div key={index} className="flex gap-2 items-start">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={pair.key}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            updateNewKeyValuePair(index, 'key', e.target.value)
+                          }
+                          className="w-full px-3 py-2 bg-background border border-border rounded-lg text-white focus:outline-none focus:border-primary"
+                          placeholder="chave"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={pair.value}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            updateNewKeyValuePair(index, 'value', e.target.value)
+                          }
+                          className="w-full px-3 py-2 bg-background border border-border rounded-lg text-white focus:outline-none focus:border-primary"
+                          placeholder="valor"
+                        />
+                      </div>
+                      {newKeyValuePairs.length > 1 && (
+                        <button
+                          onClick={() => removeNewKeyValuePair(index)}
+                          className="p-2 hover:bg-background rounded-lg text-red-400 hover:text-red-300 transition-colors"
+                          title="Remover"
+                        >
+                          <X size={20} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted mt-2">
+                  Os pares chave-valor serão armazenados como JSON no Vault
+                </p>
               </div>
             </div>
             <div className="flex gap-3 mt-6">
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => {
+                  setShowCreateModal(false)
+                  setNewSecretPath('')
+                  setNewKeyValuePairs([{ key: '', value: '' }])
+                }}
                 className="flex-1 px-4 py-2 border border-border rounded-lg text-white hover:bg-surface-light transition-colors"
               >
                 Cancelar
