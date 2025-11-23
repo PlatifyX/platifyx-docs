@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/PlatifyX/platifyx-core/internal/service"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
@@ -20,12 +22,34 @@ func NewAWSSecretsHandler(svc *service.IntegrationService, log *logger.Logger) *
 	}
 }
 
-func (h *AWSSecretsHandler) GetStats(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+func (h *AWSSecretsHandler) getIntegrationID(c *gin.Context) (int, error) {
+	integrationID := c.Query("integration_id")
+	if integrationID == "" {
+		return 0, fmt.Errorf("integration_id parameter is required")
+	}
+
+	id, err := strconv.Atoi(integrationID)
 	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
+		return 0, fmt.Errorf("invalid integration_id")
+	}
+
+	return id, nil
+}
+
+func (h *AWSSecretsHandler) GetStats(c *gin.Context) {
+	integrationID, err := h.getIntegrationID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -43,11 +67,19 @@ func (h *AWSSecretsHandler) GetStats(c *gin.Context) {
 }
 
 func (h *AWSSecretsHandler) ListSecrets(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -68,11 +100,19 @@ func (h *AWSSecretsHandler) ListSecrets(c *gin.Context) {
 }
 
 func (h *AWSSecretsHandler) GetSecret(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -98,11 +138,19 @@ func (h *AWSSecretsHandler) GetSecret(c *gin.Context) {
 }
 
 func (h *AWSSecretsHandler) CreateSecret(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -111,6 +159,7 @@ func (h *AWSSecretsHandler) CreateSecret(c *gin.Context) {
 		Name         string            `json:"name"`
 		Description  string            `json:"description"`
 		SecretString string            `json:"secretString"`
+		SecretValue  string            `json:"secret_value"`
 		Tags         map[string]string `json:"tags"`
 	}
 
@@ -121,14 +170,19 @@ func (h *AWSSecretsHandler) CreateSecret(c *gin.Context) {
 		return
 	}
 
-	if req.Name == "" || req.SecretString == "" {
+	secretValue := req.SecretString
+	if secretValue == "" {
+		secretValue = req.SecretValue
+	}
+
+	if req.Name == "" || secretValue == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "name and secretString are required",
+			"error": "name and secret value are required",
 		})
 		return
 	}
 
-	if err := awsSecretsService.CreateSecret(c.Request.Context(), req.Name, req.Description, req.SecretString, req.Tags); err != nil {
+	if err := awsSecretsService.CreateSecret(c.Request.Context(), req.Name, req.Description, secretValue, req.Tags); err != nil {
 		h.log.Errorw("Failed to create AWS secret", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -142,11 +196,19 @@ func (h *AWSSecretsHandler) CreateSecret(c *gin.Context) {
 }
 
 func (h *AWSSecretsHandler) UpdateSecret(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -161,6 +223,7 @@ func (h *AWSSecretsHandler) UpdateSecret(c *gin.Context) {
 
 	var req struct {
 		SecretString string `json:"secretString"`
+		SecretValue  string `json:"secret_value"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -170,14 +233,19 @@ func (h *AWSSecretsHandler) UpdateSecret(c *gin.Context) {
 		return
 	}
 
-	if req.SecretString == "" {
+	secretValue := req.SecretString
+	if secretValue == "" {
+		secretValue = req.SecretValue
+	}
+
+	if secretValue == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "secretString is required",
+			"error": "secret value is required",
 		})
 		return
 	}
 
-	if err := awsSecretsService.UpdateSecret(c.Request.Context(), secretName, req.SecretString); err != nil {
+	if err := awsSecretsService.UpdateSecret(c.Request.Context(), secretName, secretValue); err != nil {
 		h.log.Errorw("Failed to update AWS secret", "error", err, "name", secretName)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -191,11 +259,19 @@ func (h *AWSSecretsHandler) UpdateSecret(c *gin.Context) {
 }
 
 func (h *AWSSecretsHandler) DeleteSecret(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -224,11 +300,19 @@ func (h *AWSSecretsHandler) DeleteSecret(c *gin.Context) {
 }
 
 func (h *AWSSecretsHandler) DescribeSecret(c *gin.Context) {
-	awsSecretsService, err := h.service.GetAWSSecretsService()
+	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
-		h.log.Errorw("Failed to get AWS Secrets service", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	if err != nil {
+		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "AWS Secrets Manager integration not configured",
+			"error": err.Error(),
 		})
 		return
 	}

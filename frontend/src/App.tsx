@@ -19,6 +19,7 @@ import FinOpsPageEnhanced from './pages/FinOpsPageEnhanced'
 import TechDocsPage from './pages/TechDocsPage'
 import ObservabilityPage from './pages/ObservabilityPage'
 import SettingsPage from './pages/SettingsPage'
+import SecretsPage from './pages/SecretsPage'
 
 function RootRedirect() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -140,6 +141,13 @@ function App() {
             <PrivateRoute>
               <Layout>
                 <SettingsPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/secrets" element={
+            <PrivateRoute>
+              <Layout>
+                <SecretsPage />
               </Layout>
             </PrivateRoute>
           } />

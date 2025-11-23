@@ -103,7 +103,6 @@ const integrationTypes = [
     name: 'HashiCorp Vault',
     description: 'Gerenciamento de secrets',
     logo: '/logos/vault.png',
-    disabled: true,
   },
   {
     id: 'kubernetes',
