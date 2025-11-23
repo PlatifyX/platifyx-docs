@@ -14,7 +14,8 @@ import {
   FileText,
   Network,
   Boxes,
-  Workflow
+  Workflow,
+  Key
 } from 'lucide-react'
 
 interface NavItem {
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
   { path: '/observability', label: 'Observabilidade', icon: <Activity size={20} /> },
   { path: '/quality', label: 'Qualidade', icon: <Shield size={20} /> },
   { path: '/finops', label: 'FinOps', icon: <DollarSign size={20} /> },
+  { path: '/secrets', label: 'Secrets', icon: <Key size={20} /> },
   { path: '/techdocs', label: 'Documentação', icon: <FileText size={20} /> },
   { path: '/infrastructure-templates', label: 'Templates', icon: <Boxes size={20} /> },
   { path: '/integrations', label: 'Integrações', icon: <Plug size={20} /> },
