@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react'
 import { Key, Plus, Eye, EyeOff, Trash2, RefreshCw, Search, Lock, Folder, FileKey, ChevronRight } from 'lucide-react'
 import { SecretsApi, type VaultSecretListItem, type VaultStats } from '../../services/secretsApi'
 
-function VaultTab() {
+interface VaultTabProps {
+  integrationId: number
+}
+
+function VaultTab({ integrationId }: VaultTabProps) {
   const [secrets, setSecrets] = useState<VaultSecretListItem[]>([])
   const [stats, setStats] = useState<VaultStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -18,14 +22,14 @@ function VaultTab() {
 
   useEffect(() => {
     loadData()
-  }, [currentPath])
+  }, [integrationId, currentPath])
 
   const loadData = async () => {
     setLoading(true)
     try {
       const [secretsList, statsData] = await Promise.all([
-        SecretsApi.listVaultSecrets(currentPath),
-        SecretsApi.getVaultStats(),
+        SecretsApi.listVaultSecrets(integrationId, currentPath),
+        SecretsApi.getVaultStats(integrationId),
       ])
       setSecrets(secretsList)
       setStats(statsData)
@@ -50,7 +54,7 @@ function VaultTab() {
   const handleViewSecret = async (path: string) => {
     try {
       const fullPath = currentPath ? `${currentPath}/${path}` : path
-      const data = await SecretsApi.readVaultSecret(fullPath)
+      const data = await SecretsApi.readVaultSecret(integrationId, fullPath)
       setSelectedSecretPath(fullPath)
       setSecretData(data.data || {})
       setShowSecretValues(false)
@@ -70,7 +74,7 @@ function VaultTab() {
     try {
       const data = JSON.parse(newSecretData)
       const fullPath = currentPath ? `${currentPath}/${newSecretPath}` : newSecretPath
-      await SecretsApi.writeVaultSecret(fullPath, data)
+      await SecretsApi.writeVaultSecret(integrationId, fullPath, data)
       setShowCreateModal(false)
       setNewSecretPath('')
       setNewSecretData('{}')
@@ -88,7 +92,7 @@ function VaultTab() {
     }
 
     try {
-      await SecretsApi.deleteVaultSecret(fullPath)
+      await SecretsApi.deleteVaultSecret(integrationId, fullPath)
       await loadData()
     } catch (error: any) {
       console.error('Error deleting secret:', error)

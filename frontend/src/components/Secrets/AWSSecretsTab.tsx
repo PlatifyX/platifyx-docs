@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react'
 import { Key, Plus, Eye, EyeOff, Trash2, RefreshCw, Search, Lock } from 'lucide-react'
 import { SecretsApi, type AWSSecret, type AWSSecretsStats } from '../../services/secretsApi'
 
-function AWSSecretsTab() {
+interface AWSSecretsTabProps {
+  integrationId: number
+}
+
+function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
   const [secrets, setSecrets] = useState<AWSSecret[]>([])
   const [stats, setStats] = useState<AWSSecretsStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -18,14 +22,14 @@ function AWSSecretsTab() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [integrationId])
 
   const loadData = async () => {
     setLoading(true)
     try {
       const [secretsList, statsData] = await Promise.all([
-        SecretsApi.listAWSSecrets(),
-        SecretsApi.getAWSStats(),
+        SecretsApi.listAWSSecrets(integrationId),
+        SecretsApi.getAWSStats(integrationId),
       ])
       setSecrets(secretsList)
       setStats(statsData)
@@ -38,7 +42,7 @@ function AWSSecretsTab() {
 
   const handleViewSecret = async (name: string) => {
     try {
-      const data = await SecretsApi.getAWSSecret(name)
+      const data = await SecretsApi.getAWSSecret(integrationId, name)
       setSelectedSecret(name)
       setSecretValue(data.value)
       setShowSecretValue(false)
@@ -56,7 +60,7 @@ function AWSSecretsTab() {
     }
 
     try {
-      await SecretsApi.createAWSSecret(newSecretName, newSecretValue, newSecretDescription)
+      await SecretsApi.createAWSSecret(integrationId, newSecretName, newSecretValue, newSecretDescription)
       setShowCreateModal(false)
       setNewSecretName('')
       setNewSecretValue('')
@@ -74,7 +78,7 @@ function AWSSecretsTab() {
     }
 
     try {
-      await SecretsApi.deleteAWSSecret(name)
+      await SecretsApi.deleteAWSSecret(integrationId, name)
       await loadData()
     } catch (error: any) {
       console.error('Error deleting secret:', error)
