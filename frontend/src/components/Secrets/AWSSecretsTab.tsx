@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Key, Plus, Eye, EyeOff, Trash2, RefreshCw, Search, Lock, Edit } from 'lucide-react'
+import { Key, Plus, Eye, EyeOff, Trash2, RefreshCw, Search, Lock, Edit, X } from 'lucide-react'
 import { SecretsApi, type AWSSecret, type AWSSecretsStats } from '../../services/secretsApi'
 
 interface AWSSecretsTabProps {
   integrationId: number
+}
+
+interface KeyValuePair {
+  key: string
+  value: string
 }
 
 function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
@@ -17,11 +22,11 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
   const [secretValue, setSecretValue] = useState<string>('')
   const [showSecretValue, setShowSecretValue] = useState(false)
   const [newSecretName, setNewSecretName] = useState('')
-  const [newSecretValue, setNewSecretValue] = useState('')
   const [newSecretDescription, setNewSecretDescription] = useState('')
+  const [newKeyValuePairs, setNewKeyValuePairs] = useState<KeyValuePair[]>([{ key: '', value: '' }])
   const [showEditModal, setShowEditModal] = useState(false)
   const [editSecretName, setEditSecretName] = useState('')
-  const [editSecretValue, setEditSecretValue] = useState('')
+  const [editKeyValuePairs, setEditKeyValuePairs] = useState<KeyValuePair[]>([{ key: '', value: '' }])
 
   useEffect(() => {
     loadData()
@@ -43,6 +48,65 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
     }
   }
 
+  const parseJsonToKeyValuePairs = (jsonString: string): KeyValuePair[] => {
+    try {
+      const parsed = JSON.parse(jsonString)
+      if (typeof parsed === 'object' && parsed !== null) {
+        return Object.entries(parsed).map(([key, value]) => ({
+          key,
+          value: String(value)
+        }))
+      }
+      return [{ key: '', value: jsonString }]
+    } catch {
+      return [{ key: '', value: jsonString }]
+    }
+  }
+
+  const keyValuePairsToJson = (pairs: KeyValuePair[]): string => {
+    const validPairs = pairs.filter(p => p.key.trim() !== '')
+    if (validPairs.length === 0) {
+      return ''
+    }
+    const obj: Record<string, string> = {}
+    validPairs.forEach(pair => {
+      obj[pair.key] = pair.value
+    })
+    return JSON.stringify(obj)
+  }
+
+  const addNewKeyValuePair = () => {
+    setNewKeyValuePairs([...newKeyValuePairs, { key: '', value: '' }])
+  }
+
+  const removeNewKeyValuePair = (index: number) => {
+    if (newKeyValuePairs.length > 1) {
+      setNewKeyValuePairs(newKeyValuePairs.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateNewKeyValuePair = (index: number, field: 'key' | 'value', value: string) => {
+    const updated = [...newKeyValuePairs]
+    updated[index][field] = value
+    setNewKeyValuePairs(updated)
+  }
+
+  const addEditKeyValuePair = () => {
+    setEditKeyValuePairs([...editKeyValuePairs, { key: '', value: '' }])
+  }
+
+  const removeEditKeyValuePair = (index: number) => {
+    if (editKeyValuePairs.length > 1) {
+      setEditKeyValuePairs(editKeyValuePairs.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateEditKeyValuePair = (index: number, field: 'key' | 'value', value: string) => {
+    const updated = [...editKeyValuePairs]
+    updated[index][field] = value
+    setEditKeyValuePairs(updated)
+  }
+
   const handleViewSecret = async (name: string) => {
     try {
       const data = await SecretsApi.getAWSSecret(integrationId, name)
@@ -60,7 +124,8 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
     try {
       const data = await SecretsApi.getAWSSecret(integrationId, name)
       setEditSecretName(name)
-      setEditSecretValue(data.secretString || '')
+      const pairs = parseJsonToKeyValuePairs(data.secretString || '')
+      setEditKeyValuePairs(pairs)
       setShowEditModal(true)
     } catch (error) {
       console.error('Error loading secret for edit:', error)
@@ -69,16 +134,17 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
   }
 
   const handleUpdateSecret = async () => {
-    if (!editSecretValue) {
-      alert('Valor é obrigatório')
+    const jsonValue = keyValuePairsToJson(editKeyValuePairs)
+    if (!jsonValue) {
+      alert('Adicione pelo menos um par chave-valor')
       return
     }
 
     try {
-      await SecretsApi.updateAWSSecret(integrationId, editSecretName, editSecretValue)
+      await SecretsApi.updateAWSSecret(integrationId, editSecretName, jsonValue)
       setShowEditModal(false)
       setEditSecretName('')
-      setEditSecretValue('')
+      setEditKeyValuePairs([{ key: '', value: '' }])
       await loadData()
     } catch (error: any) {
       console.error('Error updating secret:', error)
@@ -87,17 +153,23 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
   }
 
   const handleCreateSecret = async () => {
-    if (!newSecretName || !newSecretValue) {
-      alert('Nome e valor são obrigatórios')
+    if (!newSecretName) {
+      alert('Nome é obrigatório')
+      return
+    }
+
+    const jsonValue = keyValuePairsToJson(newKeyValuePairs)
+    if (!jsonValue) {
+      alert('Adicione pelo menos um par chave-valor')
       return
     }
 
     try {
-      await SecretsApi.createAWSSecret(integrationId, newSecretName, newSecretValue, newSecretDescription)
+      await SecretsApi.createAWSSecret(integrationId, newSecretName, jsonValue, newSecretDescription)
       setShowCreateModal(false)
       setNewSecretName('')
-      setNewSecretValue('')
       setNewSecretDescription('')
+      setNewKeyValuePairs([{ key: '', value: '' }])
       await loadData()
     } catch (error: any) {
       console.error('Error creating secret:', error)
@@ -259,7 +331,7 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
 
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-surface border border-border rounded-lg p-6 w-full max-w-md">
+          <div className="bg-surface border border-border rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-white mb-4">Criar Novo Secret</h3>
             <div className="space-y-4">
               <div>
@@ -287,21 +359,68 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Valor *
-                </label>
-                <textarea
-                  value={newSecretValue}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewSecretValue(e.target.value)}
-                  rows={4}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-white focus:outline-none focus:border-primary font-mono text-sm"
-                  placeholder="Valor do secret..."
-                />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-white">
+                    Pares Chave-Valor *
+                  </label>
+                  <button
+                    onClick={addNewKeyValuePair}
+                    className="flex items-center gap-1 px-3 py-1 bg-primary hover:bg-primary-dark rounded-lg text-white text-sm transition-colors"
+                  >
+                    <Plus size={16} />
+                    Adicionar Campo
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {newKeyValuePairs.map((pair, index) => (
+                    <div key={index} className="flex gap-2 items-start">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={pair.key}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            updateNewKeyValuePair(index, 'key', e.target.value)
+                          }
+                          className="w-full px-3 py-2 bg-background border border-border rounded-lg text-white focus:outline-none focus:border-primary"
+                          placeholder="chave"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={pair.value}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            updateNewKeyValuePair(index, 'value', e.target.value)
+                          }
+                          className="w-full px-3 py-2 bg-background border border-border rounded-lg text-white focus:outline-none focus:border-primary"
+                          placeholder="valor"
+                        />
+                      </div>
+                      {newKeyValuePairs.length > 1 && (
+                        <button
+                          onClick={() => removeNewKeyValuePair(index)}
+                          className="p-2 hover:bg-background rounded-lg text-red-400 hover:text-red-300 transition-colors"
+                          title="Remover"
+                        >
+                          <X size={20} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted mt-2">
+                  Os pares chave-valor serão armazenados como JSON
+                </p>
               </div>
             </div>
             <div className="flex gap-3 mt-6">
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => {
+                  setShowCreateModal(false)
+                  setNewSecretName('')
+                  setNewSecretDescription('')
+                  setNewKeyValuePairs([{ key: '', value: '' }])
+                }}
                 className="flex-1 px-4 py-2 border border-border rounded-lg text-white hover:bg-surface-light transition-colors"
               >
                 Cancelar
@@ -369,7 +488,7 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
 
       {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-surface border border-border rounded-lg p-6 w-full max-w-md">
+          <div className="bg-surface border border-border rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-white mb-4">Editar Secret</h3>
             <div className="space-y-4">
               <div>
@@ -381,16 +500,58 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Novo Valor *
-                </label>
-                <textarea
-                  value={editSecretValue}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditSecretValue(e.target.value)}
-                  rows={4}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-white focus:outline-none focus:border-primary font-mono text-sm"
-                  placeholder="Novo valor do secret..."
-                />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-white">
+                    Pares Chave-Valor *
+                  </label>
+                  <button
+                    onClick={addEditKeyValuePair}
+                    className="flex items-center gap-1 px-3 py-1 bg-primary hover:bg-primary-dark rounded-lg text-white text-sm transition-colors"
+                  >
+                    <Plus size={16} />
+                    Adicionar Campo
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {editKeyValuePairs.map((pair, index) => (
+                    <div key={index} className="flex gap-2 items-start">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={pair.key}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            updateEditKeyValuePair(index, 'key', e.target.value)
+                          }
+                          className="w-full px-3 py-2 bg-background border border-border rounded-lg text-white focus:outline-none focus:border-primary"
+                          placeholder="chave"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={pair.value}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            updateEditKeyValuePair(index, 'value', e.target.value)
+                          }
+                          className="w-full px-3 py-2 bg-background border border-border rounded-lg text-white focus:outline-none focus:border-primary"
+                          placeholder="valor"
+                        />
+                      </div>
+                      {editKeyValuePairs.length > 1 && (
+                        <button
+                          onClick={() => removeEditKeyValuePair(index)}
+                          className="p-2 hover:bg-background rounded-lg text-red-400 hover:text-red-300 transition-colors"
+                          title="Remover"
+                        >
+                          <X size={20} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted mt-2">
+                  Os pares chave-valor serão armazenados como JSON
+                </p>
               </div>
             </div>
             <div className="flex gap-3 mt-6">
@@ -398,7 +559,7 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
                 onClick={() => {
                   setShowEditModal(false)
                   setEditSecretName('')
-                  setEditSecretValue('')
+                  setEditKeyValuePairs([{ key: '', value: '' }])
                 }}
                 className="flex-1 px-4 py-2 border border-border rounded-lg text-white hover:bg-surface-light transition-colors"
               >
