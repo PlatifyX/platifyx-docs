@@ -15,7 +15,7 @@ import AzureDevOpsPage from './pages/AzureDevOpsPage'
 import IntegrationsPage from './pages/IntegrationsPage'
 import InfrastructureTemplatesPage from './pages/InfrastructureTemplatesPage'
 import QualityPage from './pages/QualityPage'
-import FinOpsPageEnhanced from './pages/FinOpsPageEnhanced'
+import FinOpsPage from './pages/FinOpsPage'
 import TechDocsPage from './pages/TechDocsPage'
 import ObservabilityPage from './pages/ObservabilityPage'
 import SettingsPage from './pages/SettingsPage'
@@ -112,7 +112,7 @@ function App() {
           <Route path="/finops" element={
             <PrivateRoute>
               <Layout>
-                <FinOpsPageEnhanced />
+                <FinOpsPage />
               </Layout>
             </PrivateRoute>
           } />

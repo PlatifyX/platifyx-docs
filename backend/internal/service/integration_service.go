@@ -290,6 +290,32 @@ func (s *IntegrationService) GetAllAWSConfigs() (map[string]*domain.AWSCloudConf
 	return configs, nil
 }
 
+func (s *IntegrationService) GetAWSConfigByName(name string) (*domain.AWSCloudConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeAWS))
+	if err != nil {
+		s.log.Errorw("Failed to fetch AWS integrations", "error", err)
+		return nil, err
+	}
+
+	for _, integration := range integrations {
+		if integration.Name == name && integration.Enabled {
+			var config domain.AWSCloudIntegrationConfig
+			if err := json.Unmarshal(integration.Config, &config); err != nil {
+				s.log.Errorw("Failed to unmarshal AWS config", "error", err, "integration", integration.Name)
+				return nil, err
+			}
+
+			return &domain.AWSCloudConfig{
+				AccessKeyID:     config.AccessKeyID,
+				SecretAccessKey: config.SecretAccessKey,
+				Region:          config.Region,
+			}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("AWS integration '%s' not found or disabled", name)
+}
+
 func (s *IntegrationService) GetKubernetesConfig() (*domain.KubernetesConfig, error) {
 	integration, err := s.repo.GetByType(string(domain.IntegrationTypeKubernetes))
 	if err != nil {

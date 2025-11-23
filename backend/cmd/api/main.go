@@ -416,9 +416,15 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		// Authentication
 		auth := v1.Group("/auth")
 		{
-			// Login endpoint com rate limiting (5 tentativas por minuto)
+			// Login endpoint com rate limiting
+			// Em desenvolvimento: 50 tentativas/minuto
+			// Em produção: 5 tentativas/minuto
+			loginRateLimiter := middleware.DefaultLoginRateLimiter()
+			if cfg.Environment == "development" {
+				loginRateLimiter = middleware.DevelopmentLoginRateLimiter()
+			}
 			auth.POST("/login",
-				middleware.RateLimiter(services.CacheService, middleware.DefaultLoginRateLimiter()),
+				middleware.RateLimiter(services.CacheService, loginRateLimiter),
 				handlers.AuthHandler.Login,
 			)
 

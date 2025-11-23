@@ -91,7 +91,9 @@ func (h *FinOpsHandler) ListResources(c *gin.Context) {
 
 // GetAWSMonthlyCosts returns monthly cost data from AWS for the last year
 func (h *FinOpsHandler) GetAWSMonthlyCosts(c *gin.Context) {
-	cacheKey := service.BuildKey("finops:aws", "monthly")
+	integration := c.Query("integration")
+
+	cacheKey := service.BuildKey("finops:aws", "monthly:"+integration)
 
 	// Try cache first
 	if h.cache != nil {
@@ -104,7 +106,7 @@ func (h *FinOpsHandler) GetAWSMonthlyCosts(c *gin.Context) {
 	}
 
 	// Cache MISS
-	data, err := h.service.GetAWSCostsByMonth()
+	data, err := h.service.GetAWSCostsByMonth(integration)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS monthly costs", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -133,7 +135,9 @@ func (h *FinOpsHandler) GetAWSCostsByService(c *gin.Context) {
 		}
 	}
 
-	cacheKey := service.BuildKey("finops:aws:byservice", strconv.Itoa(months))
+	integration := c.Query("integration")
+
+	cacheKey := service.BuildKey("finops:aws:byservice", strconv.Itoa(months)+":"+integration)
 
 	// Try cache first
 	if h.cache != nil {
@@ -146,7 +150,7 @@ func (h *FinOpsHandler) GetAWSCostsByService(c *gin.Context) {
 	}
 
 	// Cache MISS
-	data, err := h.service.GetAWSCostsByService(months)
+	data, err := h.service.GetAWSCostsByService(months, integration)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS costs by service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -165,7 +169,9 @@ func (h *FinOpsHandler) GetAWSCostsByService(c *gin.Context) {
 
 // GetAWSCostForecast returns AWS cost forecast
 func (h *FinOpsHandler) GetAWSCostForecast(c *gin.Context) {
-	data, err := h.service.GetAWSCostForecast()
+	integration := c.Query("integration")
+
+	data, err := h.service.GetAWSCostForecast(integration)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS cost forecast", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
