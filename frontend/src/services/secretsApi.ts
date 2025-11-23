@@ -12,7 +12,7 @@ export interface AWSSecret {
 
 export interface AWSSecretValue {
   name: string
-  value: string
+  secretString: string
   versionId?: string
 }
 

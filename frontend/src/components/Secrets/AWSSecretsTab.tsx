@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Key, Plus, Eye, EyeOff, Trash2, RefreshCw, Search, Lock } from 'lucide-react'
+import { Key, Plus, Eye, EyeOff, Trash2, RefreshCw, Search, Lock, Edit } from 'lucide-react'
 import { SecretsApi, type AWSSecret, type AWSSecretsStats } from '../../services/secretsApi'
 
 interface AWSSecretsTabProps {
@@ -19,6 +19,9 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
   const [newSecretName, setNewSecretName] = useState('')
   const [newSecretValue, setNewSecretValue] = useState('')
   const [newSecretDescription, setNewSecretDescription] = useState('')
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editSecretName, setEditSecretName] = useState('')
+  const [editSecretValue, setEditSecretValue] = useState('')
 
   useEffect(() => {
     loadData()
@@ -44,12 +47,42 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
     try {
       const data = await SecretsApi.getAWSSecret(integrationId, name)
       setSelectedSecret(name)
-      setSecretValue(data.value)
+      setSecretValue(data.secretString || '')
       setShowSecretValue(false)
       setShowViewModal(true)
     } catch (error) {
       console.error('Error viewing secret:', error)
       alert('Erro ao visualizar secret')
+    }
+  }
+
+  const handleEditSecret = async (name: string) => {
+    try {
+      const data = await SecretsApi.getAWSSecret(integrationId, name)
+      setEditSecretName(name)
+      setEditSecretValue(data.secretString || '')
+      setShowEditModal(true)
+    } catch (error) {
+      console.error('Error loading secret for edit:', error)
+      alert('Erro ao carregar secret para edição')
+    }
+  }
+
+  const handleUpdateSecret = async () => {
+    if (!editSecretValue) {
+      alert('Valor é obrigatório')
+      return
+    }
+
+    try {
+      await SecretsApi.updateAWSSecret(integrationId, editSecretName, editSecretValue)
+      setShowEditModal(false)
+      setEditSecretName('')
+      setEditSecretValue('')
+      await loadData()
+    } catch (error: any) {
+      console.error('Error updating secret:', error)
+      alert(error.message || 'Erro ao atualizar secret')
     }
   }
 
@@ -202,6 +235,13 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
                         <Eye size={18} />
                       </button>
                       <button
+                        onClick={() => handleEditSecret(secret.name)}
+                        className="p-2 hover:bg-surface rounded-lg text-green-400 hover:text-green-300 transition-colors"
+                        title="Editar"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button
                         onClick={() => handleDeleteSecret(secret.name)}
                         className="p-2 hover:bg-surface rounded-lg text-red-400 hover:text-red-300 transition-colors"
                         title="Deletar"
@@ -321,6 +361,54 @@ function AWSSecretsTab({ integrationId }: AWSSecretsTabProps) {
                 className="flex-1 px-4 py-2 bg-primary hover:bg-primary-dark rounded-lg text-white font-medium transition-colors"
               >
                 Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-surface border border-border rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-white mb-4">Editar Secret</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">
+                  Nome
+                </label>
+                <div className="px-3 py-2 bg-background border border-border rounded-lg text-muted">
+                  {editSecretName}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">
+                  Novo Valor *
+                </label>
+                <textarea
+                  value={editSecretValue}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditSecretValue(e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-white focus:outline-none focus:border-primary font-mono text-sm"
+                  placeholder="Novo valor do secret..."
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowEditModal(false)
+                  setEditSecretName('')
+                  setEditSecretValue('')
+                }}
+                className="flex-1 px-4 py-2 border border-border rounded-lg text-white hover:bg-surface-light transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleUpdateSecret}
+                className="flex-1 px-4 py-2 bg-primary hover:bg-primary-dark rounded-lg text-white font-medium transition-colors"
+              >
+                Atualizar
               </button>
             </div>
           </div>
