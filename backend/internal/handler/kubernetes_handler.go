@@ -9,26 +9,53 @@ import (
 )
 
 type KubernetesHandler struct {
-	service *service.KubernetesService
-	log     *logger.Logger
+	integrationService *service.IntegrationService
+	log                *logger.Logger
 }
 
-func NewKubernetesHandler(svc *service.KubernetesService, log *logger.Logger) *KubernetesHandler {
+func NewKubernetesHandler(integrationService *service.IntegrationService, log *logger.Logger) *KubernetesHandler {
 	return &KubernetesHandler{
-		service: svc,
-		log:     log,
+		integrationService: integrationService,
+		log:                log,
 	}
 }
 
+func (h *KubernetesHandler) getService(organizationUUID string) (*service.KubernetesService, error) {
+	config, err := h.integrationService.GetKubernetesConfig(organizationUUID)
+	if err != nil {
+		return nil, err
+	}
+	if config == nil {
+		return nil, nil
+	}
+	return service.NewKubernetesService(*config, h.log)
+}
+
 func (h *KubernetesHandler) GetClusterInfo(c *gin.Context) {
-	if h.service == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Kubernetes integration not configured",
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
 		})
 		return
 	}
 
-	cluster, err := h.service.GetClusterInfo()
+	kubeService, err := h.getService(orgUUID)
+	if err != nil {
+		h.log.Errorw("Failed to get Kubernetes service", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	if kubeService == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Kubernetes integration not configured for this organization",
+		})
+		return
+	}
+
+	cluster, err := kubeService.GetClusterInfo()
 	if err != nil {
 		h.log.Errorw("Failed to get cluster info", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -41,9 +68,25 @@ func (h *KubernetesHandler) GetClusterInfo(c *gin.Context) {
 }
 
 func (h *KubernetesHandler) ListPods(c *gin.Context) {
-	if h.service == nil {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	kubeService, err := h.getService(orgUUID)
+	if err != nil {
+		h.log.Errorw("Failed to get Kubernetes service", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	if kubeService == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Kubernetes integration not configured",
+			"error": "Kubernetes integration not configured for this organization",
 		})
 		return
 	}
@@ -51,7 +94,7 @@ func (h *KubernetesHandler) ListPods(c *gin.Context) {
 	namespace := c.Query("namespace")
 	// If namespace is empty, it will list pods from all namespaces
 
-	pods, err := h.service.GetPods(namespace)
+	pods, err := kubeService.GetPods(namespace)
 	if err != nil {
 		h.log.Errorw("Failed to list pods", "error", err, "namespace", namespace)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -68,9 +111,25 @@ func (h *KubernetesHandler) ListPods(c *gin.Context) {
 }
 
 func (h *KubernetesHandler) ListDeployments(c *gin.Context) {
-	if h.service == nil {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	kubeService, err := h.getService(orgUUID)
+	if err != nil {
+		h.log.Errorw("Failed to get Kubernetes service", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	if kubeService == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Kubernetes integration not configured",
+			"error": "Kubernetes integration not configured for this organization",
 		})
 		return
 	}
@@ -78,7 +137,7 @@ func (h *KubernetesHandler) ListDeployments(c *gin.Context) {
 	namespace := c.Query("namespace")
 	// If namespace is empty, it will list deployments from all namespaces
 
-	deployments, err := h.service.GetDeployments(namespace)
+	deployments, err := kubeService.GetDeployments(namespace)
 	if err != nil {
 		h.log.Errorw("Failed to list deployments", "error", err, "namespace", namespace)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -95,9 +154,25 @@ func (h *KubernetesHandler) ListDeployments(c *gin.Context) {
 }
 
 func (h *KubernetesHandler) ListServices(c *gin.Context) {
-	if h.service == nil {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	kubeService, err := h.getService(orgUUID)
+	if err != nil {
+		h.log.Errorw("Failed to get Kubernetes service", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	if kubeService == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Kubernetes integration not configured",
+			"error": "Kubernetes integration not configured for this organization",
 		})
 		return
 	}
@@ -105,7 +180,7 @@ func (h *KubernetesHandler) ListServices(c *gin.Context) {
 	namespace := c.Query("namespace")
 	// If namespace is empty, it will list services from all namespaces
 
-	services, err := h.service.GetServices(namespace)
+	services, err := kubeService.GetServices(namespace)
 	if err != nil {
 		h.log.Errorw("Failed to list services", "error", err, "namespace", namespace)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -122,14 +197,30 @@ func (h *KubernetesHandler) ListServices(c *gin.Context) {
 }
 
 func (h *KubernetesHandler) ListNamespaces(c *gin.Context) {
-	if h.service == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Kubernetes integration not configured",
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
 		})
 		return
 	}
 
-	namespaces, err := h.service.GetNamespaces()
+	kubeService, err := h.getService(orgUUID)
+	if err != nil {
+		h.log.Errorw("Failed to get Kubernetes service", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	if kubeService == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Kubernetes integration not configured for this organization",
+		})
+		return
+	}
+
+	namespaces, err := kubeService.GetNamespaces()
 	if err != nil {
 		h.log.Errorw("Failed to list namespaces", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -145,14 +236,30 @@ func (h *KubernetesHandler) ListNamespaces(c *gin.Context) {
 }
 
 func (h *KubernetesHandler) ListNodes(c *gin.Context) {
-	if h.service == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Kubernetes integration not configured",
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
 		})
 		return
 	}
 
-	nodes, err := h.service.GetNodes()
+	kubeService, err := h.getService(orgUUID)
+	if err != nil {
+		h.log.Errorw("Failed to get Kubernetes service", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	if kubeService == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Kubernetes integration not configured for this organization",
+		})
+		return
+	}
+
+	nodes, err := kubeService.GetNodes()
 	if err != nil {
 		h.log.Errorw("Failed to list nodes", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{

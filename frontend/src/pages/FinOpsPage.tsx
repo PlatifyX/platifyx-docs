@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { DollarSign, Package, Filter, AlertTriangle } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
-import { buildApiUrl } from '../config/api'
+import { apiFetch } from '../config/api'
 import IntegrationSelector from '../components/Common/IntegrationSelector'
 
 interface FinOpsStats {
@@ -60,8 +60,7 @@ function FinOpsPage() {
       if (providerFilter) queryParams.append('provider', providerFilter)
       if (selectedIntegration) queryParams.append('integration', selectedIntegration)
 
-      console.log('Fetching stats from:', buildApiUrl(`finops/stats?${queryParams}`))
-      const response = await fetch(buildApiUrl(`finops/stats?${queryParams}`))
+      const response = await apiFetch(`finops/stats?${queryParams}`)
 
       if (!response.ok) {
         console.error('Stats response not OK:', response.status, response.statusText)
@@ -89,7 +88,7 @@ function FinOpsPage() {
         queryParams.append('integration', selectedIntegration)
       }
 
-      const response = await fetch(buildApiUrl(`finops/aws/by-service?${queryParams.toString()}`))
+      const response = await apiFetch(`finops/aws/by-service?${queryParams.toString()}`)
       
       if (!response.ok) {
         console.error('Service costs response not OK:', response.status, response.statusText)
@@ -117,7 +116,7 @@ function FinOpsPage() {
       if (selectedIntegration) {
         queryParams.append('integration', selectedIntegration)
       }
-      const response = await fetch(buildApiUrl(`finops/aws/monthly?${queryParams.toString()}`))
+      const response = await apiFetch(`finops/aws/monthly?${queryParams.toString()}`)
       if (response.ok) {
         const data = await response.json()
         setMonthlyCosts(data || [])
@@ -133,7 +132,7 @@ function FinOpsPage() {
       if (selectedIntegration) {
         queryParams.append('integration', selectedIntegration)
       }
-      const response = await fetch(buildApiUrl(`finops/aws/forecast?${queryParams.toString()}`))
+      const response = await apiFetch(`finops/aws/forecast?${queryParams.toString()}`)
       if (response.ok) {
         const data = await response.json()
         setForecast(data || [])
@@ -146,8 +145,8 @@ function FinOpsPage() {
   const fetchOptimizationData = async () => {
     try {
       const [reservationRes, savingsPlansRes] = await Promise.all([
-        fetch(buildApiUrl('finops/aws/reservation-utilization')),
-        fetch(buildApiUrl('finops/aws/savings-plans-utilization'))
+        apiFetch('finops/aws/reservation-utilization'),
+        apiFetch('finops/aws/savings-plans-utilization')
       ])
 
       if (reservationRes.ok) {

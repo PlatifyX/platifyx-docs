@@ -22,14 +22,14 @@ func NewDiagramService(aiService *AIService, log *logger.Logger) *DiagramService
 }
 
 // GenerateDiagram generates a Draw.io diagram from code or description
-func (s *DiagramService) GenerateDiagram(req domain.GenerateDiagramRequest) (*domain.DiagramResponse, error) {
-	s.log.Infow("Generating diagram", "type", req.DiagramType, "source", req.Source, "provider", req.Provider)
+func (s *DiagramService) GenerateDiagram(organizationUUID string, req domain.GenerateDiagramRequest) (*domain.DiagramResponse, error) {
+	s.log.Infow("Generating diagram", "type", req.DiagramType, "source", req.Source, "provider", req.Provider, "organizationUUID", organizationUUID)
 
 	// Build prompt based on diagram type and source
 	prompt := s.buildDiagramPrompt(req)
 
 	// Use AI to generate the diagram description
-	aiResp, err := s.aiService.GenerateCompletion(req.Provider, prompt, req.Model)
+	aiResp, err := s.aiService.GenerateCompletion(organizationUUID, req.Provider, prompt, req.Model)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate diagram with AI: %w", err)
 	}

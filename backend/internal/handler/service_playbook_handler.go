@@ -64,7 +64,15 @@ func (h *ServicePlaybookHandler) CreateService(c *gin.Context) {
 		Config:           req.Config,
 	}
 
-	progress, err := h.service.CreateServiceFromPlaybook(playbookReq)
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	progress, err := h.service.CreateServiceFromPlaybook(orgUUID, playbookReq)
 	if err != nil {
 		h.log.Errorw("Failed to create service from playbook", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

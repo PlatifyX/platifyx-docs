@@ -22,6 +22,14 @@ func NewSlackHandler(svc *service.IntegrationService, log *logger.Logger) *Slack
 }
 
 func (h *SlackHandler) SendMessage(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var input domain.SlackMessage
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -31,7 +39,7 @@ func (h *SlackHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	slackService, err := h.service.GetSlackService()
+	slackService, err := h.service.GetSlackService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Slack service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -54,6 +62,14 @@ func (h *SlackHandler) SendMessage(c *gin.Context) {
 }
 
 func (h *SlackHandler) SendSimpleMessage(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var input struct {
 		Text string `json:"text" binding:"required"`
 	}
@@ -65,7 +81,7 @@ func (h *SlackHandler) SendSimpleMessage(c *gin.Context) {
 		return
 	}
 
-	slackService, err := h.service.GetSlackService()
+	slackService, err := h.service.GetSlackService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Slack service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -88,6 +104,14 @@ func (h *SlackHandler) SendSimpleMessage(c *gin.Context) {
 }
 
 func (h *SlackHandler) SendAlert(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var input struct {
 		Title string `json:"title" binding:"required"`
 		Text  string `json:"text" binding:"required"`
@@ -101,7 +125,7 @@ func (h *SlackHandler) SendAlert(c *gin.Context) {
 		return
 	}
 
-	slackService, err := h.service.GetSlackService()
+	slackService, err := h.service.GetSlackService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Slack service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{

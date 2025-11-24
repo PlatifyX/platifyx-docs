@@ -5,7 +5,7 @@ import PipelinesTab from '../components/AzureDevOps/PipelinesTab'
 import BuildsTab from '../components/AzureDevOps/BuildsTab'
 import ReleasesTab from '../components/AzureDevOps/ReleasesTab'
 import CIFilters, { FilterValues } from '../components/AzureDevOps/CIFilters'
-import { buildApiUrl } from '../config/api'
+import { apiFetch } from '../config/api'
 
 type TabType = 'pipelines' | 'builds' | 'releases'
 type IntegrationType = 'all' | 'azuredevops' | 'github' | 'jenkins'
@@ -49,7 +49,7 @@ function AzureDevOpsPage() {
       if (filters.startDate) params.append('startDate', filters.startDate)
       if (filters.endDate) params.append('endDate', filters.endDate)
 
-      const response = await fetch(buildApiUrl(`ci/stats?${params.toString()}`))
+      const response = await apiFetch(`ci/stats?${params.toString()}`)
       if (!response.ok) {
         // Se não houver integração, não mostra como erro
         setStats(null)

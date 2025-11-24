@@ -32,7 +32,7 @@ func NewTroubleshootingAssistantService(
 	}
 }
 
-func (s *TroubleshootingAssistantService) Troubleshoot(req domain.TroubleshootingRequest) (*domain.TroubleshootingResponse, error) {
+func (s *TroubleshootingAssistantService) Troubleshoot(organizationUUID string, req domain.TroubleshootingRequest) (*domain.TroubleshootingResponse, error) {
 	if s.aiService == nil {
 		return nil, fmt.Errorf("AI service not available")
 	}
@@ -57,7 +57,7 @@ Seja técnico, preciso e direto.`,
 		},
 	}
 
-	response, err := s.aiService.GenerateChat(domain.AIProviderClaude, messages, "")
+	response, err := s.aiService.GenerateChat(organizationUUID, domain.AIProviderClaude, messages, "")
 	if err != nil {
 		return nil, err
 	}

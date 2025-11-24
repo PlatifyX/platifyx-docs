@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Building2 } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Integration {
   id: number
@@ -24,7 +24,7 @@ function IntegrationSelector({ integrationType, selectedIntegration, onIntegrati
 
   const fetchIntegrations = async () => {
     try {
-      const response = await fetch(buildApiUrl('integrations'))
+      const response = await apiFetch('integrations')
       if (response.ok) {
         const data = await response.json()
         const filtered = data.integrations.filter((int: Integration) => int.type === integrationType)

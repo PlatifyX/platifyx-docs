@@ -21,7 +21,15 @@ func NewArgoCDHandler(svc *service.IntegrationService, log *logger.Logger) *Argo
 }
 
 func (h *ArgoCDHandler) GetStats(c *gin.Context) {
-	argoCDService, err := h.service.GetArgoCDService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	argoCDService, err := h.service.GetArgoCDService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get ArgoCD service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -43,7 +51,15 @@ func (h *ArgoCDHandler) GetStats(c *gin.Context) {
 }
 
 func (h *ArgoCDHandler) GetApplications(c *gin.Context) {
-	argoCDService, err := h.service.GetArgoCDService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	argoCDService, err := h.service.GetArgoCDService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get ArgoCD service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -68,7 +84,15 @@ func (h *ArgoCDHandler) GetApplications(c *gin.Context) {
 }
 
 func (h *ArgoCDHandler) GetApplication(c *gin.Context) {
-	argoCDService, err := h.service.GetArgoCDService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	argoCDService, err := h.service.GetArgoCDService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get ArgoCD service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -98,7 +122,15 @@ func (h *ArgoCDHandler) GetApplication(c *gin.Context) {
 }
 
 func (h *ArgoCDHandler) SyncApplication(c *gin.Context) {
-	argoCDService, err := h.service.GetArgoCDService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	argoCDService, err := h.service.GetArgoCDService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get ArgoCD service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -141,7 +173,15 @@ func (h *ArgoCDHandler) SyncApplication(c *gin.Context) {
 }
 
 func (h *ArgoCDHandler) GetProjects(c *gin.Context) {
-	argoCDService, err := h.service.GetArgoCDService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	argoCDService, err := h.service.GetArgoCDService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get ArgoCD service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -166,7 +206,15 @@ func (h *ArgoCDHandler) GetProjects(c *gin.Context) {
 }
 
 func (h *ArgoCDHandler) GetProject(c *gin.Context) {
-	argoCDService, err := h.service.GetArgoCDService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	argoCDService, err := h.service.GetArgoCDService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get ArgoCD service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -196,7 +244,15 @@ func (h *ArgoCDHandler) GetProject(c *gin.Context) {
 }
 
 func (h *ArgoCDHandler) GetClusters(c *gin.Context) {
-	argoCDService, err := h.service.GetArgoCDService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	argoCDService, err := h.service.GetArgoCDService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get ArgoCD service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -221,7 +277,15 @@ func (h *ArgoCDHandler) GetClusters(c *gin.Context) {
 }
 
 func (h *ArgoCDHandler) RefreshApplication(c *gin.Context) {
-	argoCDService, err := h.service.GetArgoCDService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	argoCDService, err := h.service.GetArgoCDService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get ArgoCD service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -252,7 +316,15 @@ func (h *ArgoCDHandler) RefreshApplication(c *gin.Context) {
 }
 
 func (h *ArgoCDHandler) DeleteApplication(c *gin.Context) {
-	argoCDService, err := h.service.GetArgoCDService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	argoCDService, err := h.service.GetArgoCDService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get ArgoCD service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -285,7 +357,15 @@ func (h *ArgoCDHandler) DeleteApplication(c *gin.Context) {
 }
 
 func (h *ArgoCDHandler) RollbackApplication(c *gin.Context) {
-	argoCDService, err := h.service.GetArgoCDService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	argoCDService, err := h.service.GetArgoCDService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get ArgoCD service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{

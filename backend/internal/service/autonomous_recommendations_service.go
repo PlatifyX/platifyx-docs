@@ -33,7 +33,7 @@ func NewAutonomousRecommendationsService(
 	}
 }
 
-func (s *AutonomousRecommendationsService) GenerateRecommendations() ([]domain.Recommendation, error) {
+func (s *AutonomousRecommendationsService) GenerateRecommendations(organizationUUID string) ([]domain.Recommendation, error) {
 	recommendations := []domain.Recommendation{}
 
 	deploymentRecs, err := s.analyzeDeployments()
@@ -43,7 +43,7 @@ func (s *AutonomousRecommendationsService) GenerateRecommendations() ([]domain.R
 		recommendations = append(recommendations, deploymentRecs...)
 	}
 
-	costRecs, err := s.analyzeCosts()
+	costRecs, err := s.analyzeCosts(organizationUUID)
 	if err != nil {
 		s.log.Warnw("Failed to analyze costs", "error", err)
 	} else {
@@ -97,12 +97,12 @@ func (s *AutonomousRecommendationsService) analyzeDeployments() ([]domain.Recomm
 	return recommendations, nil
 }
 
-func (s *AutonomousRecommendationsService) analyzeCosts() ([]domain.Recommendation, error) {
+func (s *AutonomousRecommendationsService) analyzeCosts(organizationUUID string) ([]domain.Recommendation, error) {
 	if s.finOpsService == nil {
 		return []domain.Recommendation{}, nil
 	}
 
-	stats, err := s.finOpsService.GetStats("", "")
+	stats, err := s.finOpsService.GetStats(organizationUUID, "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (s *AutonomousRecommendationsService) analyzeCosts() ([]domain.Recommendati
 	return recommendations, nil
 }
 
-func (s *AutonomousRecommendationsService) GenerateAIRecommendation(context map[string]interface{}) (*domain.Recommendation, error) {
+func (s *AutonomousRecommendationsService) GenerateAIRecommendation(organizationUUID string, context map[string]interface{}) (*domain.Recommendation, error) {
 	if s.aiService == nil {
 		return nil, fmt.Errorf("AI service not available")
 	}
@@ -161,7 +161,7 @@ Gere uma recomendação no formato JSON com os campos:
 
 Responda APENAS com o JSON válido, sem markdown.`, string(contextJSON))
 
-	response, err := s.aiService.GenerateCompletion(domain.AIProviderClaude, prompt, "")
+	response, err := s.aiService.GenerateCompletion(organizationUUID, domain.AIProviderClaude, prompt, "")
 	if err != nil {
 		return nil, err
 	}

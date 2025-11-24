@@ -348,8 +348,8 @@ type repoFile struct {
 	Content string
 }
 
-func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest) (*domain.TechDocsProgress, error) {
-	s.log.Infow("Queueing documentation generation", "provider", req.Provider, "source", req.Source, "docType", req.DocType, "readFullRepo", req.ReadFullRepo)
+func (s *TechDocsService) GenerateDocumentation(organizationUUID string, req domain.AIGenerateDocRequest) (*domain.TechDocsProgress, error) {
+	s.log.Infow("Queueing documentation generation", "provider", req.Provider, "source", req.Source, "docType", req.DocType, "readFullRepo", req.ReadFullRepo, "organizationUUID", organizationUUID)
 
 	if s.aiService == nil {
 		return nil, fmt.Errorf("AI service not available")
@@ -365,12 +365,12 @@ func (s *TechDocsService) GenerateDocumentation(req domain.AIGenerateDocRequest)
 		return nil, fmt.Errorf("failed to persist progress: %w", err)
 	}
 
-	go s.runGenerateDocumentationJob(progress.ID, req)
+	go s.runGenerateDocumentationJob(organizationUUID, progress.ID, req)
 
 	return progress, nil
 }
 
-func (s *TechDocsService) runGenerateDocumentationJob(progressID string, req domain.AIGenerateDocRequest) {
+func (s *TechDocsService) runGenerateDocumentationJob(organizationUUID string, progressID string, req domain.AIGenerateDocRequest) {
 	defer func() {
 		if r := recover(); r != nil {
 			s.markProgressFailed(progressID, fmt.Errorf("panic: %v", r))
@@ -379,7 +379,7 @@ func (s *TechDocsService) runGenerateDocumentationJob(progressID string, req dom
 
 	s.setProgressRunning(progressID, "Preparando documentação")
 
-	response, err := s.executeDocumentationGeneration(progressID, req)
+	response, err := s.executeDocumentationGeneration(organizationUUID, progressID, req)
 	if err != nil {
 		s.markProgressFailed(progressID, err)
 		return
@@ -388,7 +388,7 @@ func (s *TechDocsService) runGenerateDocumentationJob(progressID string, req dom
 	s.markProgressCompleted(progressID, response)
 }
 
-func (s *TechDocsService) executeDocumentationGeneration(progressID string, req domain.AIGenerateDocRequest) (*domain.AIResponse, error) {
+func (s *TechDocsService) executeDocumentationGeneration(organizationUUID string, progressID string, req domain.AIGenerateDocRequest) (*domain.AIResponse, error) {
 	var files []repoFile
 
 	if req.Source == "github" && req.ReadFullRepo {
@@ -429,7 +429,7 @@ func (s *TechDocsService) executeDocumentationGeneration(progressID string, req 
 		contextLimit := s.getModelContextLimit(req.Provider, req.Model)
 		s.log.Infow("Context limit for model", "provider", req.Provider, "model", req.Model, "limit", contextLimit)
 
-		return s.generateDocumentationWithChunking(req, files, contextLimit, progressID)
+		return s.generateDocumentationWithChunking(organizationUUID, req, files, contextLimit, progressID)
 	}
 
 	req.Model = s.getCheapestModel(req.Provider, req.Model)
@@ -452,7 +452,7 @@ func (s *TechDocsService) executeDocumentationGeneration(progressID string, req 
 	s.setProgressTotal(progressID, 1)
 	s.updateChunkProgress(progressID, 1, 1, "Gerando documentação")
 
-	response, err := s.aiService.GenerateCompletion(req.Provider, prompt, req.Model)
+	response, err := s.aiService.GenerateCompletion(organizationUUID, req.Provider, prompt, req.Model)
 	if err != nil {
 		s.log.Errorw("Failed to generate documentation", "error", err)
 		return nil, fmt.Errorf("failed to generate documentation: %w", err)
@@ -471,7 +471,7 @@ func (s *TechDocsService) executeDocumentationGeneration(progressID string, req 
 }
 
 // generateDocumentationWithChunking processes large repositories in chunks
-func (s *TechDocsService) generateDocumentationWithChunking(req domain.AIGenerateDocRequest, files []repoFile, contextLimit int, progressID string) (*domain.AIResponse, error) {
+func (s *TechDocsService) generateDocumentationWithChunking(organizationUUID string, req domain.AIGenerateDocRequest, files []repoFile, contextLimit int, progressID string) (*domain.AIResponse, error) {
 	// Prioritize important files first
 	prioritizedFiles := s.prioritizeFiles(files)
 
@@ -490,7 +490,7 @@ func (s *TechDocsService) generateDocumentationWithChunking(req domain.AIGenerat
 		s.updateChunkProgress(progressID, 1, 1, "Gerando documentação")
 		req.Code = chunks[0]
 		prompt := s.buildGenerateDocPrompt(req)
-		return s.aiService.GenerateCompletion(req.Provider, prompt, req.Model)
+		return s.aiService.GenerateCompletion(organizationUUID, req.Provider, prompt, req.Model)
 	}
 
 	var chunkResults []string
@@ -505,7 +505,7 @@ func (s *TechDocsService) generateDocumentationWithChunking(req domain.AIGenerat
 		// Modify the prompt to indicate this is part of a multi-chunk process
 		prompt := s.buildChunkDocPrompt(chunkReq, i+1, len(chunks))
 
-		response, err := s.aiService.GenerateCompletion(req.Provider, prompt, req.Model)
+		response, err := s.aiService.GenerateCompletion(organizationUUID, req.Provider, prompt, req.Model)
 		if err != nil {
 			s.log.Errorw("Failed to process chunk", "chunk", i+1, "error", err)
 			return nil, fmt.Errorf("failed to process chunk %d: %w", i+1, err)
@@ -983,8 +983,8 @@ func (s *TechDocsService) buildGenerateDocPrompt(req domain.AIGenerateDocRequest
 }
 
 // ImproveDocumentation improves existing documentation using AI
-func (s *TechDocsService) ImproveDocumentation(req domain.AIImproveDocRequest) (*domain.AIResponse, error) {
-	s.log.Infow("Improving documentation with AI", "provider", req.Provider, "improvementType", req.ImprovementType)
+func (s *TechDocsService) ImproveDocumentation(organizationUUID string, req domain.AIImproveDocRequest) (*domain.AIResponse, error) {
+	s.log.Infow("Improving documentation with AI", "provider", req.Provider, "improvementType", req.ImprovementType, "organizationUUID", organizationUUID)
 
 	if s.aiService == nil {
 		return nil, fmt.Errorf("AI service not available")
@@ -992,7 +992,7 @@ func (s *TechDocsService) ImproveDocumentation(req domain.AIImproveDocRequest) (
 
 	prompt := s.buildImproveDocPrompt(req)
 
-	response, err := s.aiService.GenerateCompletion(req.Provider, prompt, req.Model)
+	response, err := s.aiService.GenerateCompletion(organizationUUID, req.Provider, prompt, req.Model)
 	if err != nil {
 		s.log.Errorw("Failed to improve documentation", "error", err)
 		return nil, fmt.Errorf("failed to improve documentation: %w", err)
@@ -1046,8 +1046,8 @@ func (s *TechDocsService) buildImproveDocPrompt(req domain.AIImproveDocRequest) 
 }
 
 // ChatAboutDocumentation provides Q&A about documentation using AI
-func (s *TechDocsService) ChatAboutDocumentation(req domain.AIChatRequest) (*domain.AIResponse, error) {
-	s.log.Infow("Processing chat about documentation", "provider", req.Provider)
+func (s *TechDocsService) ChatAboutDocumentation(organizationUUID string, req domain.AIChatRequest) (*domain.AIResponse, error) {
+	s.log.Infow("Processing chat about documentation", "provider", req.Provider, "organizationUUID", organizationUUID)
 
 	if s.aiService == nil {
 		return nil, fmt.Errorf("AI service not available")
@@ -1073,7 +1073,7 @@ func (s *TechDocsService) ChatAboutDocumentation(req domain.AIChatRequest) (*dom
 		Content: req.Message,
 	})
 
-	response, err := s.aiService.GenerateChat(req.Provider, messages, req.Model)
+	response, err := s.aiService.GenerateChat(organizationUUID, req.Provider, messages, req.Model)
 	if err != nil {
 		s.log.Errorw("Failed to process chat", "error", err)
 		return nil, fmt.Errorf("failed to process chat: %w", err)
@@ -1084,14 +1084,14 @@ func (s *TechDocsService) ChatAboutDocumentation(req domain.AIChatRequest) (*dom
 }
 
 // GenerateDiagram generates a diagram from code or description
-func (s *TechDocsService) GenerateDiagram(req domain.GenerateDiagramRequest) (*domain.DiagramResponse, error) {
-	s.log.Infow("Generating diagram", "type", req.DiagramType, "provider", req.Provider)
+func (s *TechDocsService) GenerateDiagram(organizationUUID string, req domain.GenerateDiagramRequest) (*domain.DiagramResponse, error) {
+	s.log.Infow("Generating diagram", "type", req.DiagramType, "provider", req.Provider, "organizationUUID", organizationUUID)
 
 	if s.diagramService == nil {
 		return nil, fmt.Errorf("diagram service not available")
 	}
 
-	response, err := s.diagramService.GenerateDiagram(req)
+	response, err := s.diagramService.GenerateDiagram(organizationUUID, req)
 	if err != nil {
 		s.log.Errorw("Failed to generate diagram", "error", err)
 		return nil, fmt.Errorf("failed to generate diagram: %w", err)

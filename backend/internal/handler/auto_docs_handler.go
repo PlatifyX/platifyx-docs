@@ -56,7 +56,15 @@ func (h *AutoDocsHandler) GenerateAutoDocs(c *gin.Context) {
 		}
 	}
 
-	progress, err := h.service.GenerateAutoDocs(autoDocReq)
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	progress, err := h.service.GenerateAutoDocs(orgUUID, autoDocReq)
 	if err != nil {
 		h.log.Errorw("Failed to generate auto docs", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/config"
 	"github.com/PlatifyX/platifyx-core/internal/handler"
 	"github.com/PlatifyX/platifyx-core/internal/middleware"
+	"github.com/PlatifyX/platifyx-core/internal/repository"
 	"github.com/PlatifyX/platifyx-core/internal/service"
 	"github.com/PlatifyX/platifyx-core/pkg/database"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
@@ -46,10 +48,41 @@ func main() {
 
 	log.Info("Migrations completed successfully")
 
+	orgRepo := repository.NewOrganizationRepository(db)
+	
+	platifyxOrgUUID := "ebb73e53-aa9e-4a9c-bc0c-531934c519e6"
+	platifyxOrg, err := orgRepo.GetByUUID(platifyxOrgUUID)
+	if err == nil && platifyxOrg != nil {
+		nodeDB, err := database.NewPostgresConnection(platifyxOrg.DatabaseAddressWrite)
+		if err == nil {
+			defer nodeDB.Close()
+			orgService := service.NewOrganizationService(orgRepo, db, log)
+			schemaName := strings.ReplaceAll(platifyxOrgUUID, "-", "_")
+			var count int
+			err = nodeDB.QueryRow(`
+				SELECT COUNT(*) 
+				FROM information_schema.schemata 
+				WHERE schema_name = $1
+			`, schemaName).Scan(&count)
+			if err == nil && count == 0 {
+				err = orgService.CreateSchemaInNodeDB(nodeDB, platifyxOrgUUID)
+				if err != nil {
+					log.Warnw("Failed to create schema for PlatifyX organization", "error", err)
+				} else {
+					log.Info("Created schema for PlatifyX organization in node database")
+				}
+			} else if err == nil && count > 0 {
+				log.Info("Schema for PlatifyX organization already exists")
+			}
+		}
+	}
+
 	serviceManager := service.NewServiceManager(cfg, log, db)
 	handlerManager := handler.NewHandlerManager(serviceManager, log)
 
-	router := setupRouter(cfg, handlerManager, serviceManager, log)
+	userOrgRepo := repository.NewUserOrganizationRepository(db)
+
+	router := setupRouter(cfg, handlerManager, serviceManager, log, orgRepo, userOrgRepo)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.Port),
@@ -82,7 +115,7 @@ func main() {
 	log.Info("Server exited")
 }
 
-func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services *service.ServiceManager, log *logger.Logger) *gin.Engine {
+func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services *service.ServiceManager, log *logger.Logger, orgRepo *repository.OrganizationRepository, userOrgRepo *repository.UserOrganizationRepository) *gin.Engine {
 	if cfg.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -100,6 +133,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 
 		// Service Catalog (discovered from Kubernetes)
 		serviceCatalog := v1.Group("/service-catalog")
+		serviceCatalog.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			serviceCatalog.POST("/sync", handlers.ServiceCatalogHandler.SyncServices)
 			serviceCatalog.GET("", handlers.ServiceCatalogHandler.ListServices)
@@ -114,6 +148,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		kubernetes := v1.Group("/kubernetes")
+		kubernetes.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			kubernetes.GET("/cluster", handlers.KubernetesHandler.GetClusterInfo)
 			kubernetes.GET("/pods", handlers.KubernetesHandler.ListPods)
@@ -124,6 +159,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		ci := v1.Group("/ci")
+		ci.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			ci.GET("/stats", handlers.AzureDevOpsHandler.GetStats)
 
@@ -145,6 +181,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		quality := v1.Group("/quality")
+		quality.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			quality.GET("/stats", handlers.SonarQubeHandler.GetStats)
 
@@ -155,6 +192,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		finops := v1.Group("/finops")
+		finops.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			finops.GET("/stats", handlers.FinOpsHandler.GetStats)
 			finops.GET("/costs", handlers.FinOpsHandler.ListCosts)
@@ -168,6 +206,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		observability := v1.Group("/observability")
+		observability.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			observability.GET("/stats", handlers.GrafanaHandler.GetStats)
 			observability.GET("/health", handlers.GrafanaHandler.GetHealth)
@@ -200,6 +239,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 
 		// Grafana endpoints (alias for some observability endpoints)
 		grafana := v1.Group("/grafana")
+		grafana.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			grafana.GET("/stats", handlers.GrafanaHandler.GetStats)
 			grafana.GET("/config", handlers.GrafanaHandler.GetConfig)
@@ -208,6 +248,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		code := v1.Group("/code")
+		code.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			code.GET("/stats", handlers.GitHubHandler.GetStats)
 			code.GET("/user", handlers.GitHubHandler.GetAuthenticatedUser)
@@ -242,6 +283,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		ai := v1.Group("/ai")
+		ai.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			ai.GET("/providers", handlers.AIHandler.GetProviders)
 		}
@@ -280,7 +322,43 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 			boards.GET("/source/:source", handlers.BoardsHandler.GetBoardBySource)
 		}
 
+		organizations := v1.Group("/organizations")
+		{
+			organizations.GET("", handlers.OrganizationHandler.List)
+			organizations.GET("/:uuid", handlers.OrganizationHandler.GetByUUID)
+			organizations.POST("", handlers.OrganizationHandler.Create)
+			organizations.PUT("/:uuid", handlers.OrganizationHandler.Update)
+			organizations.DELETE("/:uuid", handlers.OrganizationHandler.Delete)
+
+			organizations.GET("/:uuid/users", handlers.UserOrganizationHandler.GetOrganizationUsers)
+			organizations.POST("/:uuid/users", handlers.UserOrganizationHandler.AddUserToOrganization)
+			organizations.PUT("/:uuid/users/:userId/role", handlers.UserOrganizationHandler.UpdateUserRole)
+			organizations.DELETE("/:uuid/users/:userId", handlers.UserOrganizationHandler.RemoveUserFromOrganization)
+
+			orgUsers := organizations.Group("/:uuid/node-users")
+			orgUsers.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
+			{
+				orgUsers.GET("", handlers.OrganizationUserHandler.ListUsers)
+				orgUsers.GET("/:userId", handlers.OrganizationUserHandler.GetUser)
+				orgUsers.POST("", handlers.OrganizationUserHandler.CreateUser)
+				orgUsers.PUT("/:userId", handlers.OrganizationUserHandler.UpdateUser)
+				orgUsers.DELETE("/:userId", handlers.OrganizationUserHandler.DeleteUser)
+			}
+		}
+
+		users := v1.Group("/users")
+		{
+			users.GET("/:userId/organizations", handlers.UserOrganizationHandler.GetUserOrganizations)
+		}
+
+		me := v1.Group("/me")
+		me.Use(middleware.AuthMiddleware(services.AuthService))
+		{
+			me.GET("/organizations", handlers.UserOrganizationHandler.GetMyOrganizations)
+		}
+
 		integrations := v1.Group("/integrations")
+		integrations.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			integrations.GET("", handlers.IntegrationHandler.List)
 			integrations.GET("/:id", handlers.IntegrationHandler.GetByID)
@@ -310,6 +388,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		jira := v1.Group("/jira")
+		jira.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			jira.GET("/stats", handlers.JiraHandler.GetStats)
 			jira.GET("/user", handlers.JiraHandler.GetCurrentUser)
@@ -321,6 +400,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		slack := v1.Group("/slack")
+		slack.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			slack.POST("/message", handlers.SlackHandler.SendMessage)
 			slack.POST("/simple", handlers.SlackHandler.SendSimpleMessage)
@@ -328,6 +408,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		teams := v1.Group("/teams")
+		teams.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			teams.POST("/message", handlers.TeamsHandler.SendMessage)
 			teams.POST("/simple", handlers.TeamsHandler.SendSimpleMessage)
@@ -335,6 +416,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		argocd := v1.Group("/argocd")
+		argocd.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			argocd.GET("/stats", handlers.ArgoCDHandler.GetStats)
 			argocd.GET("/applications", handlers.ArgoCDHandler.GetApplications)
@@ -349,6 +431,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		prometheus := v1.Group("/prometheus")
+		prometheus.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			prometheus.GET("/stats", handlers.PrometheusHandler.GetStats)
 			prometheus.GET("/query", handlers.PrometheusHandler.Query)
@@ -363,6 +446,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		vault := v1.Group("/vault")
+		vault.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			vault.GET("/stats", handlers.VaultHandler.GetStats)
 			vault.GET("/health", handlers.VaultHandler.GetHealth)
@@ -373,6 +457,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		}
 
 		awssecrets := v1.Group("/awssecrets")
+		awssecrets.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
 		{
 			awssecrets.GET("/stats", handlers.AWSSecretsHandler.GetStats)
 			awssecrets.GET("/list", handlers.AWSSecretsHandler.ListSecrets)
@@ -450,38 +535,45 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		// Authentication
 		auth := v1.Group("/auth")
 		{
-			// Login endpoint com rate limiting
-			// Em desenvolvimento: 50 tentativas/minuto
-			// Em produção: 5 tentativas/minuto
-			loginRateLimiter := middleware.DefaultLoginRateLimiter()
-			if cfg.Environment == "development" {
-				loginRateLimiter = middleware.DevelopmentLoginRateLimiter()
+			// Login endpoint com rate limiting apenas em produção
+			if cfg.Environment == "production" {
+				auth.POST("/login",
+					middleware.RateLimiter(services.CacheService, middleware.DefaultLoginRateLimiter()),
+					handlers.AuthHandler.Login,
+				)
+			} else {
+				auth.POST("/login", handlers.AuthHandler.Login)
 			}
-			auth.POST("/login",
-				middleware.RateLimiter(services.CacheService, loginRateLimiter),
-				handlers.AuthHandler.Login,
-			)
 
 			auth.POST("/logout", handlers.AuthHandler.Logout)
 			auth.POST("/refresh", handlers.AuthHandler.RefreshToken)
 			auth.GET("/me", handlers.AuthHandler.Me)
 			auth.POST("/change-password", handlers.AuthHandler.ChangePassword)
 
-			// Password reset com rate limiting (3 tentativas a cada 5 minutos)
-			auth.POST("/forgot-password",
-				middleware.RateLimiter(services.CacheService, middleware.DefaultPasswordResetRateLimiter()),
-				handlers.AuthHandler.ForgotPassword,
-			)
-			auth.POST("/reset-password",
-				middleware.RateLimiter(services.CacheService, middleware.DefaultPasswordResetRateLimiter()),
-				handlers.AuthHandler.ResetPassword,
-			)
+			// Password reset com rate limiting apenas em produção
+			if cfg.Environment == "production" {
+				auth.POST("/forgot-password",
+					middleware.RateLimiter(services.CacheService, middleware.DefaultPasswordResetRateLimiter()),
+					handlers.AuthHandler.ForgotPassword,
+				)
+				auth.POST("/reset-password",
+					middleware.RateLimiter(services.CacheService, middleware.DefaultPasswordResetRateLimiter()),
+					handlers.AuthHandler.ResetPassword,
+				)
+			} else {
+				auth.POST("/forgot-password", handlers.AuthHandler.ForgotPassword)
+				auth.POST("/reset-password", handlers.AuthHandler.ResetPassword)
+			}
 
-			// SSO Login com rate limiting moderado (10 tentativas por minuto)
-			auth.GET("/sso/:provider",
-				middleware.IPBasedRateLimiter(services.CacheService, 10),
-				handlers.SSOHandler.LoginWithSSO,
-			)
+			// SSO Login com rate limiting apenas em produção
+			if cfg.Environment == "production" {
+				auth.GET("/sso/:provider",
+					middleware.IPBasedRateLimiter(services.CacheService, 10),
+					handlers.SSOHandler.LoginWithSSO,
+				)
+			} else {
+				auth.GET("/sso/:provider", handlers.SSOHandler.LoginWithSSO)
+			}
 			auth.GET("/callback/:provider", handlers.SSOHandler.CallbackSSO)
 		}
 	}

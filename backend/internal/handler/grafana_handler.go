@@ -23,8 +23,8 @@ func NewGrafanaHandler(integrationSvc *service.IntegrationService, cache *servic
 	}
 }
 
-func (h *GrafanaHandler) getService() (*service.GrafanaService, error) {
-	config, err := h.integrationService.GetGrafanaConfig()
+func (h *GrafanaHandler) getService(organizationUUID string) (*service.GrafanaService, error) {
+	config, err := h.integrationService.GetGrafanaConfig(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,15 @@ func (h *GrafanaHandler) getService() (*service.GrafanaService, error) {
 }
 
 func (h *GrafanaHandler) GetStats(c *gin.Context) {
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -56,7 +64,15 @@ func (h *GrafanaHandler) GetStats(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) GetHealth(c *gin.Context) {
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -102,7 +118,15 @@ func (h *GrafanaHandler) SearchDashboards(c *gin.Context) {
 	}
 
 	// Cache MISS
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -143,7 +167,15 @@ func (h *GrafanaHandler) SearchDashboards(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) GetDashboardByUID(c *gin.Context) {
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -174,7 +206,15 @@ func (h *GrafanaHandler) GetDashboardByUID(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) GetAlerts(c *gin.Context) {
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -224,7 +264,15 @@ func (h *GrafanaHandler) GetAlerts(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) GetDataSources(c *gin.Context) {
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -256,7 +304,15 @@ func (h *GrafanaHandler) GetDataSources(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) GetDataSourceByID(c *gin.Context) {
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -294,7 +350,15 @@ func (h *GrafanaHandler) GetDataSourceByID(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) GetOrganizations(c *gin.Context) {
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -326,7 +390,15 @@ func (h *GrafanaHandler) GetOrganizations(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) GetCurrentOrganization(c *gin.Context) {
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -355,7 +427,15 @@ func (h *GrafanaHandler) GetCurrentOrganization(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) GetUsers(c *gin.Context) {
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -387,7 +467,15 @@ func (h *GrafanaHandler) GetUsers(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) GetFolders(c *gin.Context) {
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -419,7 +507,15 @@ func (h *GrafanaHandler) GetFolders(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) GetFolderByUID(c *gin.Context) {
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -450,7 +546,15 @@ func (h *GrafanaHandler) GetFolderByUID(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) GetAnnotations(c *gin.Context) {
-	svc, err := h.getService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -487,7 +591,15 @@ func (h *GrafanaHandler) GetAnnotations(c *gin.Context) {
 }
 
 func (h *GrafanaHandler) GetConfig(c *gin.Context) {
-	config, err := h.integrationService.GetGrafanaConfig()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	config, err := h.integrationService.GetGrafanaConfig(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Grafana config", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{

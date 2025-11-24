@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Terminal, Download } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface BuildLogsModalProps {
   buildId: number
@@ -19,7 +19,7 @@ function BuildLogsModal({ buildId, buildNumber, onClose }: BuildLogsModalProps) 
 
   const fetchLogs = async () => {
     try {
-      const response = await fetch(buildApiUrl(`ci/builds/${buildId}/logs`))
+      const response = await apiFetch(`ci/builds/${buildId}/logs`)
       if (!response.ok) throw new Error('Failed to fetch build logs')
       const data = await response.json()
       setLogs(data.logs || 'Nenhum log disponível')

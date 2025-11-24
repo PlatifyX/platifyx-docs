@@ -37,6 +37,14 @@ func (h *AWSSecretsHandler) getIntegrationID(c *gin.Context) (int, error) {
 }
 
 func (h *AWSSecretsHandler) GetStats(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -45,7 +53,7 @@ func (h *AWSSecretsHandler) GetStats(c *gin.Context) {
 		return
 	}
 
-	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -67,6 +75,14 @@ func (h *AWSSecretsHandler) GetStats(c *gin.Context) {
 }
 
 func (h *AWSSecretsHandler) ListSecrets(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -75,7 +91,7 @@ func (h *AWSSecretsHandler) ListSecrets(c *gin.Context) {
 		return
 	}
 
-	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -100,6 +116,14 @@ func (h *AWSSecretsHandler) ListSecrets(c *gin.Context) {
 }
 
 func (h *AWSSecretsHandler) GetSecret(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -108,7 +132,7 @@ func (h *AWSSecretsHandler) GetSecret(c *gin.Context) {
 		return
 	}
 
-	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -138,6 +162,14 @@ func (h *AWSSecretsHandler) GetSecret(c *gin.Context) {
 }
 
 func (h *AWSSecretsHandler) CreateSecret(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -146,7 +178,7 @@ func (h *AWSSecretsHandler) CreateSecret(c *gin.Context) {
 		return
 	}
 
-	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -196,6 +228,14 @@ func (h *AWSSecretsHandler) CreateSecret(c *gin.Context) {
 }
 
 func (h *AWSSecretsHandler) UpdateSecret(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -204,7 +244,7 @@ func (h *AWSSecretsHandler) UpdateSecret(c *gin.Context) {
 		return
 	}
 
-	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -259,6 +299,14 @@ func (h *AWSSecretsHandler) UpdateSecret(c *gin.Context) {
 }
 
 func (h *AWSSecretsHandler) DeleteSecret(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -267,7 +315,7 @@ func (h *AWSSecretsHandler) DeleteSecret(c *gin.Context) {
 		return
 	}
 
-	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -300,6 +348,14 @@ func (h *AWSSecretsHandler) DeleteSecret(c *gin.Context) {
 }
 
 func (h *AWSSecretsHandler) DescribeSecret(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -308,7 +364,7 @@ func (h *AWSSecretsHandler) DescribeSecret(c *gin.Context) {
 		return
 	}
 
-	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID)
+	awsSecretsService, err := h.service.GetAWSSecretsServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS Secrets service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{

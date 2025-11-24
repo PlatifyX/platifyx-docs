@@ -31,7 +31,15 @@ func NewAutonomousHandler(
 }
 
 func (h *AutonomousHandler) GetRecommendations(c *gin.Context) {
-	recommendations, err := h.recommendationsService.GenerateRecommendations()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	recommendations, err := h.recommendationsService.GenerateRecommendations(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to generate recommendations", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -45,6 +53,14 @@ func (h *AutonomousHandler) GetRecommendations(c *gin.Context) {
 }
 
 func (h *AutonomousHandler) Troubleshoot(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var req struct {
 		Question    string                 `json:"question"`
 		Context     map[string]interface{} `json:"context,omitempty"`
@@ -66,7 +82,7 @@ func (h *AutonomousHandler) Troubleshoot(c *gin.Context) {
 		Namespace:   req.Namespace,
 	}
 
-	response, err := h.troubleshootingService.Troubleshoot(troubleshootingReq)
+	response, err := h.troubleshootingService.Troubleshoot(orgUUID, troubleshootingReq)
 	if err != nil {
 		h.log.Errorw("Failed to troubleshoot", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

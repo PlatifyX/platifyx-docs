@@ -50,7 +50,7 @@ func NewServicePlaybookService(
 	}
 }
 
-func (s *ServicePlaybookService) CreateServiceFromPlaybook(req domain.ServicePlaybookRequest) (*domain.ServicePlaybookProgress, error) {
+func (s *ServicePlaybookService) CreateServiceFromPlaybook(organizationUUID string, req domain.ServicePlaybookRequest) (*domain.ServicePlaybookProgress, error) {
 	progressID := uuid.New().String()
 
 	progress := &domain.ServicePlaybookProgress{
@@ -66,12 +66,12 @@ func (s *ServicePlaybookService) CreateServiceFromPlaybook(req domain.ServicePla
 
 	s.saveProgress(progressID, progress)
 
-	go s.runServiceCreation(progressID, req)
+	go s.runServiceCreation(organizationUUID, progressID, req)
 
 	return progress, nil
 }
 
-func (s *ServicePlaybookService) runServiceCreation(progressID string, req domain.ServicePlaybookRequest) {
+func (s *ServicePlaybookService) runServiceCreation(organizationUUID string, progressID string, req domain.ServicePlaybookRequest) {
 	progress, _ := s.getProgress(progressID)
 	if progress == nil {
 		return
@@ -170,7 +170,7 @@ func (s *ServicePlaybookService) runServiceCreation(progressID string, req domai
 	s.updateProgress(progressID, progress)
 
 	if req.RepositoryURL != "" {
-		if err := s.generateDocumentation(req, progress); err != nil {
+		if err := s.generateDocumentation(organizationUUID, req, progress); err != nil {
 			s.log.Warnw("Failed to generate documentation", "error", err)
 		} else {
 			artifacts.DocumentationGenerated = true
@@ -270,7 +270,7 @@ func (s *ServicePlaybookService) integrateWithPortal(req domain.ServicePlaybookR
 	return nil
 }
 
-func (s *ServicePlaybookService) generateDocumentation(req domain.ServicePlaybookRequest, progress *domain.ServicePlaybookProgress) error {
+func (s *ServicePlaybookService) generateDocumentation(organizationUUID string, req domain.ServicePlaybookRequest, progress *domain.ServicePlaybookProgress) error {
 	if s.autoDocsService == nil || req.RepositoryURL == "" {
 		return fmt.Errorf("auto docs service not available or no repository URL")
 	}
@@ -286,7 +286,7 @@ func (s *ServicePlaybookService) generateDocumentation(req domain.ServicePlayboo
 		},
 	}
 
-	_, err := s.autoDocsService.GenerateAutoDocs(autoDocReq)
+	_, err := s.autoDocsService.GenerateAutoDocs(organizationUUID, autoDocReq)
 	return err
 }
 

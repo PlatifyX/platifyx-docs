@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Integration {
   id: number
@@ -35,7 +35,7 @@ function SonarQubeModal({ integration, isCreating, onSave, onClose }: SonarQubeM
     setTestResult(null)
 
     try {
-      const response = await fetch(buildApiUrl('integrations/test/sonarqube'), {
+      const response = await apiFetch('integrations/test/sonarqube', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -25,11 +25,19 @@ func NewFinOpsHandler(service *service.FinOpsService, cache *service.CacheServic
 
 // GetStats returns aggregated cost statistics
 func (h *FinOpsHandler) GetStats(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	provider := c.Query("provider")     // azure, gcp, aws, or empty for all
 	integration := c.Query("integration") // specific integration name
 
 	// Build cache key
-	cacheKey := service.BuildKey("finops:stats", provider+":"+integration)
+	cacheKey := service.BuildKey("finops:stats", orgUUID+":"+provider+":"+integration)
 
 	// Try cache first
 	if h.cache != nil {
@@ -42,7 +50,7 @@ func (h *FinOpsHandler) GetStats(c *gin.Context) {
 	}
 
 	// Cache MISS - fetch from service
-	stats, err := h.service.GetStats(provider, integration)
+	stats, err := h.service.GetStats(orgUUID, provider, integration)
 	if err != nil {
 		h.log.Errorw("Failed to get FinOps stats", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -61,10 +69,18 @@ func (h *FinOpsHandler) GetStats(c *gin.Context) {
 
 // ListCosts returns detailed cost breakdown
 func (h *FinOpsHandler) ListCosts(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	provider := c.Query("provider")
 	integration := c.Query("integration")
 
-	costs, err := h.service.GetAllCosts(provider, integration)
+	costs, err := h.service.GetAllCosts(orgUUID, provider, integration)
 	if err != nil {
 		h.log.Errorw("Failed to list costs", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -76,10 +92,18 @@ func (h *FinOpsHandler) ListCosts(c *gin.Context) {
 
 // ListResources returns all cloud resources
 func (h *FinOpsHandler) ListResources(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	provider := c.Query("provider")
 	integration := c.Query("integration")
 
-	resources, err := h.service.GetAllResources(provider, integration)
+	resources, err := h.service.GetAllResources(orgUUID, provider, integration)
 	if err != nil {
 		h.log.Errorw("Failed to list resources", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -91,9 +115,17 @@ func (h *FinOpsHandler) ListResources(c *gin.Context) {
 
 // GetAWSMonthlyCosts returns monthly cost data from AWS for the last year
 func (h *FinOpsHandler) GetAWSMonthlyCosts(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integration := c.Query("integration")
 
-	cacheKey := service.BuildKey("finops:aws", "monthly:"+integration)
+	cacheKey := service.BuildKey("finops:aws", orgUUID+":monthly:"+integration)
 
 	// Try cache first
 	if h.cache != nil {
@@ -106,7 +138,7 @@ func (h *FinOpsHandler) GetAWSMonthlyCosts(c *gin.Context) {
 	}
 
 	// Cache MISS
-	data, err := h.service.GetAWSCostsByMonth(integration)
+	data, err := h.service.GetAWSCostsByMonth(orgUUID, integration)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS monthly costs", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -125,6 +157,14 @@ func (h *FinOpsHandler) GetAWSMonthlyCosts(c *gin.Context) {
 
 // GetAWSCostsByService returns cost data grouped by AWS service for a specified period
 func (h *FinOpsHandler) GetAWSCostsByService(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	// Get months parameter from query string, default to 12
 	months := 12
 	if monthsParam := c.Query("months"); monthsParam != "" {
@@ -137,7 +177,7 @@ func (h *FinOpsHandler) GetAWSCostsByService(c *gin.Context) {
 
 	integration := c.Query("integration")
 
-	cacheKey := service.BuildKey("finops:aws:byservice", strconv.Itoa(months)+":"+integration)
+	cacheKey := service.BuildKey("finops:aws:byservice", orgUUID+":"+strconv.Itoa(months)+":"+integration)
 
 	// Try cache first
 	if h.cache != nil {
@@ -150,7 +190,7 @@ func (h *FinOpsHandler) GetAWSCostsByService(c *gin.Context) {
 	}
 
 	// Cache MISS
-	data, err := h.service.GetAWSCostsByService(months, integration)
+	data, err := h.service.GetAWSCostsByService(orgUUID, months, integration)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS costs by service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -169,9 +209,17 @@ func (h *FinOpsHandler) GetAWSCostsByService(c *gin.Context) {
 
 // GetAWSCostForecast returns AWS cost forecast
 func (h *FinOpsHandler) GetAWSCostForecast(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integration := c.Query("integration")
 
-	data, err := h.service.GetAWSCostForecast(integration)
+	data, err := h.service.GetAWSCostForecast(orgUUID, integration)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS cost forecast", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -183,12 +231,20 @@ func (h *FinOpsHandler) GetAWSCostForecast(c *gin.Context) {
 
 // GetAWSCostsByTag returns cost data grouped by tag
 func (h *FinOpsHandler) GetAWSCostsByTag(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	tagKey := c.Query("tag")
 	if tagKey == "" {
 		tagKey = "Team" // Default tag
 	}
 
-	data, err := h.service.GetAWSCostsByTag(tagKey)
+	data, err := h.service.GetAWSCostsByTag(orgUUID, tagKey)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS costs by tag", "error", err, "tag", tagKey)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -200,7 +256,15 @@ func (h *FinOpsHandler) GetAWSCostsByTag(c *gin.Context) {
 
 // GetAWSReservationUtilization returns Reserved Instance utilization data
 func (h *FinOpsHandler) GetAWSReservationUtilization(c *gin.Context) {
-	data, err := h.service.GetAWSReservationUtilization()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	data, err := h.service.GetAWSReservationUtilization(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS reservation utilization", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -212,7 +276,15 @@ func (h *FinOpsHandler) GetAWSReservationUtilization(c *gin.Context) {
 
 // GetAWSSavingsPlansUtilization returns Savings Plans utilization data
 func (h *FinOpsHandler) GetAWSSavingsPlansUtilization(c *gin.Context) {
-	data, err := h.service.GetAWSSavingsPlansUtilization()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	data, err := h.service.GetAWSSavingsPlansUtilization(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get AWS savings plans utilization", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

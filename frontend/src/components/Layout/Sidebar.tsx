@@ -17,14 +17,19 @@ import {
   Workflow,
   Key,
   Zap,
-  LayoutGrid
+  LayoutGrid,
+  Building2
 } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
 
 interface NavItem {
   path: string
   label: string
   icon: React.ReactNode
+  adminOnly?: boolean
 }
+
+const ADMIN_EMAIL = 'admin@platifyx.com'
 
 const navItems: NavItem[] = [
   { path: '/', label: 'Home', icon: <Home size={20} /> },
@@ -44,22 +49,28 @@ const navItems: NavItem[] = [
   { path: '/techdocs', label: 'Documentação', icon: <FileText size={20} /> },
   { path: '/infrastructure-templates', label: 'Templates', icon: <Boxes size={20} /> },
   { path: '/integrations', label: 'Integrações', icon: <Plug size={20} /> },
+  { path: '/organizations', label: 'Organizações', icon: <Building2 size={20} />, adminOnly: true },
   { path: '/settings', label: 'Configurações', icon: <Settings size={20} /> },
 ]
 
 function Sidebar() {
+  const { user } = useAuth()
+  const isAdmin = user?.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
+
+  const visibleNavItems = navItems.filter(item => !item.adminOnly || isAdmin)
+
   return (
     <aside className="w-[260px] bg-surface border-r border-border fixed top-16 left-0 bottom-0 overflow-y-auto z-[90]">
       <nav className="p-4 px-3 flex flex-col gap-1">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center gap-3 py-2.5 px-3 rounded-lg no-underline transition-all text-sm font-medium text-white ${
+              `flex items-center gap-3 py-2.5 px-3 rounded-lg no-underline transition-all text-sm font-medium text-text ${
                 isActive
-                  ? 'bg-primary hover:bg-primary-dark'
-                  : 'hover:bg-surface-light'
+                  ? 'bg-primary hover:bg-primary-dark text-text'
+                  : 'hover:bg-background'
               }`
             }
           >

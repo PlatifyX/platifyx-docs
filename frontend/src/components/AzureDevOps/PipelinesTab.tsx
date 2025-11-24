@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { GitBranch, FolderOpen, Package } from 'lucide-react'
 import PipelineRunsModal from './PipelineRunsModal'
 import { FilterValues } from './CIFilters'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Pipeline {
   id: number
@@ -36,7 +36,7 @@ function PipelinesTab({ filters }: PipelinesTabProps) {
       if (filters.integration) params.append('integration', filters.integration)
       if (filters.project) params.append('project', filters.project)
 
-      const response = await fetch(buildApiUrl(`ci/pipelines?${params.toString()}`))
+      const response = await apiFetch(`ci/pipelines?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch pipelines')
       const data = await response.json()
       setPipelines(data.pipelines || [])

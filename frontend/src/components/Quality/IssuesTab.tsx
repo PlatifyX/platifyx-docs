@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AlertCircle, Bug, Shield, Code } from 'lucide-react'
 import { QualityFilterValues } from './QualityFilters'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Issue {
   key: string
@@ -42,7 +42,7 @@ function IssuesTab({ filters }: IssuesTabProps) {
       if (filterType) params.append('type', filterType)
       if (filterSeverity) params.append('severity', filterSeverity)
 
-      const response = await fetch(buildApiUrl(`quality/issues?${params.toString()}`))
+      const response = await apiFetch(`quality/issues?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch issues')
       const data = await response.json()
       setIssues(data.issues || [])

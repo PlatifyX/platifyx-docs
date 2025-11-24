@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Rocket, CheckCircle, XCircle, Clock, UserCheck, Check, X } from 'lucide-react'
 import { FilterValues } from './CIFilters'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface User {
   id: string
@@ -69,7 +69,7 @@ function ReleasesTab({ filters }: ReleasesTabProps) {
       if (filters.startDate) params.append('startDate', filters.startDate)
       if (filters.endDate) params.append('endDate', filters.endDate)
 
-      const response = await fetch(buildApiUrl(`ci/releases?${params.toString()}`))
+      const response = await apiFetch(`ci/releases?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch releases')
       const data = await response.json()
       setReleases(data.releases || [])
@@ -139,7 +139,7 @@ function ReleasesTab({ filters }: ReleasesTabProps) {
 
   const handleApproveRelease = async (release: Release, approvalId: number, project: string) => {
     try {
-      const response = await fetch(buildApiUrl('ci/releases/approve'), {
+      const response = await apiFetch('ci/releases/approve', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -165,7 +165,7 @@ function ReleasesTab({ filters }: ReleasesTabProps) {
 
   const handleRejectRelease = async (release: Release, approvalId: number, project: string) => {
     try {
-      const response = await fetch(buildApiUrl('ci/releases/reject'), {
+      const response = await apiFetch('ci/releases/reject', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

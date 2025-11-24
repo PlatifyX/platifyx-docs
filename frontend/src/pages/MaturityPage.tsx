@@ -142,7 +142,7 @@ function MaturityPage() {
             value={teamName}
             onChange={(e) => setTeamName(e.target.value)}
             placeholder="Nome do time (ex: Backend Team)"
-            className="w-full bg-[#1E1E1E] border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500"
+            className="w-full bg-surface border border-border rounded-lg px-4 py-2 text-text placeholder-text-secondary/50"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 fetchScorecard()
@@ -153,7 +153,7 @@ function MaturityPage() {
         <button
           onClick={fetchScorecard}
           disabled={loading || !teamName.trim()}
-          className="flex items-center gap-2 px-6 py-2 bg-[#1B998B] hover:bg-[#15887a] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-6 py-2 bg-button text-text rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-dark"
         >
           {loading ? (
             <>
@@ -172,11 +172,11 @@ function MaturityPage() {
       {scorecard && (
         <div className="space-y-6">
           {/* Overall Score Card */}
-          <div className="bg-gradient-to-r from-[#1E1E1E] to-[#2A2A2A] border border-gray-700 rounded-lg p-6">
+          <div className="bg-gradient-to-r from-surface to-background border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-white">{scorecard.teamName}</h2>
-                <p className="text-gray-400 text-sm">Scorecard de Maturidade</p>
+                <h2 className="text-2xl font-bold text-text">{scorecard.teamName}</h2>
+                <p className="text-text-secondary text-sm">Scorecard de Maturidade</p>
               </div>
               <div className="flex items-center gap-4">
                 {getTrendIcon(scorecard.trend)}
@@ -184,12 +184,12 @@ function MaturityPage() {
                   <div className={`text-4xl font-bold ${getScoreColor(scorecard.overallScore)}`}>
                     {scorecard.overallScore.toFixed(1)}
                   </div>
-                  <div className="text-sm text-gray-400">/ 10.0</div>
+                  <div className="text-sm text-text-secondary">/ 10.0</div>
                 </div>
               </div>
             </div>
 
-            <div className="w-full bg-gray-700 rounded-full h-3">
+            <div className="w-full bg-background rounded-full h-3">
               <div
                 className={`h-3 rounded-full transition-all ${getScoreBgColor(scorecard.overallScore)}`}
                 style={{ width: `${(scorecard.overallScore / 10) * 100}%` }}
@@ -204,8 +204,8 @@ function MaturityPage() {
               return (
                 <div
                   key={score.category}
-                  className={`bg-[#1E1E1E] border-2 rounded-lg p-6 cursor-pointer transition-all hover:border-[#1B998B] ${
-                    selectedCategory === score.category ? 'border-[#1B998B]' : 'border-gray-700'
+                  className={`bg-surface border-2 rounded-lg p-6 cursor-pointer transition-all hover:border-primary ${
+                    selectedCategory === score.category ? 'border-primary' : 'border-border'
                   }`}
                   onClick={() => setSelectedCategory(selectedCategory === score.category ? null : score.category)}
                 >
@@ -213,8 +213,8 @@ function MaturityPage() {
                     <div className="flex items-center gap-3">
                       <Icon className={getScoreColor(score.score)} size={24} />
                       <div>
-                        <h3 className="font-bold text-white">{categoryLabels[score.category] || score.category}</h3>
-                        <p className={`text-sm ${levelColors[score.level] || 'text-gray-400'}`}>
+                        <h3 className="font-bold text-text">{categoryLabels[score.category] || score.category}</h3>
+                        <p className={`text-sm ${levelColors[score.level] || 'text-text-secondary'}`}>
                           {score.level}
                         </p>
                       </div>
@@ -224,7 +224,7 @@ function MaturityPage() {
                     </div>
                   </div>
 
-                  <div className="w-full bg-gray-700 rounded-full h-2 mb-3">
+                  <div className="w-full bg-background rounded-full h-2 mb-3">
                     <div
                       className={`h-2 rounded-full transition-all ${getScoreBgColor(score.score)}`}
                       style={{ width: `${(score.score / 10) * 100}%` }}
@@ -232,8 +232,8 @@ function MaturityPage() {
                   </div>
 
                   {score.recommendations && score.recommendations.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-700">
-                      <p className="text-xs text-gray-400 mb-1">
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <p className="text-xs text-text-secondary mb-1">
                         {score.recommendations.length} recomendação(ões)
                       </p>
                     </div>
@@ -245,8 +245,8 @@ function MaturityPage() {
 
           {/* Recommendations for Selected Category */}
           {selectedCategory && (
-            <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6">
-              <h3 className="text-xl font-bold mb-4">
+            <div className="bg-surface border border-border rounded-lg p-6">
+              <h3 className="text-xl font-bold mb-4 text-text">
                 Recomendações - {categoryLabels[selectedCategory] || selectedCategory}
               </h3>
               {scorecard.scores
@@ -254,10 +254,10 @@ function MaturityPage() {
                 ?.recommendations.map((rec) => (
                   <div
                     key={rec.id}
-                    className="bg-[#2A2A2A] border border-gray-700 rounded-lg p-4 mb-3"
+                    className="bg-background border border-border rounded-lg p-4 mb-3"
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-semibold text-white">{rec.title}</h4>
+                      <h4 className="font-semibold text-text">{rec.title}</h4>
                       <span className={`text-xs px-2 py-1 rounded ${
                         rec.severity === 'high' ? 'bg-red-500/20 text-red-400' :
                         rec.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
@@ -266,8 +266,8 @@ function MaturityPage() {
                         {rec.severity}
                       </span>
                     </div>
-                    <p className="text-gray-300 text-sm mb-2">{rec.description}</p>
-                    <div className="text-xs text-gray-400 space-y-1">
+                    <p className="text-text-secondary text-sm mb-2">{rec.description}</p>
+                    <div className="text-xs text-text-secondary space-y-1">
                       <p><span className="font-semibold">Motivo:</span> {rec.reason}</p>
                       <p><span className="font-semibold">Ação:</span> {rec.action}</p>
                       <p><span className="font-semibold">Impacto:</span> {rec.impact}</p>
@@ -276,7 +276,7 @@ function MaturityPage() {
                 ))}
               {(!scorecard.scores.find(s => s.category === selectedCategory)?.recommendations ||
                 scorecard.scores.find(s => s.category === selectedCategory)?.recommendations.length === 0) && (
-                <p className="text-gray-400 text-center py-4">
+                <p className="text-text-secondary text-center py-4">
                   Nenhuma recomendação disponível para esta categoria
                 </p>
               )}
@@ -286,7 +286,7 @@ function MaturityPage() {
       )}
 
       {!scorecard && !loading && (
-        <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-12 text-center">
+        <div className="bg-surface border border-border rounded-lg p-12 text-center">
           <Target className="mx-auto mb-4 text-gray-400" size={48} />
           <p className="text-gray-400 text-lg">Digite o nome do time para ver o scorecard</p>
           <p className="text-gray-500 text-sm mt-2">

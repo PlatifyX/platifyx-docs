@@ -3,7 +3,7 @@ import { Package, CheckCircle, XCircle, Clock, GitBranch, Plus } from 'lucide-re
 import BuildLogsModal from './BuildLogsModal'
 import QueueBuildModal from './QueueBuildModal'
 import { FilterValues } from './CIFilters'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Build {
   id: number
@@ -47,7 +47,7 @@ function BuildsTab({ filters }: BuildsTabProps) {
       if (filters.startDate) params.append('startDate', filters.startDate)
       if (filters.endDate) params.append('endDate', filters.endDate)
 
-      const response = await fetch(buildApiUrl(`ci/builds?${params.toString()}`))
+      const response = await apiFetch(`ci/builds?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch builds')
       const data = await response.json()
       setBuilds(data.builds || [])

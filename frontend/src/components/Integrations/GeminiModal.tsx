@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Integration {
   id: number
@@ -34,7 +34,7 @@ function GeminiModal({ integration, isCreating, onSave, onClose }: GeminiModalPr
     setTestResult(null)
 
     try {
-      const response = await fetch(buildApiUrl('integrations/test/gemini'), {
+      const response = await apiFetch('integrations/test/gemini', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

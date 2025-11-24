@@ -22,7 +22,15 @@ func NewJiraHandler(svc *service.IntegrationService, log *logger.Logger) *JiraHa
 }
 
 func (h *JiraHandler) GetStats(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	jiraService, err := h.service.GetJiraService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Jira service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -44,7 +52,15 @@ func (h *JiraHandler) GetStats(c *gin.Context) {
 }
 
 func (h *JiraHandler) GetProjects(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	jiraService, err := h.service.GetJiraService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Jira service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -69,7 +85,15 @@ func (h *JiraHandler) GetProjects(c *gin.Context) {
 }
 
 func (h *JiraHandler) SearchIssues(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	jiraService, err := h.service.GetJiraService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Jira service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -98,7 +122,15 @@ func (h *JiraHandler) SearchIssues(c *gin.Context) {
 }
 
 func (h *JiraHandler) GetIssue(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	jiraService, err := h.service.GetJiraService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Jira service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -128,7 +160,15 @@ func (h *JiraHandler) GetIssue(c *gin.Context) {
 }
 
 func (h *JiraHandler) GetBoards(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	jiraService, err := h.service.GetJiraService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Jira service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -153,7 +193,15 @@ func (h *JiraHandler) GetBoards(c *gin.Context) {
 }
 
 func (h *JiraHandler) GetSprints(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	jiraService, err := h.service.GetJiraService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Jira service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -187,7 +235,15 @@ func (h *JiraHandler) GetSprints(c *gin.Context) {
 }
 
 func (h *JiraHandler) GetCurrentUser(c *gin.Context) {
-	jiraService, err := h.service.GetJiraService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	jiraService, err := h.service.GetJiraService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Jira service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{

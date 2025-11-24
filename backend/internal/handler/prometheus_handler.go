@@ -22,7 +22,15 @@ func NewPrometheusHandler(svc *service.IntegrationService, log *logger.Logger) *
 }
 
 func (h *PrometheusHandler) GetStats(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	prometheusService, err := h.service.GetPrometheusService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Prometheus service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -44,7 +52,15 @@ func (h *PrometheusHandler) GetStats(c *gin.Context) {
 }
 
 func (h *PrometheusHandler) Query(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	prometheusService, err := h.service.GetPrometheusService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Prometheus service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -87,7 +103,15 @@ func (h *PrometheusHandler) Query(c *gin.Context) {
 }
 
 func (h *PrometheusHandler) QueryRange(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	prometheusService, err := h.service.GetPrometheusService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Prometheus service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -144,7 +168,15 @@ func (h *PrometheusHandler) QueryRange(c *gin.Context) {
 }
 
 func (h *PrometheusHandler) GetTargets(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	prometheusService, err := h.service.GetPrometheusService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Prometheus service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -166,7 +198,15 @@ func (h *PrometheusHandler) GetTargets(c *gin.Context) {
 }
 
 func (h *PrometheusHandler) GetAlerts(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	prometheusService, err := h.service.GetPrometheusService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Prometheus service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -188,7 +228,15 @@ func (h *PrometheusHandler) GetAlerts(c *gin.Context) {
 }
 
 func (h *PrometheusHandler) GetRules(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	prometheusService, err := h.service.GetPrometheusService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Prometheus service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -210,7 +258,15 @@ func (h *PrometheusHandler) GetRules(c *gin.Context) {
 }
 
 func (h *PrometheusHandler) GetLabelValues(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	prometheusService, err := h.service.GetPrometheusService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Prometheus service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -240,7 +296,15 @@ func (h *PrometheusHandler) GetLabelValues(c *gin.Context) {
 }
 
 func (h *PrometheusHandler) GetSeries(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	prometheusService, err := h.service.GetPrometheusService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Prometheus service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -295,7 +359,15 @@ func (h *PrometheusHandler) GetSeries(c *gin.Context) {
 }
 
 func (h *PrometheusHandler) GetMetadata(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	prometheusService, err := h.service.GetPrometheusService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Prometheus service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -319,7 +391,15 @@ func (h *PrometheusHandler) GetMetadata(c *gin.Context) {
 }
 
 func (h *PrometheusHandler) GetBuildInfo(c *gin.Context) {
-	prometheusService, err := h.service.GetPrometheusService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	prometheusService, err := h.service.GetPrometheusService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Prometheus service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{

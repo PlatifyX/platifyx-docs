@@ -1,4 +1,4 @@
-import { buildApiUrl } from '../config/api'
+import { apiFetch } from '../config/api'
 
 export interface AIProvider {
   provider: string
@@ -143,7 +143,7 @@ export const aiService = {
 
   async getAzureDevOpsProjects(): Promise<AzureDevOpsProject[]> {
     try {
-      const response = await fetch(buildApiUrl('integrations/azuredevops/projects'))
+      const response = await apiFetch('integrations/azuredevops/projects')
       if (!response.ok) throw new Error('Failed to fetch Azure DevOps projects')
       const data = await response.json()
       return data.projects || []

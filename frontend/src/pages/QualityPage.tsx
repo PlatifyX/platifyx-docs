@@ -5,7 +5,7 @@ import ProjectsTab from '../components/Quality/ProjectsTab'
 import IssuesTab from '../components/Quality/IssuesTab'
 import QualityFilters, { QualityFilterValues } from '../components/Quality/QualityFilters'
 import IntegrationSelector from '../components/Common/IntegrationSelector'
-import { buildApiUrl } from '../config/api'
+import { apiFetch } from '../config/api'
 
 type TabType = 'projects' | 'issues'
 
@@ -37,19 +37,20 @@ function QualityPage() {
   }, [filters])
 
   const fetchStats = async () => {
+    setLoading(true)
     try {
       const params = new URLSearchParams()
       if (filters.integration) params.append('integration', filters.integration)
       if (filters.project) params.append('project', filters.project)
 
-      const response = await fetch(buildApiUrl(`quality/stats?${params.toString()}`))
+      const response = await apiFetch(`quality/stats?${params.toString()}`)
       if (!response.ok) {
-        // 404 = sem integração configurada
-        if (response.status === 404) {
+        // 404 ou 503 = sem integração configurada
+        if (response.status === 404 || response.status === 503) {
           setStats(null)
           setError(null)
         } else {
-          // Outros erros (503, 500, etc.) = problema no serviço
+          // Outros erros (500, etc.) = problema no serviço
           setError(`Erro ao buscar estatísticas (${response.status})`)
           setStats(null)
         }
@@ -57,8 +58,15 @@ function QualityPage() {
         return
       }
       const data = await response.json()
-      setStats(data)
-      setError(null)
+      // Verificar se há dados válidos (pelo menos um projeto)
+      if (data && data.totalProjects !== undefined) {
+        setStats(data)
+        setError(null)
+      } else {
+        // Dados inválidos ou vazios
+        setStats(null)
+        setError(null)
+      }
     } catch (err: any) {
       // Erro de rede ou outros erros
       setError(`Erro de conexão: ${err.message || 'Não foi possível conectar ao backend'}`)
@@ -97,7 +105,7 @@ function QualityPage() {
         onIntegrationChange={handleIntegrationChange}
       />
 
-      {!loading && stats && !error && (
+      {!loading && stats && !error && stats.totalProjects !== undefined && (
         <QualityStatsCard stats={stats} />
       )}
 
@@ -116,11 +124,11 @@ function QualityPage() {
         </div>
       )}
 
-      {!loading && !error && !stats && (
+      {!loading && !error && (!stats || stats.totalProjects === undefined) && (
         <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
           <Shield size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-          <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>
-          <p className="text-base text-text-secondary max-w-[500px]">Configure uma integração do SonarQube para visualizar métricas de qualidade de código</p>
+          <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma métrica de qualidade disponível</h2>
+          <p className="text-base text-text-secondary max-w-[500px]">Configure uma integração do SonarQube e certifique-se de que há projetos configurados para visualizar métricas de qualidade de código</p>
         </div>
       )}
 

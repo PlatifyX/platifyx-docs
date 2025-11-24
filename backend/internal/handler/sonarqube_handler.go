@@ -26,8 +26,8 @@ func NewSonarQubeHandler(integrationService *service.IntegrationService, cache *
 	}
 }
 
-func (h *SonarQubeHandler) getService() (*service.SonarQubeService, error) {
-	config, err := h.integrationService.GetSonarQubeConfig()
+func (h *SonarQubeHandler) getService(organizationUUID string) (*service.SonarQubeService, error) {
+	config, err := h.integrationService.GetSonarQubeConfig(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,15 @@ func (h *SonarQubeHandler) ListProjects(c *gin.Context) {
 	}
 
 	// Cache MISS
-	configs, err := h.integrationService.GetAllSonarQubeConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllSonarQubeConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get SonarQube configurations",
@@ -122,7 +130,15 @@ func (h *SonarQubeHandler) GetProjectDetails(c *gin.Context) {
 	projectKey := c.Param("key")
 	integrationName := c.Query("integration")
 
-	configs, err := h.integrationService.GetAllSonarQubeConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllSonarQubeConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get SonarQube configurations",
@@ -164,7 +180,15 @@ func (h *SonarQubeHandler) ListIssues(c *gin.Context) {
 	filterSeverity := c.Query("severity")
 	filterType := c.Query("type")
 
-	configs, err := h.integrationService.GetAllSonarQubeConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllSonarQubeConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get SonarQube configurations",
@@ -231,7 +255,15 @@ func (h *SonarQubeHandler) GetStats(c *gin.Context) {
 	filterIntegration := c.Query("integration")
 	filterProject := c.Query("project")
 
-	configs, err := h.integrationService.GetAllSonarQubeConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllSonarQubeConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get SonarQube configurations",

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Integration {
   id: number
@@ -36,7 +36,7 @@ function ArgoCDModal({ integration, isCreating, onSave, onClose }: ArgoCDModalPr
     setTestResult(null)
 
     try {
-      const response = await fetch(buildApiUrl('integrations/test/argocd'), {
+      const response = await apiFetch('integrations/test/argocd', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

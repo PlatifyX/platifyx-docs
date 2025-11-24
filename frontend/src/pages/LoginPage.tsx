@@ -28,34 +28,34 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#2A2A2A] flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div className="bg-[#2A2A2A] rounded-2xl shadow-xl p-8">
+        <div className="bg-surface rounded-2xl shadow-xl p-8 border border-border">
           {/* Logo e Título */}
           <div className="text-center mb-8">
-            <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-              <LogIn className="h-8 w-8 text-white" />
+            <div className="mx-auto h-16 w-16 bg-button rounded-full flex items-center justify-center mb-4">
+              <LogIn className="h-8 w-8 text-text" />
             </div>
-            <h2 className="text-3xl font-bold text-white">
+            <h2 className="text-3xl font-bold text-text">
               Bem-vindo ao PlatifyX
             </h2>
-            <p className="mt-2 text-sm text-gray-300">
+            <p className="mt-2 text-sm text-text-secondary">
               Faça login para acessar a plataforma
             </p>
           </div>
 
           {/* Erro */}
           {error && (
-            <div className="mb-4 bg-red-900/30 border border-red-500 rounded-lg p-4 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
-              <p className="text-sm text-red-200">{error}</p>
+            <div className="mb-4 bg-error/30 border border-error rounded-lg p-4 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-error flex-shrink-0" />
+              <p className="text-sm text-error">{error}</p>
             </div>
           )}
 
           {/* Formulário */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-text mb-2">
                 Email
               </label>
               <input
@@ -66,19 +66,19 @@ function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none relative block w-full px-4 py-3 border border-gray-600 rounded-lg placeholder-gray-400 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="appearance-none relative block w-full px-4 py-3 border border-border rounded-lg placeholder-text-secondary/50 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 placeholder="seu@email.com"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="block text-sm font-medium text-white">
+                <label htmlFor="password" className="block text-sm font-medium text-text">
                   Senha
                 </label>
                 <Link
                   to="/forgot-password"
-                  className="text-sm font-medium text-blue-400 hover:text-blue-300"
+                  className="text-sm font-medium text-link hover:text-primary"
                 >
                   Esqueceu a senha?
                 </Link>
@@ -91,7 +91,7 @@ function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none relative block w-full px-4 py-3 border border-gray-600 rounded-lg placeholder-gray-400 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="appearance-none relative block w-full px-4 py-3 border border-border rounded-lg placeholder-text-secondary/50 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 placeholder="••••••••"
               />
             </div>
@@ -100,7 +100,7 @@ function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-sm"
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-text bg-button hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-sm"
               >
                 {isLoading ? (
                   <span className="flex items-center">
@@ -122,10 +122,10 @@ function LoginPage() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-600" />
+                <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-[#2A2A2A] text-gray-300">
+                <span className="px-2 bg-surface text-text-secondary">
                   Ou continue com
                 </span>
               </div>
@@ -137,7 +137,7 @@ function LoginPage() {
             <button
               type="button"
               onClick={() => window.location.href = `${API_CONFIG.ENDPOINTS.AUTH}/sso/google`}
-              className="w-full inline-flex justify-center items-center gap-2 py-3 px-4 border border-gray-600 rounded-lg shadow-sm bg-gray-800 text-sm font-medium text-white hover:bg-gray-700 transition-all"
+              className="w-full inline-flex justify-center items-center gap-2 py-3 px-4 border border-border rounded-lg shadow-sm bg-background text-sm font-medium text-text hover:bg-surface transition-all"
             >
               
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -152,7 +152,7 @@ function LoginPage() {
             <button
               type="button"
               onClick={() => window.location.href = `${API_CONFIG.ENDPOINTS.AUTH}/sso/microsoft`}
-              className="w-full inline-flex justify-center items-center gap-2 py-3 px-4 border border-gray-600 rounded-lg shadow-sm bg-gray-800 text-sm font-medium text-white hover:bg-gray-700 transition-all"
+              className="w-full inline-flex justify-center items-center gap-2 py-3 px-4 border border-border rounded-lg shadow-sm bg-background text-sm font-medium text-text hover:bg-surface transition-all"
             >
               <svg className="w-5 h-5" viewBox="0 0 23 23">
                 <path fill="#f3f3f3" d="M0 0h23v23H0z"/>
@@ -169,7 +169,7 @@ function LoginPage() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-600" />
+                <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
               </div>

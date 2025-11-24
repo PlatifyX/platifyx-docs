@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { OrganizationProvider } from './contexts/OrganizationContext'
 import Layout from './components/Layout/Layout'
 import PrivateRoute from './components/PrivateRoute'
+import AdminRoute from './components/AdminRoute'
 import LoginPage from './pages/LoginPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
@@ -24,6 +26,7 @@ import BoardsPage from './pages/BoardsPage'
 import ObservabilityPage from './pages/ObservabilityPage'
 import SettingsPage from './pages/SettingsPage'
 import SecretsPage from './pages/SecretsPage'
+import OrganizationsPage from './pages/OrganizationsPage'
 
 function RootRedirect() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -46,7 +49,8 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
+        <OrganizationProvider>
+          <Routes>
           {/* Rota raiz - redireciona para login ou home */}
           <Route path="/" element={<RootRedirect />} />
 
@@ -183,7 +187,15 @@ function App() {
               </Layout>
             </PrivateRoute>
           } />
+          <Route path="/organizations" element={
+            <AdminRoute>
+              <Layout>
+                <OrganizationsPage />
+              </Layout>
+            </AdminRoute>
+          } />
         </Routes>
+        </OrganizationProvider>
       </AuthProvider>
     </Router>
   )

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Bell, Search, User, LogOut, Settings } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import OrganizationSelector from './OrganizationSelector'
 
 function Header() {
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -33,6 +34,9 @@ function Header() {
       </div>
 
       <div className="flex items-center gap-2">
+        <OrganizationSelector />
+
+        <div className="h-6 w-px bg-border" />
         <button className="bg-transparent border-none text-muted-foreground p-2 rounded-md flex items-center justify-center transition-all hover:bg-surface-light hover:text-foreground" title="Notificações">
           <Bell size={20} />
         </button>

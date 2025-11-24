@@ -48,7 +48,7 @@ func NewAutoDocsService(
 	}
 }
 
-func (s *AutoDocsService) GenerateAutoDocs(req domain.AutoDocRequest) (*domain.AutoDocProgress, error) {
+func (s *AutoDocsService) GenerateAutoDocs(organizationUUID string, req domain.AutoDocRequest) (*domain.AutoDocProgress, error) {
 	progressID := uuid.New().String()
 	
 	progress := &domain.AutoDocProgress{
@@ -63,12 +63,12 @@ func (s *AutoDocsService) GenerateAutoDocs(req domain.AutoDocRequest) (*domain.A
 
 	s.saveProgress(progressID, progress)
 
-	go s.runAutoDocsGeneration(progressID, req)
+	go s.runAutoDocsGeneration(organizationUUID, progressID, req)
 
 	return progress, nil
 }
 
-func (s *AutoDocsService) runAutoDocsGeneration(progressID string, req domain.AutoDocRequest) {
+func (s *AutoDocsService) runAutoDocsGeneration(organizationUUID string, progressID string, req domain.AutoDocRequest) {
 	progress, _ := s.getProgress(progressID)
 	if progress == nil {
 		return
@@ -112,7 +112,7 @@ func (s *AutoDocsService) runAutoDocsGeneration(progressID string, req domain.Au
 		progress.Progress = 30 + float64(i+1)/float64(totalDocs)*60
 		s.updateProgress(progressID, progress)
 
-		doc, err := s.generateDocument(docType, analysis, req)
+		doc, err := s.generateDocument(organizationUUID, docType, analysis, req)
 		if err != nil {
 			s.log.Errorw("Failed to generate document", "type", docType, "error", err)
 			progress.Errors = append(progress.Errors, fmt.Sprintf("Erro ao gerar %s: %v", docType, err))
@@ -246,28 +246,28 @@ func (s *AutoDocsService) detectFramework(language, description string) string {
 	}
 }
 
-func (s *AutoDocsService) generateDocument(docType domain.DocType, analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
+func (s *AutoDocsService) generateDocument(organizationUUID string, docType domain.DocType, analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
 	switch docType {
 	case domain.DocTypeC4Diagram:
-		return s.generateC4Diagram(analysis, req)
+		return s.generateC4Diagram(organizationUUID, analysis, req)
 	case domain.DocTypeArchitecture:
-		return s.generateArchitectureDoc(analysis, req)
+		return s.generateArchitectureDoc(organizationUUID, analysis, req)
 	case domain.DocTypeRunbook:
-		return s.generateRunbook(analysis, req)
+		return s.generateRunbook(organizationUUID, analysis, req)
 	case domain.DocTypeSLO:
-		return s.generateSLO(analysis, req)
+		return s.generateSLO(organizationUUID, analysis, req)
 	case domain.DocTypeStatusPage:
-		return s.generateStatusPage(analysis, req)
+		return s.generateStatusPage(organizationUUID, analysis, req)
 	case domain.DocTypeDeployGuide:
-		return s.generateDeployGuide(analysis, req)
+		return s.generateDeployGuide(organizationUUID, analysis, req)
 	case domain.DocTypeCICDFlow:
-		return s.generateCICDFlow(analysis, req)
+		return s.generateCICDFlow(organizationUUID, analysis, req)
 	default:
 		return nil, fmt.Errorf("unsupported document type: %s", docType)
 	}
 }
 
-func (s *AutoDocsService) generateC4Diagram(analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
+func (s *AutoDocsService) generateC4Diagram(organizationUUID string, analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
 	prompt := fmt.Sprintf(`Gere um diagrama C4 (Context, Container, Component) para o serviço %s.
 
 Informações do repositório:
@@ -286,7 +286,7 @@ Formato: Apenas código Mermaid, sem markdown.`,
 		req.ServiceName, analysis.Language, analysis.Framework, 
 		analysis.HasHelmCharts, analysis.HasK8sManifests, analysis.HasPipelines)
 
-	response, err := s.aiService.GenerateCompletion(domain.AIProviderClaude, prompt, "")
+	response, err := s.aiService.GenerateCompletion(organizationUUID, domain.AIProviderClaude, prompt, "")
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +301,7 @@ Formato: Apenas código Mermaid, sem markdown.`,
 	}, nil
 }
 
-func (s *AutoDocsService) generateArchitectureDoc(analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
+func (s *AutoDocsService) generateArchitectureDoc(organizationUUID string, analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
 	prompt := fmt.Sprintf(`Gere documentação de arquitetura completa para o serviço %s.
 
 Inclua:
@@ -317,7 +317,7 @@ Formato: Markdown bem estruturado.`,
 		req.ServiceName, analysis.Language, analysis.Framework,
 		analysis.HasHelmCharts, analysis.HasK8sManifests)
 
-	response, err := s.aiService.GenerateCompletion(domain.AIProviderClaude, prompt, "")
+	response, err := s.aiService.GenerateCompletion(organizationUUID, domain.AIProviderClaude, prompt, "")
 	if err != nil {
 		return nil, err
 	}
@@ -332,7 +332,7 @@ Formato: Markdown bem estruturado.`,
 	}, nil
 }
 
-func (s *AutoDocsService) generateRunbook(analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
+func (s *AutoDocsService) generateRunbook(organizationUUID string, analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
 	prompt := fmt.Sprintf(`Gere um runbook operacional completo para o serviço %s.
 
 Inclua:
@@ -347,7 +347,7 @@ Inclua:
 Baseado em: %s, %s, %v (K8s)`, 
 		req.ServiceName, analysis.Language, analysis.Framework, analysis.HasK8sManifests)
 
-	response, err := s.aiService.GenerateCompletion(domain.AIProviderClaude, prompt, "")
+	response, err := s.aiService.GenerateCompletion(organizationUUID, domain.AIProviderClaude, prompt, "")
 	if err != nil {
 		return nil, err
 	}
@@ -362,7 +362,7 @@ Baseado em: %s, %s, %v (K8s)`,
 	}, nil
 }
 
-func (s *AutoDocsService) generateSLO(analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
+func (s *AutoDocsService) generateSLO(organizationUUID string, analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
 	prompt := fmt.Sprintf(`Gere um documento de SLO (Service Level Objectives) para %s.
 
 Inclua:
@@ -376,7 +376,7 @@ Inclua:
 
 Formato: Markdown com tabelas.`, req.ServiceName)
 
-	response, err := s.aiService.GenerateCompletion(domain.AIProviderClaude, prompt, "")
+	response, err := s.aiService.GenerateCompletion(organizationUUID, domain.AIProviderClaude, prompt, "")
 	if err != nil {
 		return nil, err
 	}
@@ -391,7 +391,7 @@ Formato: Markdown com tabelas.`, req.ServiceName)
 	}, nil
 }
 
-func (s *AutoDocsService) generateStatusPage(analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
+func (s *AutoDocsService) generateStatusPage(organizationUUID string, analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
 	content := fmt.Sprintf(`# Status Page - %s
 
 ## Status Atual
@@ -432,7 +432,7 @@ Nenhum incidente registrado.
 	}, nil
 }
 
-func (s *AutoDocsService) generateDeployGuide(analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
+func (s *AutoDocsService) generateDeployGuide(organizationUUID string, analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
 	prompt := fmt.Sprintf(`Gere um guia completo de deploy para %s.
 
 Inclua:
@@ -451,7 +451,7 @@ Formato: Markdown passo a passo.`,
 		req.ServiceName, analysis.Language, analysis.Framework,
 		analysis.HasHelmCharts, analysis.HasK8sManifests, analysis.HasPipelines)
 
-	response, err := s.aiService.GenerateCompletion(domain.AIProviderClaude, prompt, "")
+	response, err := s.aiService.GenerateCompletion(organizationUUID, domain.AIProviderClaude, prompt, "")
 	if err != nil {
 		return nil, err
 	}
@@ -466,7 +466,7 @@ Formato: Markdown passo a passo.`,
 	}, nil
 }
 
-func (s *AutoDocsService) generateCICDFlow(analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
+func (s *AutoDocsService) generateCICDFlow(organizationUUID string, analysis *domain.RepositoryAnalysis, req domain.AutoDocRequest) (*domain.GeneratedDocument, error) {
 	prompt := fmt.Sprintf(`Gere um diagrama de fluxo CI/CD para %s.
 
 Mostre:
@@ -482,7 +482,7 @@ Formato: Diagrama Mermaid de flowchart.
 Baseado em: %v (Pipelines), %v (K8s)`, 
 		req.ServiceName, analysis.HasPipelines, analysis.HasK8sManifests)
 
-	response, err := s.aiService.GenerateCompletion(domain.AIProviderClaude, prompt, "")
+	response, err := s.aiService.GenerateCompletion(organizationUUID, domain.AIProviderClaude, prompt, "")
 	if err != nil {
 		return nil, err
 	}
