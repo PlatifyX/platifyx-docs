@@ -21,11 +21,21 @@ type ServiceManager struct {
 	TechDocsService        *TechDocsService
 	ServiceTemplateService *ServiceTemplateService
 	ServiceCatalogService  *ServiceCatalogService
-	AIService              *AIService
-	DiagramService         *DiagramService
-	TemplateService        *TemplateService
-	UserService            *UserService
-	AuthService            *AuthService
+	AIService                        *AIService
+	DiagramService                   *DiagramService
+	TemplateService                  *TemplateService
+	UserService                      *UserService
+	AuthService                      *AuthService
+	AutonomousRecommendationsService *AutonomousRecommendationsService
+	TroubleshootingAssistantService   *TroubleshootingAssistantService
+	AutonomousActionsService         *AutonomousActionsService
+	MaturityService                  *MaturityService
+	AutoDocsService                  *AutoDocsService
+	ServicePlaybookService           *ServicePlaybookService
+	BoardsService                    *BoardsService
+	OrganizationService              *OrganizationService
+	UserOrganizationService          *UserOrganizationService
+	OrganizationUserService          *OrganizationUserService
 	// User Management Repositories (exposed for handlers)
 	UserRepository          *repository.UserRepository
 	RoleRepository          *repository.RoleRepository
@@ -53,38 +63,12 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	// Initialize integration service
 	integrationService := NewIntegrationService(integrationRepo, log)
 
-	// Get Kubernetes config from database
+	// Kubernetes, GitHub, and SonarQube services are now initialized on-demand per organization
+	// They cannot be initialized here during startup as they require organizationUUID
 	var kubernetesService *KubernetesService
-	k8sConfig, err := integrationService.GetKubernetesConfig()
-	if err == nil && k8sConfig != nil {
-		kubernetesService, err = NewKubernetesService(*k8sConfig, log)
-		if err != nil {
-			log.Errorw("Failed to initialize Kubernetes service", "error", err)
-			kubernetesService = nil
-		}
-	}
-
-	// Get GitHub config from database
 	var githubService *GitHubService
-	githubConfig, err := integrationService.GetGitHubConfig()
-	if err == nil && githubConfig != nil {
-		log.Infow("Initializing GitHub service",
-			"organization", githubConfig.Organization,
-			"hasToken", githubConfig.Token != "",
-		)
-		githubService = NewGitHubService(*githubConfig, log)
-	} else {
-		log.Warnw("GitHub integration not configured or disabled",
-			"error", err,
-		)
-	}
-
-	// Get SonarQube config from database
 	var sonarQubeService *SonarQubeService
-	sonarQubeConfig, err := integrationService.GetSonarQubeConfig()
-	if err == nil && sonarQubeConfig != nil {
-		sonarQubeService = NewSonarQubeService(*sonarQubeConfig, log)
-	}
+	log.Info("Kubernetes, GitHub, and SonarQube services will be initialized on-demand per organization")
 
 	// Initialize Cache Service (Redis) - must be before ServiceCatalog and AzureDevOps
 	var cacheService *CacheService
@@ -116,24 +100,14 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		)
 	}
 
-	// Get Azure DevOps config from database (with cache support)
+	// Azure DevOps service is now initialized on-demand per organization
 	var azureDevOpsService *AzureDevOpsService
-	azureDevOpsConfig, err := integrationService.GetAzureDevOpsConfig()
-	if err == nil && azureDevOpsConfig != nil {
-		if redisClient != nil {
-			azureDevOpsService = NewAzureDevOpsServiceWithCache(*azureDevOpsConfig, redisClient, log)
-			log.Info("Azure DevOps service initialized with cache")
-		} else {
-			azureDevOpsService = NewAzureDevOpsService(*azureDevOpsConfig, log)
-			log.Info("Azure DevOps service initialized without cache")
-		}
-	}
+	log.Info("Azure DevOps service will be initialized on-demand per organization")
 
 	// Initialize ServiceCatalog service (with cache support)
-	var serviceCatalogService *ServiceCatalogService
-	if kubernetesService != nil {
-		serviceCatalogService = NewServiceCatalogService(serviceRepo, integrationRepo, kubernetesService, azureDevOpsService, githubService, redisClient, log)
-	}
+	// ServiceCatalogService can work without KubernetesService for listing services (GetAll)
+	// KubernetesService will be created dynamically per organization when needed for sync
+	serviceCatalogService := NewServiceCatalogService(serviceRepo, integrationRepo, nil, nil, nil, redisClient, log)
 
 	// Initialize FinOps service
 	finOpsService := NewFinOpsService(integrationService, log)
@@ -148,24 +122,9 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	serviceTemplateRepo := repository.NewServiceTemplateRepository(db)
 	serviceTemplateService := NewServiceTemplateService(serviceTemplateRepo, log)
 
-	// Get AWS Secrets Manager config from database
+	// AWS Secrets Manager service is now initialized on-demand per organization
 	var awsSecretsService *AWSSecretsService
-	awsSecretsConfig, err := integrationService.GetAWSSecretsConfig()
-	if err == nil && awsSecretsConfig != nil {
-		log.Infow("Initializing AWS Secrets Manager service",
-			"region", awsSecretsConfig.Region,
-			"hasAccessKey", awsSecretsConfig.AccessKeyID != "",
-		)
-		awsSecretsService, err = NewAWSSecretsService(*awsSecretsConfig, log)
-		if err != nil {
-			log.Errorw("Failed to initialize AWS Secrets Manager service", "error", err)
-			awsSecretsService = nil
-		}
-	} else {
-		log.Warnw("AWS Secrets Manager integration not configured or disabled",
-			"error", err,
-		)
-	}
+	log.Info("AWS Secrets Manager service will be initialized on-demand per organization")
 
 	// Initialize Infrastructure Template service (for Backstage-style templates)
 	templateService := NewTemplateService(log, awsSecretsService)
@@ -173,6 +132,78 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	// Initialize User Management services
 	userService := NewUserService(userRepo, auditRepo)
 	authService := NewAuthService(userRepo, sessionRepo, auditRepo, passwordResetRepo, cfg.JWTSecret)
+
+	// Initialize Autonomous Engineering services
+	autonomousRecommendationsService := NewAutonomousRecommendationsService(
+		aiService,
+		kubernetesService,
+		finOpsService,
+		azureDevOpsService,
+		log,
+	)
+
+	troubleshootingAssistantService := NewTroubleshootingAssistantService(
+		aiService,
+		kubernetesService,
+		azureDevOpsService,
+		log,
+	)
+
+	autonomousActionsService := NewAutonomousActionsService(
+		kubernetesService,
+		azureDevOpsService,
+		log,
+	)
+
+	maturityService := NewMaturityService(
+		kubernetesService,
+		azureDevOpsService,
+		sonarQubeService,
+		finOpsService,
+		aiService,
+		log,
+	)
+
+	autoDocsService := NewAutoDocsService(
+		techDocsService,
+		aiService,
+		diagramService,
+		githubService,
+		azureDevOpsService,
+		integrationService,
+		kubernetesService,
+		redisClient,
+		log,
+	)
+
+	servicePlaybookService := NewServicePlaybookService(
+		templateService,
+		techDocsService,
+		autoDocsService,
+		maturityService,
+		kubernetesService,
+		azureDevOpsService,
+		githubService,
+		integrationService,
+		redisClient,
+		log,
+	)
+
+	boardsService := NewBoardsService(
+		azureDevOpsService,
+		githubService,
+		integrationService,
+		log,
+	)
+
+	organizationRepo := repository.NewOrganizationRepository(db)
+	organizationService := NewOrganizationService(organizationRepo, db, log)
+
+	userOrgRepo := repository.NewUserOrganizationRepository(db)
+	userOrganizationService := NewUserOrganizationService(userOrgRepo, userRepo, organizationRepo, log)
+
+	orgUserRepo := repository.NewOrganizationUserRepository(db)
+	organizationUserService := NewOrganizationUserService(orgUserRepo, log)
 
 	return &ServiceManager{
 		CacheService:           cacheService,
@@ -188,9 +219,19 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		AIService:              aiService,
 		DiagramService:         diagramService,
 		TemplateService:        templateService,
-		UserService:            userService,
-		AuthService:            authService,
-		UserRepository:          userRepo,
+		UserService:                      userService,
+		AuthService:                      authService,
+		AutonomousRecommendationsService: autonomousRecommendationsService,
+		TroubleshootingAssistantService:   troubleshootingAssistantService,
+		AutonomousActionsService:         autonomousActionsService,
+		MaturityService:                  maturityService,
+		AutoDocsService:                  autoDocsService,
+		ServicePlaybookService:           servicePlaybookService,
+		BoardsService:                    boardsService,
+		OrganizationService:             organizationService,
+		UserOrganizationService:         userOrganizationService,
+		OrganizationUserService:         organizationUserService,
+		UserRepository:                  userRepo,
 		RoleRepository:          roleRepo,
 		TeamRepository:          teamRepo,
 		SSORepository:           ssoRepo,

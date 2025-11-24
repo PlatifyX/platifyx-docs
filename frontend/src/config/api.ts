@@ -32,13 +32,34 @@ export const buildApiUrl = (path: string): string => {
 }
 
 /**
- * Wrapper for fetch with automatic API URL building
+ * Wrapper for fetch with automatic API URL building and organization header
  * @param path - API path (e.g., 'finops/stats')
  * @param options - Fetch options
  */
 export const apiFetch = async (path: string, options?: RequestInit): Promise<Response> => {
   const url = buildApiUrl(path)
-  return fetch(url, options)
+  
+  const orgUUID = localStorage.getItem('platifyx_current_organization')
+  const token = localStorage.getItem('token')
+  
+  const headers = new Headers(options?.headers)
+  
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+  
+  if (orgUUID) {
+    headers.set('X-Organization-UUID', orgUUID)
+  }
+  
+  if (!headers.has('Content-Type') && options?.body && typeof options.body === 'string') {
+    headers.set('Content-Type', 'application/json')
+  }
+  
+  return fetch(url, {
+    ...options,
+    headers,
+  })
 }
 
 export default API_CONFIG

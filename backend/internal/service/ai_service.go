@@ -24,11 +24,11 @@ func NewAIService(integrationService *IntegrationService, log *logger.Logger) *A
 }
 
 // GetAvailableProviders returns list of available AI providers
-func (s *AIService) GetAvailableProviders() ([]domain.AIProviderInfo, error) {
+func (s *AIService) GetAvailableProviders(organizationUUID string) ([]domain.AIProviderInfo, error) {
 	providers := []domain.AIProviderInfo{}
 
 	// Check OpenAI
-	openaiConfig, err := s.integrationService.GetOpenAIConfig()
+	openaiConfig, err := s.integrationService.GetOpenAIConfig(organizationUUID)
 	if err == nil && openaiConfig != nil && openaiConfig.APIKey != "" {
 		providers = append(providers, domain.AIProviderInfo{
 			Provider:  domain.AIProviderOpenAI,
@@ -39,7 +39,7 @@ func (s *AIService) GetAvailableProviders() ([]domain.AIProviderInfo, error) {
 	}
 
 	// Check Claude
-	claudeConfig, err := s.integrationService.GetClaudeConfig()
+	claudeConfig, err := s.integrationService.GetClaudeConfig(organizationUUID)
 	if err == nil && claudeConfig != nil && claudeConfig.APIKey != "" {
 		providers = append(providers, domain.AIProviderInfo{
 			Provider:  domain.AIProviderClaude,
@@ -50,7 +50,7 @@ func (s *AIService) GetAvailableProviders() ([]domain.AIProviderInfo, error) {
 	}
 
 	// Check Gemini
-	geminiConfig, err := s.integrationService.GetGeminiConfig()
+	geminiConfig, err := s.integrationService.GetGeminiConfig(organizationUUID)
 	if err == nil && geminiConfig != nil && geminiConfig.APIKey != "" {
 		providers = append(providers, domain.AIProviderInfo{
 			Provider:  domain.AIProviderGemini,
@@ -64,39 +64,39 @@ func (s *AIService) GetAvailableProviders() ([]domain.AIProviderInfo, error) {
 }
 
 // GenerateCompletion generates text completion using specified provider
-func (s *AIService) GenerateCompletion(provider domain.AIProvider, prompt string, model string) (*domain.AIResponse, error) {
-	s.log.Infow("Generating completion", "provider", provider, "model", model)
+func (s *AIService) GenerateCompletion(organizationUUID string, provider domain.AIProvider, prompt string, model string) (*domain.AIResponse, error) {
+	s.log.Infow("Generating completion", "provider", provider, "model", model, "organizationUUID", organizationUUID)
 
 	switch provider {
 	case domain.AIProviderOpenAI:
-		return s.generateOpenAICompletion(prompt, model)
+		return s.generateOpenAICompletion(organizationUUID, prompt, model)
 	case domain.AIProviderClaude:
-		return s.generateClaudeCompletion(prompt, model)
+		return s.generateClaudeCompletion(organizationUUID, prompt, model)
 	case domain.AIProviderGemini:
-		return s.generateGeminiCompletion(prompt, model)
+		return s.generateGeminiCompletion(organizationUUID, prompt, model)
 	default:
 		return nil, fmt.Errorf("unsupported AI provider: %s", provider)
 	}
 }
 
 // GenerateChat generates chat response using specified provider
-func (s *AIService) GenerateChat(provider domain.AIProvider, messages []domain.ChatMessage, model string) (*domain.AIResponse, error) {
-	s.log.Infow("Generating chat response", "provider", provider, "model", model, "messages", len(messages))
+func (s *AIService) GenerateChat(organizationUUID string, provider domain.AIProvider, messages []domain.ChatMessage, model string) (*domain.AIResponse, error) {
+	s.log.Infow("Generating chat response", "provider", provider, "model", model, "messages", len(messages), "organizationUUID", organizationUUID)
 
 	switch provider {
 	case domain.AIProviderOpenAI:
-		return s.generateOpenAIChat(messages, model)
+		return s.generateOpenAIChat(organizationUUID, messages, model)
 	case domain.AIProviderClaude:
-		return s.generateClaudeChat(messages, model)
+		return s.generateClaudeChat(organizationUUID, messages, model)
 	case domain.AIProviderGemini:
-		return s.generateGeminiChat(messages, model)
+		return s.generateGeminiChat(organizationUUID, messages, model)
 	default:
 		return nil, fmt.Errorf("unsupported AI provider: %s", provider)
 	}
 }
 
-func (s *AIService) generateOpenAICompletion(prompt string, model string) (*domain.AIResponse, error) {
-	config, err := s.integrationService.GetOpenAIConfig()
+func (s *AIService) generateOpenAICompletion(organizationUUID string, prompt string, model string) (*domain.AIResponse, error) {
+	config, err := s.integrationService.GetOpenAIConfig(organizationUUID)
 	if err != nil {
 		return nil, fmt.Errorf("OpenAI not configured: %w", err)
 	}
@@ -136,8 +136,8 @@ func (s *AIService) generateOpenAICompletion(prompt string, model string) (*doma
 	}, nil
 }
 
-func (s *AIService) generateOpenAIChat(messages []domain.ChatMessage, model string) (*domain.AIResponse, error) {
-	config, err := s.integrationService.GetOpenAIConfig()
+func (s *AIService) generateOpenAIChat(organizationUUID string, messages []domain.ChatMessage, model string) (*domain.AIResponse, error) {
+	config, err := s.integrationService.GetOpenAIConfig(organizationUUID)
 	if err != nil {
 		return nil, fmt.Errorf("OpenAI not configured: %w", err)
 	}
@@ -183,8 +183,8 @@ func (s *AIService) generateOpenAIChat(messages []domain.ChatMessage, model stri
 	}, nil
 }
 
-func (s *AIService) generateClaudeCompletion(prompt string, model string) (*domain.AIResponse, error) {
-	config, err := s.integrationService.GetClaudeConfig()
+func (s *AIService) generateClaudeCompletion(organizationUUID string, prompt string, model string) (*domain.AIResponse, error) {
+	config, err := s.integrationService.GetClaudeConfig(organizationUUID)
 	if err != nil {
 		return nil, fmt.Errorf("Claude not configured: %w", err)
 	}
@@ -230,8 +230,8 @@ func (s *AIService) generateClaudeCompletion(prompt string, model string) (*doma
 	}, nil
 }
 
-func (s *AIService) generateClaudeChat(messages []domain.ChatMessage, model string) (*domain.AIResponse, error) {
-	config, err := s.integrationService.GetClaudeConfig()
+func (s *AIService) generateClaudeChat(organizationUUID string, messages []domain.ChatMessage, model string) (*domain.AIResponse, error) {
+	config, err := s.integrationService.GetClaudeConfig(organizationUUID)
 	if err != nil {
 		return nil, fmt.Errorf("Claude not configured: %w", err)
 	}
@@ -283,8 +283,8 @@ func (s *AIService) generateClaudeChat(messages []domain.ChatMessage, model stri
 	}, nil
 }
 
-func (s *AIService) generateGeminiCompletion(prompt string, model string) (*domain.AIResponse, error) {
-	config, err := s.integrationService.GetGeminiConfig()
+func (s *AIService) generateGeminiCompletion(organizationUUID string, prompt string, model string) (*domain.AIResponse, error) {
+	config, err := s.integrationService.GetGeminiConfig(organizationUUID)
 	if err != nil {
 		return nil, fmt.Errorf("Gemini not configured: %w", err)
 	}
@@ -327,8 +327,8 @@ func (s *AIService) generateGeminiCompletion(prompt string, model string) (*doma
 	}, nil
 }
 
-func (s *AIService) generateGeminiChat(messages []domain.ChatMessage, model string) (*domain.AIResponse, error) {
-	config, err := s.integrationService.GetGeminiConfig()
+func (s *AIService) generateGeminiChat(organizationUUID string, messages []domain.ChatMessage, model string) (*domain.AIResponse, error) {
+	config, err := s.integrationService.GetGeminiConfig(organizationUUID)
 	if err != nil {
 		return nil, fmt.Errorf("Gemini not configured: %w", err)
 	}

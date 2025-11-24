@@ -1,6 +1,9 @@
 package service
 
 import (
+	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
@@ -21,15 +24,15 @@ func NewFinOpsService(integrationService *IntegrationService, log *logger.Logger
 }
 
 // GetStats aggregates cost statistics from all cloud providers
-func (s *FinOpsService) GetStats(provider, integration string) (*domain.FinOpsStats, error) {
+func (s *FinOpsService) GetStats(organizationUUID string, provider, integration string) (*domain.FinOpsStats, error) {
 	s.log.Info("Calculating FinOps statistics")
 
-	allCosts, err := s.GetAllCosts(provider, integration)
+	allCosts, err := s.GetAllCosts(organizationUUID, provider, integration)
 	if err != nil {
 		return nil, err
 	}
 
-	allResources, err := s.GetAllResources(provider, integration)
+	allResources, err := s.GetAllResources(organizationUUID, provider, integration)
 	if err != nil {
 		return nil, err
 	}
@@ -97,14 +100,14 @@ func (s *FinOpsService) GetStats(provider, integration string) (*domain.FinOpsSt
 }
 
 // GetAllCosts retrieves costs from all enabled cloud providers
-func (s *FinOpsService) GetAllCosts(provider, integration string) ([]domain.CloudCost, error) {
+func (s *FinOpsService) GetAllCosts(organizationUUID string, provider, integration string) ([]domain.CloudCost, error) {
 	allCosts := make([]domain.CloudCost, 0)
 	now := time.Now()
 	startDate := now.AddDate(0, -1, 0) // Last month
 
 	// Azure costs
 	if provider == "" || provider == "azure" {
-		azureConfigs, err := s.integrationService.GetAllAzureCloudConfigs()
+		azureConfigs, err := s.integrationService.GetAllAzureCloudConfigs(organizationUUID)
 		if err != nil {
 			s.log.Errorw("Failed to get Azure configs", "error", err)
 		} else {
@@ -128,7 +131,7 @@ func (s *FinOpsService) GetAllCosts(provider, integration string) ([]domain.Clou
 
 	// GCP costs
 	if provider == "" || provider == "gcp" {
-		gcpConfigs, err := s.integrationService.GetAllGCPConfigs()
+		gcpConfigs, err := s.integrationService.GetAllGCPConfigs(organizationUUID)
 		if err != nil {
 			s.log.Errorw("Failed to get GCP configs", "error", err)
 		} else {
@@ -152,7 +155,7 @@ func (s *FinOpsService) GetAllCosts(provider, integration string) ([]domain.Clou
 
 	// AWS costs
 	if provider == "" || provider == "aws" {
-		awsConfigs, err := s.integrationService.GetAllAWSConfigs()
+		awsConfigs, err := s.integrationService.GetAllAWSConfigs(organizationUUID)
 		if err != nil {
 			s.log.Errorw("Failed to get AWS configs", "error", err)
 		} else {
@@ -178,12 +181,12 @@ func (s *FinOpsService) GetAllCosts(provider, integration string) ([]domain.Clou
 }
 
 // GetAllResources retrieves resources from all enabled cloud providers
-func (s *FinOpsService) GetAllResources(provider, integration string) ([]domain.CloudResource, error) {
+func (s *FinOpsService) GetAllResources(organizationUUID string, provider, integration string) ([]domain.CloudResource, error) {
 	allResources := make([]domain.CloudResource, 0)
 
 	// Azure resources
 	if provider == "" || provider == "azure" {
-		azureConfigs, err := s.integrationService.GetAllAzureCloudConfigs()
+		azureConfigs, err := s.integrationService.GetAllAzureCloudConfigs(organizationUUID)
 		if err != nil {
 			s.log.Errorw("Failed to get Azure configs", "error", err)
 		} else {
@@ -207,7 +210,7 @@ func (s *FinOpsService) GetAllResources(provider, integration string) ([]domain.
 
 	// GCP resources
 	if provider == "" || provider == "gcp" {
-		gcpConfigs, err := s.integrationService.GetAllGCPConfigs()
+		gcpConfigs, err := s.integrationService.GetAllGCPConfigs(organizationUUID)
 		if err != nil {
 			s.log.Errorw("Failed to get GCP configs", "error", err)
 		} else {
@@ -231,7 +234,7 @@ func (s *FinOpsService) GetAllResources(provider, integration string) ([]domain.
 
 	// AWS resources
 	if provider == "" || provider == "aws" {
-		awsConfigs, err := s.integrationService.GetAllAWSConfigs()
+		awsConfigs, err := s.integrationService.GetAllAWSConfigs(organizationUUID)
 		if err != nil {
 			s.log.Errorw("Failed to get AWS configs", "error", err)
 		} else {
@@ -257,13 +260,29 @@ func (s *FinOpsService) GetAllResources(provider, integration string) ([]domain.
 }
 
 // GetAWSCostsByMonth retrieves monthly cost data from AWS for the last year
-func (s *FinOpsService) GetAWSCostsByMonth() ([]map[string]interface{}, error) {
-	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
-	if err != nil {
-		return nil, err
+func (s *FinOpsService) GetAWSCostsByMonth(organizationUUID string, integrationName string) ([]map[string]interface{}, error) {
+	var awsConfigs map[string]*domain.AWSCloudConfig
+	var err error
+
+	if integrationName != "" {
+		config, err := s.integrationService.GetAWSConfigByName(integrationName, organizationUUID)
+		if err != nil {
+			return nil, err
+		}
+		if config == nil {
+			return []map[string]interface{}{}, nil
+		}
+		awsConfigs = map[string]*domain.AWSCloudConfig{
+			integrationName: config,
+		}
+	} else {
+		awsConfigs, err = s.integrationService.GetAllAWSConfigs(organizationUUID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	allMonthlyData := make([]map[string]interface{}, 0)
+	monthlyCostMap := make(map[string]float64)
 
 	for name, config := range awsConfigs {
 		client := cloud.NewAWSClient(*config)
@@ -272,20 +291,67 @@ func (s *FinOpsService) GetAWSCostsByMonth() ([]map[string]interface{}, error) {
 			s.log.Errorw("Failed to get AWS monthly costs", "error", err, "integration", name)
 			continue
 		}
-		allMonthlyData = append(allMonthlyData, monthlyData...)
+
+		for _, item := range monthlyData {
+			month := ""
+			if m, ok := item["month"].(string); ok {
+				parts := strings.Split(m, "-")
+				if len(parts) >= 2 {
+					month = fmt.Sprintf("%s-%s", parts[0], parts[1])
+				} else {
+					month = m
+				}
+			}
+			cost := 0.0
+			if c, ok := item["cost"].(float64); ok {
+				cost = c
+			}
+			monthlyCostMap[month] += cost
+		}
 	}
 
-	return allMonthlyData, nil
+	result := make([]map[string]interface{}, 0)
+	for month, cost := range monthlyCostMap {
+		result = append(result, map[string]interface{}{
+			"month": month,
+			"cost":  cost,
+		})
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		monthI, _ := result[i]["month"].(string)
+		monthJ, _ := result[j]["month"].(string)
+		return monthI < monthJ
+	})
+
+	return result, nil
 }
 
 // GetAWSCostsByService retrieves cost data grouped by service from AWS for a specified number of months
-func (s *FinOpsService) GetAWSCostsByService(months int) ([]map[string]interface{}, error) {
-	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
-	if err != nil {
-		return nil, err
+func (s *FinOpsService) GetAWSCostsByService(organizationUUID string, months int, integrationName string) ([]map[string]interface{}, error) {
+	var awsConfigs map[string]*domain.AWSCloudConfig
+	var err error
+
+	if integrationName != "" {
+		config, err := s.integrationService.GetAWSConfigByName(integrationName, organizationUUID)
+		if err != nil {
+			return nil, err
+		}
+		if config == nil {
+			return []map[string]interface{}{}, nil
+		}
+		awsConfigs = map[string]*domain.AWSCloudConfig{
+			integrationName: config,
+		}
+	} else {
+		awsConfigs, err = s.integrationService.GetAllAWSConfigs(organizationUUID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	allServiceData := make([]map[string]interface{}, 0)
+	serviceCostMap := make(map[string]float64)
 
 	for name, config := range awsConfigs {
 		client := cloud.NewAWSClient(*config)
@@ -294,20 +360,55 @@ func (s *FinOpsService) GetAWSCostsByService(months int) ([]map[string]interface
 			s.log.Errorw("Failed to get AWS costs by service", "error", err, "integration", name)
 			continue
 		}
-		allServiceData = append(allServiceData, serviceData...)
+
+		for _, item := range serviceData {
+			serviceName := "Unknown"
+			if s, ok := item["service"].(string); ok {
+				serviceName = s
+			}
+			cost := 0.0
+			if c, ok := item["cost"].(float64); ok {
+				cost = c
+			}
+			serviceCostMap[serviceName] += cost
+		}
+	}
+
+	for service, cost := range serviceCostMap {
+		allServiceData = append(allServiceData, map[string]interface{}{
+			"service": service,
+			"cost":    cost,
+		})
 	}
 
 	return allServiceData, nil
 }
 
 // GetAWSCostForecast retrieves cost forecast from AWS
-func (s *FinOpsService) GetAWSCostForecast() ([]map[string]interface{}, error) {
-	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
-	if err != nil {
-		return nil, err
+func (s *FinOpsService) GetAWSCostForecast(organizationUUID string, integrationName string) ([]map[string]interface{}, error) {
+	var awsConfigs map[string]*domain.AWSCloudConfig
+	var err error
+
+	if integrationName != "" {
+		config, err := s.integrationService.GetAWSConfigByName(integrationName, organizationUUID)
+		if err != nil {
+			return nil, err
+		}
+		if config == nil {
+			return []map[string]interface{}{}, nil
+		}
+		awsConfigs = map[string]*domain.AWSCloudConfig{
+			integrationName: config,
+		}
+	} else {
+		awsConfigs, err = s.integrationService.GetAllAWSConfigs(organizationUUID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	allForecastData := make([]map[string]interface{}, 0)
+	totalForecast := 0.0
 
 	for name, config := range awsConfigs {
 		client := cloud.NewAWSClient(*config)
@@ -316,15 +417,26 @@ func (s *FinOpsService) GetAWSCostForecast() ([]map[string]interface{}, error) {
 			s.log.Errorw("Failed to get AWS cost forecast", "error", err, "integration", name)
 			continue
 		}
-		allForecastData = append(allForecastData, forecastData...)
+
+		for _, item := range forecastData {
+			if cost, ok := item["cost"].(float64); ok {
+				totalForecast += cost
+			}
+		}
+	}
+
+	if totalForecast > 0 {
+		allForecastData = append(allForecastData, map[string]interface{}{
+			"cost": totalForecast,
+		})
 	}
 
 	return allForecastData, nil
 }
 
 // GetAWSCostsByTag retrieves cost data grouped by tag from AWS
-func (s *FinOpsService) GetAWSCostsByTag(tagKey string) ([]map[string]interface{}, error) {
-	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
+func (s *FinOpsService) GetAWSCostsByTag(organizationUUID string, tagKey string) ([]map[string]interface{}, error) {
+	awsConfigs, err := s.integrationService.GetAllAWSConfigs(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -345,8 +457,8 @@ func (s *FinOpsService) GetAWSCostsByTag(tagKey string) ([]map[string]interface{
 }
 
 // GetAWSReservationUtilization retrieves Reserved Instance utilization data
-func (s *FinOpsService) GetAWSReservationUtilization() (map[string]interface{}, error) {
-	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
+func (s *FinOpsService) GetAWSReservationUtilization(organizationUUID string) (map[string]interface{}, error) {
+	awsConfigs, err := s.integrationService.GetAllAWSConfigs(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -372,8 +484,8 @@ func (s *FinOpsService) GetAWSReservationUtilization() (map[string]interface{}, 
 }
 
 // GetAWSSavingsPlansUtilization retrieves Savings Plans utilization data
-func (s *FinOpsService) GetAWSSavingsPlansUtilization() (map[string]interface{}, error) {
-	awsConfigs, err := s.integrationService.GetAllAWSConfigs()
+func (s *FinOpsService) GetAWSSavingsPlansUtilization(organizationUUID string) (map[string]interface{}, error) {
+	awsConfigs, err := s.integrationService.GetAllAWSConfigs(organizationUUID)
 	if err != nil {
 		return nil, err
 	}

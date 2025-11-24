@@ -35,7 +35,15 @@ func NewIntegrationHandler(svc *service.IntegrationService, cache *service.Cache
 }
 
 func (h *IntegrationHandler) List(c *gin.Context) {
-	cacheKey := service.BuildKey("integrations", "list")
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	cacheKey := service.BuildKey("integrations", "list:"+orgUUID)
 
 	// Try to get from cache if cache is available
 	if h.cache != nil {
@@ -54,7 +62,7 @@ func (h *IntegrationHandler) List(c *gin.Context) {
 	}
 
 	// Cache miss or cache disabled, fetch from database
-	integrations, err := h.service.GetAll()
+	integrations, err := h.service.GetAll(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch integrations",
@@ -78,6 +86,14 @@ func (h *IntegrationHandler) List(c *gin.Context) {
 }
 
 func (h *IntegrationHandler) GetByID(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -87,7 +103,7 @@ func (h *IntegrationHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	integration, err := h.service.GetByID(id)
+	integration, err := h.service.GetByID(id, orgUUID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "Integration not found",
@@ -99,6 +115,14 @@ func (h *IntegrationHandler) GetByID(c *gin.Context) {
 }
 
 func (h *IntegrationHandler) Update(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -122,7 +146,7 @@ func (h *IntegrationHandler) Update(c *gin.Context) {
 	}
 
 	// Get existing integration
-	integration, err := h.service.GetByID(id)
+	integration, err := h.service.GetByID(id, orgUUID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "Integration not found",
@@ -135,7 +159,7 @@ func (h *IntegrationHandler) Update(c *gin.Context) {
 		integration.Name = input.Name
 	}
 
-	if err := h.service.Update(id, input.Enabled, input.Config); err != nil {
+	if err := h.service.Update(id, orgUUID, input.Enabled, input.Config); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to update integration",
 		})
@@ -144,7 +168,7 @@ func (h *IntegrationHandler) Update(c *gin.Context) {
 
 	// Invalidate cache
 	if h.cache != nil {
-		cacheKey := service.BuildKey("integrations", "list")
+		cacheKey := service.BuildKey("integrations", "list:"+orgUUID)
 		h.cache.Delete(cacheKey)
 		h.log.Debugw("Cache invalidated", "key", cacheKey)
 	}
@@ -155,6 +179,14 @@ func (h *IntegrationHandler) Update(c *gin.Context) {
 }
 
 func (h *IntegrationHandler) Create(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var input struct {
 		Name    string                 `json:"name" binding:"required"`
 		Type    string                 `json:"type" binding:"required"`
@@ -185,7 +217,7 @@ func (h *IntegrationHandler) Create(c *gin.Context) {
 		Config:  configJSON,
 	}
 
-	if err := h.service.Create(integration); err != nil {
+	if err := h.service.Create(integration, orgUUID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to create integration",
 		})
@@ -194,7 +226,7 @@ func (h *IntegrationHandler) Create(c *gin.Context) {
 
 	// Invalidate cache
 	if h.cache != nil {
-		cacheKey := service.BuildKey("integrations", "list")
+		cacheKey := service.BuildKey("integrations", "list:"+orgUUID)
 		h.cache.Delete(cacheKey)
 		h.log.Debugw("Cache invalidated", "key", cacheKey)
 	}
@@ -206,6 +238,14 @@ func (h *IntegrationHandler) Create(c *gin.Context) {
 }
 
 func (h *IntegrationHandler) Delete(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -215,7 +255,7 @@ func (h *IntegrationHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.Delete(id); err != nil {
+	if err := h.service.Delete(id, orgUUID); err != nil {
 		h.log.Errorw("Failed to delete integration", "error", err, "id", id)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to delete integration",
@@ -225,7 +265,7 @@ func (h *IntegrationHandler) Delete(c *gin.Context) {
 
 	// Invalidate cache
 	if h.cache != nil {
-		cacheKey := service.BuildKey("integrations", "list")
+		cacheKey := service.BuildKey("integrations", "list:"+orgUUID)
 		h.cache.Delete(cacheKey)
 		h.log.Debugw("Cache invalidated", "key", cacheKey)
 	}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Server, Box, Layers, Network, RefreshCw, AlertCircle } from 'lucide-react'
-import { buildApiUrl } from '../config/api'
+import { apiFetch } from '../config/api'
 import IntegrationSelector from '../components/Common/IntegrationSelector'
 
 interface Pod {
@@ -55,10 +55,14 @@ function KubernetesPage() {
       const params = new URLSearchParams()
       if (selectedIntegration) params.append('integration', selectedIntegration)
 
-      const clusterRes = await fetch(buildApiUrl(`kubernetes/cluster?${params.toString()}`))
+      const clusterRes = await apiFetch(`kubernetes/cluster?${params.toString()}`)
       if (!clusterRes.ok) {
+        // 400 = organização não encontrada ou sem header
         // 404 = sem integração configurada
-        if (clusterRes.status === 404) {
+        if (clusterRes.status === 400) {
+          const errorData = await clusterRes.json().catch(() => ({}))
+          setError(errorData.error || 'Organization UUID is required')
+        } else if (clusterRes.status === 404) {
           setClusterInfo(null)
           setPods([])
           setDeployments([])
@@ -78,7 +82,7 @@ function KubernetesPage() {
       if (activeTab === 'pods' || activeTab === 'overview') {
         const params = new URLSearchParams()
         if (selectedIntegration) params.append('integration', selectedIntegration)
-        const podsRes = await fetch(buildApiUrl(`kubernetes/pods?${params.toString()}`))
+        const podsRes = await apiFetch(`kubernetes/pods?${params.toString()}`)
         if (podsRes.ok) {
           const data = await podsRes.json()
           setPods(data.pods || [])
@@ -88,7 +92,7 @@ function KubernetesPage() {
       if (activeTab === 'deployments' || activeTab === 'overview') {
         const params = new URLSearchParams()
         if (selectedIntegration) params.append('integration', selectedIntegration)
-        const deploymentsRes = await fetch(buildApiUrl(`kubernetes/deployments?${params.toString()}`))
+        const deploymentsRes = await apiFetch(`kubernetes/deployments?${params.toString()}`)
         if (deploymentsRes.ok) {
           const data = await deploymentsRes.json()
           setDeployments(data.deployments || [])
@@ -98,7 +102,7 @@ function KubernetesPage() {
       if (activeTab === 'nodes' || activeTab === 'overview') {
         const params = new URLSearchParams()
         if (selectedIntegration) params.append('integration', selectedIntegration)
-        const nodesRes = await fetch(buildApiUrl(`kubernetes/nodes?${params.toString()}`))
+        const nodesRes = await apiFetch(`kubernetes/nodes?${params.toString()}`)
         if (nodesRes.ok) {
           const data = await nodesRes.json()
           setNodes(data.nodes || [])

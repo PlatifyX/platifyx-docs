@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Integration {
   id: number
@@ -36,7 +36,7 @@ function PrometheusModal({ integration, isCreating, onSave, onClose }: Prometheu
     setTestResult(null)
 
     try {
-      const response = await fetch(buildApiUrl('integrations/test/prometheus'), {
+      const response = await apiFetch('integrations/test/prometheus', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

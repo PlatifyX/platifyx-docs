@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Github, AlertCircle, RefreshCw, ExternalLink, Star, GitFork } from 'lucide-react'
-import { buildApiUrl } from '../config/api'
+import { apiFetch } from '../config/api'
 import IntegrationSelector from '../components/Common/IntegrationSelector'
 
 interface Repository {
@@ -53,7 +53,7 @@ function GitHubPage() {
       if (activeTab === 'overview') {
         const params = new URLSearchParams()
         if (selectedIntegration) params.append('integration', selectedIntegration)
-        const statsRes = await fetch(buildApiUrl(`code/stats?${params.toString()}`))
+        const statsRes = await apiFetch(`code/stats?${params.toString()}`)
         if (!statsRes.ok) {
           // 404 = sem integração configurada
           if (statsRes.status === 404) {
@@ -76,7 +76,7 @@ function GitHubPage() {
       if (activeTab === 'repositories' || activeTab === 'overview') {
         const params = new URLSearchParams()
         if (selectedIntegration) params.append('integration', selectedIntegration)
-        const reposRes = await fetch(buildApiUrl(`code/repositories?${params.toString()}`))
+        const reposRes = await apiFetch(`code/repositories?${params.toString()}`)
         if (!reposRes.ok) {
           // 404 = sem integração configurada
           if (reposRes.status === 404) {

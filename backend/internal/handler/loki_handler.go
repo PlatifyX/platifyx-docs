@@ -24,7 +24,15 @@ func NewLokiHandler(integrationSvc *service.IntegrationService, log *logger.Logg
 
 // GetLabels returns all label names from Loki
 func (h *LokiHandler) GetLabels(c *gin.Context) {
-	lokiService, err := h.integrationService.GetLokiService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	lokiService, err := h.integrationService.GetLokiService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Loki service", "error", err)
 		c.JSON(http.StatusServiceUnavailable, gin.H{
@@ -50,9 +58,17 @@ func (h *LokiHandler) GetLabels(c *gin.Context) {
 
 // GetLabelValues returns all values for a specific label
 func (h *LokiHandler) GetLabelValues(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	label := c.Param("label")
 
-	lokiService, err := h.integrationService.GetLokiService()
+	lokiService, err := h.integrationService.GetLokiService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Loki service", "error", err)
 		c.JSON(http.StatusServiceUnavailable, gin.H{
@@ -79,7 +95,15 @@ func (h *LokiHandler) GetLabelValues(c *gin.Context) {
 
 // GetAppLabels returns all values for the 'app' label
 func (h *LokiHandler) GetAppLabels(c *gin.Context) {
-	lokiService, err := h.integrationService.GetLokiService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	lokiService, err := h.integrationService.GetLokiService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Loki service", "error", err)
 		c.JSON(http.StatusServiceUnavailable, gin.H{
@@ -119,7 +143,15 @@ func (h *LokiHandler) QueryLogs(c *gin.Context) {
 		limit = 100
 	}
 
-	lokiService, err := h.integrationService.GetLokiService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	lokiService, err := h.integrationService.GetLokiService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Loki service", "error", err)
 		c.JSON(http.StatusServiceUnavailable, gin.H{
@@ -191,7 +223,15 @@ func (h *LokiHandler) GetLogsForApp(c *gin.Context) {
 		duration = 1 * time.Hour
 	}
 
-	lokiService, err := h.integrationService.GetLokiService()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	lokiService, err := h.integrationService.GetLokiService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Loki service", "error", err)
 		c.JSON(http.StatusServiceUnavailable, gin.H{

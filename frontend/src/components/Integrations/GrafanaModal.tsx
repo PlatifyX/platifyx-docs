@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Integration {
   id: number
@@ -35,7 +35,7 @@ function GrafanaModal({ integration, isCreating, onSave, onClose }: GrafanaModal
     setTestResult(null)
 
     try {
-      const response = await fetch(buildApiUrl('integrations/test/grafana'), {
+      const response = await apiFetch('integrations/test/grafana', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

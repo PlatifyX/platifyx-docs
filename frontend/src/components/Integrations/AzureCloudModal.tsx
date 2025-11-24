@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Integration {
   id: number
@@ -37,7 +37,7 @@ function AzureCloudModal({ integration, isCreating, onSave, onClose }: AzureClou
     setTestResult(null)
 
     try {
-      const response = await fetch(buildApiUrl('integrations/test/azure'), {
+      const response = await apiFetch('integrations/test/azure', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -22,7 +22,15 @@ func NewAIHandler(svc *service.AIService, log *logger.Logger) *AIHandler {
 
 // GetProviders returns list of available AI providers
 func (h *AIHandler) GetProviders(c *gin.Context) {
-	providers, err := h.service.GetAvailableProviders()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	providers, err := h.service.GetAvailableProviders(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get AI providers", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{

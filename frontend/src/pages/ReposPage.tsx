@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Github, GitBranch, AlertCircle, RefreshCw, ExternalLink, Star, GitFork } from 'lucide-react'
-import { buildApiUrl } from '../config/api'
+import { apiFetch } from '../config/api'
 import IntegrationSelector from '../components/Common/IntegrationSelector'
 
 type Provider = 'github' | 'gitlab' | 'azure-repos'
@@ -88,23 +88,11 @@ function ReposPage() {
       return type === 'stats' ? 'code/stats' : 'code/repositories'
     }
 
-    console.log('🔍 [ReposPage] Fetching data...', {
-      provider,
-      providerName: currentProvider.name,
-      activeTab,
-      selectedIntegration,
-      statsEndpoint: getEndpoint('stats'),
-      reposEndpoint: getEndpoint('repositories')
-    })
-
     try {
       if (activeTab === 'overview') {
         const params = new URLSearchParams()
         if (selectedIntegration) params.append('integration', selectedIntegration)
-        const statsUrl = buildApiUrl(`${getEndpoint('stats')}?${params.toString()}`)
-        console.log('📊 [ReposPage] Fetching stats from:', statsUrl)
-        const statsRes = await fetch(statsUrl)
-        console.log('📊 [ReposPage] Stats response:', statsRes.status, statsRes.statusText)
+        const statsRes = await apiFetch(`${getEndpoint('stats')}?${params.toString()}`)
         if (!statsRes.ok) {
           if (statsRes.status === 404) {
             setStats(null)
@@ -125,10 +113,7 @@ function ReposPage() {
       if (activeTab === 'repositories' || activeTab === 'overview') {
         const params = new URLSearchParams()
         if (selectedIntegration) params.append('integration', selectedIntegration)
-        const reposUrl = buildApiUrl(`${getEndpoint('repositories')}?${params.toString()}`)
-        console.log('📦 [ReposPage] Fetching repositories from:', reposUrl)
-        const reposRes = await fetch(reposUrl)
-        console.log('📦 [ReposPage] Repositories response:', reposRes.status, reposRes.statusText)
+        const reposRes = await apiFetch(`${getEndpoint('repositories')}?${params.toString()}`)
         if (!reposRes.ok) {
           if (reposRes.status === 404) {
             setRepositories([])
@@ -148,11 +133,6 @@ function ReposPage() {
           }
         } else {
           const data = await reposRes.json()
-          console.log('📦 [ReposPage] Repositories data:', {
-            count: data.repositories?.length || 0,
-            total: data.total,
-            firstRepo: data.repositories?.[0]
-          })
           const repos = data.repositories || []
           setRepositories(repos)
 
@@ -164,15 +144,12 @@ function ReposPage() {
               stats[projectName] = (stats[projectName] || 0) + 1
             })
             setProjectStats(stats)
-            console.log('📊 [ReposPage] Project stats:', stats)
           } else {
             setProjectStats({})
           }
         }
       }
     } catch (err: any) {
-      console.error('❌ [ReposPage] Error fetching data:', err)
-
       setError(`Erro de conexão: ${err.message || 'Não foi possível conectar ao backend'}`)
       setStats(null)
       setRepositories([])
@@ -182,14 +159,11 @@ function ReposPage() {
   }
 
   useEffect(() => {
-    console.log('🔄 [ReposPage] Provider or tab changed:', { provider, activeTab, selectedIntegration })
-    // Clear selected integration when provider changes to avoid filter mismatch
     setSelectedIntegration('')
     fetchData()
   }, [activeTab, provider])
 
   useEffect(() => {
-    console.log('🔄 [ReposPage] Integration changed:', { selectedIntegration })
     fetchData()
   }, [selectedIntegration])
 

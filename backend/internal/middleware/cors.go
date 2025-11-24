@@ -20,7 +20,7 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 	}
 
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Organization-UUID"}
 	config.AllowCredentials = true
 
 	return cors.New(config)

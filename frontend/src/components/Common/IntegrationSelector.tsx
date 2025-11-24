@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Building2 } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Integration {
   id: number
@@ -24,7 +24,7 @@ function IntegrationSelector({ integrationType, selectedIntegration, onIntegrati
 
   const fetchIntegrations = async () => {
     try {
-      const response = await fetch(buildApiUrl('integrations'))
+      const response = await apiFetch('integrations')
       if (response.ok) {
         const data = await response.json()
         const filtered = data.integrations.filter((int: Integration) => int.type === integrationType)
@@ -42,8 +42,16 @@ function IntegrationSelector({ integrationType, selectedIntegration, onIntegrati
     }
   }
 
-  if (loading || integrations.length === 0) {
-    return null // Only hide if no integrations
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 mb-6">
+        <label className="flex items-center gap-2 text-sm font-semibold text-text">
+          <Building2 size={18} className="text-text-secondary" />
+          Integração:
+        </label>
+        <div className="text-sm text-text-secondary">Carregando...</div>
+      </div>
+    )
   }
 
   return (

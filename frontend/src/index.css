@@ -9,15 +9,18 @@
 }
 
 :root {
-  --color-primary: #3e5c76;
-  --color-primary-dark: #2d4456;
+  --color-primary: #748cab;
+  --color-primary-dark: #3e5c76;
   --color-secondary: #3e5c76;
-  --color-background: #0d1321;
-  --color-surface: #0d1321;
-  --color-surface-light: #1a2332;
-  --color-text: #ffffff;
+  --color-background: #1e1e1e;
+  --color-surface: #1d2d44;
+  --color-surface-light: #1d2d44;
+  --color-text: #f0ebd8;
   --color-text-secondary: #f0ebd8;
-  --color-border: #f0ebd8;
+  --color-border: #748cab;
+  --color-link: #748cab;
+  --color-button: #748cab;
+  --color-button-alt: #3e5c76;
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
@@ -43,12 +46,12 @@ code {
 }
 
 a {
-  color: var(--color-primary);
+  color: var(--color-link);
   text-decoration: none;
 }
 
 a:hover {
-  color: var(--color-primary-dark);
+  color: var(--color-primary);
 }
 
 button {

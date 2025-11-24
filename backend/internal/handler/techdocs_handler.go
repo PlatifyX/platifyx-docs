@@ -163,6 +163,14 @@ func (h *TechDocsHandler) ListDocuments(c *gin.Context) {
 
 // GenerateDocumentation generates documentation using AI
 func (h *TechDocsHandler) GenerateDocumentation(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var req domain.AIGenerateDocRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -172,7 +180,7 @@ func (h *TechDocsHandler) GenerateDocumentation(c *gin.Context) {
 		return
 	}
 
-	progress, err := h.service.GenerateDocumentation(req)
+	progress, err := h.service.GenerateDocumentation(orgUUID, req)
 	if err != nil {
 		h.log.Errorw("Failed to generate documentation", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -215,6 +223,14 @@ func (h *TechDocsHandler) GetProgress(c *gin.Context) {
 
 // ImproveDocumentation improves existing documentation using AI
 func (h *TechDocsHandler) ImproveDocumentation(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var req domain.AIImproveDocRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -224,7 +240,7 @@ func (h *TechDocsHandler) ImproveDocumentation(c *gin.Context) {
 		return
 	}
 
-	response, err := h.service.ImproveDocumentation(req)
+	response, err := h.service.ImproveDocumentation(orgUUID, req)
 	if err != nil {
 		h.log.Errorw("Failed to improve documentation", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -238,6 +254,14 @@ func (h *TechDocsHandler) ImproveDocumentation(c *gin.Context) {
 
 // ChatAboutDocumentation provides Q&A about documentation
 func (h *TechDocsHandler) ChatAboutDocumentation(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var req domain.AIChatRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -247,7 +271,7 @@ func (h *TechDocsHandler) ChatAboutDocumentation(c *gin.Context) {
 		return
 	}
 
-	response, err := h.service.ChatAboutDocumentation(req)
+	response, err := h.service.ChatAboutDocumentation(orgUUID, req)
 	if err != nil {
 		h.log.Errorw("Failed to process chat", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -261,6 +285,14 @@ func (h *TechDocsHandler) ChatAboutDocumentation(c *gin.Context) {
 
 // GenerateDiagram generates a diagram using AI
 func (h *TechDocsHandler) GenerateDiagram(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var req domain.GenerateDiagramRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -270,7 +302,7 @@ func (h *TechDocsHandler) GenerateDiagram(c *gin.Context) {
 		return
 	}
 
-	response, err := h.service.GenerateDiagram(req)
+	response, err := h.service.GenerateDiagram(orgUUID, req)
 	if err != nil {
 		h.log.Errorw("Failed to generate diagram", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{

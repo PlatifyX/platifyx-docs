@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
@@ -158,9 +159,35 @@ func (c *Client) DeleteKVSecret(mountPath, secretPath string) error {
 
 // ListSecrets lists secrets in a path
 func (c *Client) ListSecrets(path string) ([]string, error) {
+	// Try LIST method first (standard Vault API)
 	respBody, err := c.doRequest("LIST", path, nil)
 	if err != nil {
-		return nil, err
+		// If LIST fails, try GET with ?list=true query parameter (fallback)
+		url := fmt.Sprintf("%s/v1/%s?list=true", c.address, path)
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error creating request: %w", err)
+		}
+
+		req.Header.Set("X-Vault-Token", c.token)
+		if c.namespace != "" {
+			req.Header.Set("X-Vault-Namespace", c.namespace)
+		}
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("error making request: %w", err)
+		}
+		defer resp.Body.Close()
+
+		respBody, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("error reading response body: %w", err)
+		}
+
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
+		}
 	}
 
 	var listResp domain.VaultListResponse
@@ -177,6 +204,8 @@ func (c *Client) ListKVSecrets(mountPath, secretPath string) ([]string, error) {
 	if secretPath == "" {
 		fullPath = fmt.Sprintf("%s/metadata", mountPath)
 	} else {
+		// Ensure secretPath doesn't end with / to avoid double slashes
+		secretPath = strings.TrimSuffix(secretPath, "/")
 		fullPath = fmt.Sprintf("%s/metadata/%s", mountPath, secretPath)
 	}
 	return c.ListSecrets(fullPath)

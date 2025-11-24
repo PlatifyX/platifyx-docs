@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Rocket, GitBranch, FolderTree } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Pipeline {
   id: number
@@ -31,7 +31,7 @@ function QueueBuildModal({ onClose, onSuccess }: QueueBuildModalProps) {
 
   const fetchPipelines = async () => {
     try {
-      const response = await fetch(buildApiUrl('ci/pipelines'))
+      const response = await apiFetch('ci/pipelines')
       if (!response.ok) throw new Error('Failed to fetch pipelines')
       const data = await response.json()
       setPipelines(data.pipelines || [])
@@ -63,7 +63,7 @@ function QueueBuildModal({ onClose, onSuccess }: QueueBuildModalProps) {
     setError(null)
 
     try {
-      const response = await fetch(buildApiUrl('ci/builds'), {
+      const response = await apiFetch('ci/builds', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Integration {
   id: number
@@ -37,7 +37,7 @@ function AWSSecretsModal({ integration, isCreating, onSave, onClose }: AWSSecret
     setTestResult(null)
 
     try {
-      const response = await fetch(buildApiUrl('integrations/test/awssecrets'), {
+      const response = await apiFetch('integrations/test/awssecrets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

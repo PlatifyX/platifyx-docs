@@ -37,6 +37,14 @@ func (h *VaultHandler) getIntegrationID(c *gin.Context) (int, error) {
 }
 
 func (h *VaultHandler) GetStats(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -45,7 +53,7 @@ func (h *VaultHandler) GetStats(c *gin.Context) {
 		return
 	}
 
-	vaultService, err := h.service.GetVaultServiceByID(integrationID)
+	vaultService, err := h.service.GetVaultServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Vault service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -67,6 +75,14 @@ func (h *VaultHandler) GetStats(c *gin.Context) {
 }
 
 func (h *VaultHandler) GetHealth(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -75,7 +91,7 @@ func (h *VaultHandler) GetHealth(c *gin.Context) {
 		return
 	}
 
-	vaultService, err := h.service.GetVaultServiceByID(integrationID)
+	vaultService, err := h.service.GetVaultServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Vault service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -97,6 +113,14 @@ func (h *VaultHandler) GetHealth(c *gin.Context) {
 }
 
 func (h *VaultHandler) ReadKVSecret(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -105,7 +129,7 @@ func (h *VaultHandler) ReadKVSecret(c *gin.Context) {
 		return
 	}
 
-	vaultService, err := h.service.GetVaultServiceByID(integrationID)
+	vaultService, err := h.service.GetVaultServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Vault service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -137,6 +161,14 @@ func (h *VaultHandler) ReadKVSecret(c *gin.Context) {
 }
 
 func (h *VaultHandler) ListKVSecrets(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -145,7 +177,7 @@ func (h *VaultHandler) ListKVSecrets(c *gin.Context) {
 		return
 	}
 
-	vaultService, err := h.service.GetVaultServiceByID(integrationID)
+	vaultService, err := h.service.GetVaultServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Vault service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -179,6 +211,14 @@ func (h *VaultHandler) ListKVSecrets(c *gin.Context) {
 }
 
 func (h *VaultHandler) WriteKVSecret(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -187,7 +227,7 @@ func (h *VaultHandler) WriteKVSecret(c *gin.Context) {
 		return
 	}
 
-	vaultService, err := h.service.GetVaultServiceByID(integrationID)
+	vaultService, err := h.service.GetVaultServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Vault service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -241,6 +281,14 @@ func (h *VaultHandler) WriteKVSecret(c *gin.Context) {
 }
 
 func (h *VaultHandler) DeleteKVSecret(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	integrationID, err := h.getIntegrationID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -249,7 +297,7 @@ func (h *VaultHandler) DeleteKVSecret(c *gin.Context) {
 		return
 	}
 
-	vaultService, err := h.service.GetVaultServiceByID(integrationID)
+	vaultService, err := h.service.GetVaultServiceByID(integrationID, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Vault service", "error", err, "integration_id", integrationID)
 		c.JSON(http.StatusInternalServerError, gin.H{

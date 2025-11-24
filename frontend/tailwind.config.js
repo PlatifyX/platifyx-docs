@@ -8,20 +8,25 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#3e5c76',
-          dark: '#2d4456',
+          DEFAULT: '#748cab',
+          dark: '#3e5c76',
         },
         secondary: '#3e5c76',
-        background: '#0d1321',
+        background: '#1e1e1e',
         surface: {
-          DEFAULT: '#0d1321',
-          light: '#1a2332',
+          DEFAULT: '#1d2d44',
+          light: '#1d2d44',
         },
         text: {
-          DEFAULT: '#ffffff',
+          DEFAULT: '#f0ebd8',
           secondary: '#f0ebd8',
         },
-        border: '#f0ebd8',
+        border: '#748cab',
+        link: '#748cab',
+        button: {
+          DEFAULT: '#748cab',
+          alt: '#3e5c76',
+        },
         success: '#10b981',
         warning: '#f59e0b',
         error: '#ef4444',

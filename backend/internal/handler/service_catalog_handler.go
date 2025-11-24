@@ -30,6 +30,31 @@ func NewServiceCatalogHandler(serviceCatalogSvc *service.ServiceCatalogService, 
 func (h *ServiceCatalogHandler) SyncServices(c *gin.Context) {
 	h.log.Info("Starting manual service sync")
 
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	kubeConfig, err := h.integrationService.GetKubernetesConfig(orgUUID)
+	if err != nil || kubeConfig == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Kubernetes integration not configured for this organization",
+		})
+		return
+	}
+
+	kubeService, err := service.NewKubernetesService(*kubeConfig, h.log)
+	if err != nil {
+		h.log.Errorw("Failed to create Kubernetes service", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to initialize Kubernetes service",
+		})
+		return
+	}
+
 	if h.serviceCatalogService == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": "Service catalog not configured - missing Kubernetes or Azure DevOps integration",
@@ -37,7 +62,7 @@ func (h *ServiceCatalogHandler) SyncServices(c *gin.Context) {
 		return
 	}
 
-	err := h.serviceCatalogService.SyncFromKubernetes()
+	err = h.serviceCatalogService.SyncFromKubernetesWithServiceAndOrg(kubeService, orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to sync services", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -80,6 +105,14 @@ func (h *ServiceCatalogHandler) ListServices(c *gin.Context) {
 func (h *ServiceCatalogHandler) GetServiceStatus(c *gin.Context) {
 	serviceName := c.Param("name")
 
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	if h.serviceCatalogService == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": "Service catalog not configured",
@@ -87,7 +120,26 @@ func (h *ServiceCatalogHandler) GetServiceStatus(c *gin.Context) {
 		return
 	}
 
-	status, err := h.serviceCatalogService.GetServiceStatus(serviceName)
+	// Get Kubernetes config dynamically
+	kubeConfig, err := h.integrationService.GetKubernetesConfig(orgUUID)
+	if err != nil || kubeConfig == nil {
+		// Return empty status if Kubernetes is not configured
+		c.JSON(http.StatusOK, gin.H{
+			"serviceName": serviceName,
+		})
+		return
+	}
+
+	kubeService, err := service.NewKubernetesService(*kubeConfig, h.log)
+	if err != nil {
+		h.log.Errorw("Failed to create Kubernetes service", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to initialize Kubernetes service",
+		})
+		return
+	}
+
+	status, err := h.serviceCatalogService.GetServiceStatusWithKubeService(serviceName, kubeService)
 	if err != nil {
 		h.log.Errorw("Failed to get service status", "error", err, "service", serviceName)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -129,9 +181,17 @@ func (h *ServiceCatalogHandler) GetServicesMetrics(c *gin.Context) {
 	}
 
 	// Get all Azure DevOps configurations to fetch builds from all integrations
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var azureDevOpsServices []*service.AzureDevOpsService
 	if h.integrationService != nil {
-		configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+		configs, err := h.integrationService.GetAllAzureDevOpsConfigs(orgUUID)
 		if err == nil && len(configs) > 0 {
 			h.log.Infow("Creating Azure DevOps services for all integrations", "count", len(configs))
 			for _, config := range configs {
@@ -140,7 +200,19 @@ func (h *ServiceCatalogHandler) GetServicesMetrics(c *gin.Context) {
 		}
 	}
 
-	metrics := h.serviceCatalogService.GetMultipleServiceMetrics(request.ServiceNames, h.sonarQubeService, azureDevOpsServices)
+	// Get all SonarQube configurations to fetch metrics from all integrations
+	var sonarQubeServices []*service.SonarQubeService
+	if h.integrationService != nil {
+		configs, err := h.integrationService.GetAllSonarQubeConfigs(orgUUID)
+		if err == nil && len(configs) > 0 {
+			h.log.Infow("Creating SonarQube services for all integrations", "count", len(configs))
+			for _, config := range configs {
+				sonarQubeServices = append(sonarQubeServices, service.NewSonarQubeService(*config, h.log))
+			}
+		}
+	}
+
+	metrics := h.serviceCatalogService.GetMultipleServiceMetrics(request.ServiceNames, sonarQubeServices, azureDevOpsServices)
 
 	h.log.Infow("Returning metrics", "metricsCount", len(metrics))
 

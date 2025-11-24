@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
@@ -63,7 +64,13 @@ func (s *AuthService) Login(req domain.LoginRequest, ipAddress, userAgent string
 		return nil, errors.New("SSO users must login through their provider")
 	}
 
-	if user.PasswordHash == nil || !s.checkPasswordHash(req.Password, *user.PasswordHash) {
+	if user.PasswordHash == nil {
+		s.logAudit(&user.ID, req.Email, "user.login", "user", &user.ID, ipAddress, userAgent, "failure")
+		return nil, ErrInvalidCredentials
+	}
+
+	password := strings.TrimSpace(req.Password)
+	if !s.checkPasswordHash(password, *user.PasswordHash) {
 		s.logAudit(&user.ID, req.Email, "user.login", "user", &user.ID, ipAddress, userAgent, "failure")
 		return nil, ErrInvalidCredentials
 	}

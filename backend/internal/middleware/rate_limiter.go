@@ -26,6 +26,15 @@ func DefaultLoginRateLimiter() RateLimiterConfig {
 	}
 }
 
+// DevelopmentLoginRateLimiter retorna configuração mais permissiva para desenvolvimento
+func DevelopmentLoginRateLimiter() RateLimiterConfig {
+	return RateLimiterConfig{
+		RequestsPerWindow: 50,              // 50 tentativas
+		WindowDuration:    1 * time.Minute, // por minuto
+		Message:           "Too many login attempts. Please try again later.",
+	}
+}
+
 // DefaultPasswordResetRateLimiter retorna configuração para reset de senha
 func DefaultPasswordResetRateLimiter() RateLimiterConfig {
 	return RateLimiterConfig{

@@ -24,8 +24,8 @@ func NewAzureDevOpsHandler(integrationService *service.IntegrationService, log *
 	}
 }
 
-func (h *AzureDevOpsHandler) getService() (*service.AzureDevOpsService, error) {
-	config, err := h.integrationService.GetAzureDevOpsConfig()
+func (h *AzureDevOpsHandler) getService(organizationUUID string) (*service.AzureDevOpsService, error) {
+	config, err := h.integrationService.GetAzureDevOpsConfig(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,15 @@ func (h *AzureDevOpsHandler) ListPipelines(c *gin.Context) {
 	filterIntegration := c.Query("integration")
 	filterProject := c.Query("project")
 
-	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configurations",
@@ -106,6 +114,14 @@ func (h *AzureDevOpsHandler) ListPipelines(c *gin.Context) {
 }
 
 func (h *AzureDevOpsHandler) ListPipelineRuns(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	pipelineIDStr := c.Param("id")
 	pipelineID, err := strconv.Atoi(pipelineIDStr)
 	if err != nil {
@@ -115,7 +131,7 @@ func (h *AzureDevOpsHandler) ListPipelineRuns(c *gin.Context) {
 		return
 	}
 
-	svc, err := h.getService()
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configuration",
@@ -157,7 +173,15 @@ func (h *AzureDevOpsHandler) ListBuilds(c *gin.Context) {
 	filterStartDate := c.Query("startDate")
 	filterEndDate := c.Query("endDate")
 
-	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configurations",
@@ -246,6 +270,14 @@ func (h *AzureDevOpsHandler) ListBuilds(c *gin.Context) {
 }
 
 func (h *AzureDevOpsHandler) GetBuild(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	buildIDStr := c.Param("id")
 	buildID, err := strconv.Atoi(buildIDStr)
 	if err != nil {
@@ -255,7 +287,7 @@ func (h *AzureDevOpsHandler) GetBuild(c *gin.Context) {
 		return
 	}
 
-	svc, err := h.getService()
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configuration",
@@ -281,6 +313,14 @@ func (h *AzureDevOpsHandler) GetBuild(c *gin.Context) {
 }
 
 func (h *AzureDevOpsHandler) GetBuildLogs(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	buildIDStr := c.Param("id")
 	buildID, err := strconv.Atoi(buildIDStr)
 	if err != nil {
@@ -290,7 +330,7 @@ func (h *AzureDevOpsHandler) GetBuildLogs(c *gin.Context) {
 		return
 	}
 
-	svc, err := h.getService()
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configuration",
@@ -330,7 +370,15 @@ func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 	filterStartDate := c.Query("startDate")
 	filterEndDate := c.Query("endDate")
 
-	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configurations",
@@ -419,6 +467,14 @@ func (h *AzureDevOpsHandler) ListReleases(c *gin.Context) {
 }
 
 func (h *AzureDevOpsHandler) GetRelease(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	releaseIDStr := c.Param("id")
 	releaseID, err := strconv.Atoi(releaseIDStr)
 	if err != nil {
@@ -428,7 +484,7 @@ func (h *AzureDevOpsHandler) GetRelease(c *gin.Context) {
 		return
 	}
 
-	svc, err := h.getService()
+	svc, err := h.getService(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configuration",
@@ -460,7 +516,15 @@ func (h *AzureDevOpsHandler) GetStats(c *gin.Context) {
 	filterStartDate := c.Query("startDate")
 	filterEndDate := c.Query("endDate")
 
-	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configurations",
@@ -702,7 +766,15 @@ func (h *AzureDevOpsHandler) QueueBuild(c *gin.Context) {
 		return
 	}
 
-	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configurations",
@@ -745,7 +817,15 @@ func (h *AzureDevOpsHandler) ApproveRelease(c *gin.Context) {
 		return
 	}
 
-	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configurations",
@@ -790,7 +870,15 @@ func (h *AzureDevOpsHandler) RejectRelease(c *gin.Context) {
 		return
 	}
 
-	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configurations",
@@ -824,7 +912,15 @@ func (h *AzureDevOpsHandler) RejectRelease(c *gin.Context) {
 func (h *AzureDevOpsHandler) ListRepositories(c *gin.Context) {
 	filterIntegration := c.Query("integration")
 
-	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configurations",
@@ -901,7 +997,15 @@ func (h *AzureDevOpsHandler) ListRepositories(c *gin.Context) {
 func (h *AzureDevOpsHandler) GetRepositoriesStats(c *gin.Context) {
 	filterIntegration := c.Query("integration")
 
-	configs, err := h.integrationService.GetAllAzureDevOpsConfigs()
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
+	configs, err := h.integrationService.GetAllAzureDevOpsConfigs(orgUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get Azure DevOps configurations",

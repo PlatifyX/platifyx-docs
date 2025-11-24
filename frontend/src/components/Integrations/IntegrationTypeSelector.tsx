@@ -63,7 +63,6 @@ const integrationTypes = [
     name: 'Jira',
     description: 'Gerenciamento de projetos, issues, sprints e boards',
     logo: '/logos/jira.png',
-    disabled: true,
   },
   {
     id: 'slack',

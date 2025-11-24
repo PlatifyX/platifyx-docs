@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Integration {
   id: number
@@ -36,7 +36,7 @@ function JiraModal({ integration, isCreating, onSave, onClose }: JiraModalProps)
     setTestResult(null)
 
     try {
-      const response = await fetch(buildApiUrl('integrations/test/jira'), {
+      const response = await apiFetch('integrations/test/jira', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

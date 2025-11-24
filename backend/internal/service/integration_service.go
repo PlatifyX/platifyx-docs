@@ -21,10 +21,10 @@ func NewIntegrationService(repo *repository.IntegrationRepository, log *logger.L
 	}
 }
 
-func (s *IntegrationService) GetAll() ([]domain.Integration, error) {
-	s.log.Info("Fetching all integrations")
+func (s *IntegrationService) GetAll(organizationUUID string) ([]domain.Integration, error) {
+	s.log.Infow("Fetching all integrations", "organizationUUID", organizationUUID)
 
-	integrations, err := s.repo.GetAll()
+	integrations, err := s.repo.GetAll(organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to fetch integrations", "error", err)
 		return nil, err
@@ -34,10 +34,10 @@ func (s *IntegrationService) GetAll() ([]domain.Integration, error) {
 	return integrations, nil
 }
 
-func (s *IntegrationService) GetByID(id int) (*domain.Integration, error) {
-	s.log.Infow("Fetching integration by ID", "id", id)
+func (s *IntegrationService) GetByID(id int, organizationUUID string) (*domain.Integration, error) {
+	s.log.Infow("Fetching integration by ID", "id", id, "organizationUUID", organizationUUID)
 
-	integration, err := s.repo.GetByID(id)
+	integration, err := s.repo.GetByID(id, organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to fetch integration", "error", err, "id", id)
 		return nil, err
@@ -46,10 +46,10 @@ func (s *IntegrationService) GetByID(id int) (*domain.Integration, error) {
 	return integration, nil
 }
 
-func (s *IntegrationService) GetByType(integrationType string) (*domain.Integration, error) {
-	s.log.Infow("Fetching integration by type", "type", integrationType)
+func (s *IntegrationService) GetByType(integrationType string, organizationUUID string) (*domain.Integration, error) {
+	s.log.Infow("Fetching integration by type", "type", integrationType, "organizationUUID", organizationUUID)
 
-	integration, err := s.repo.GetByType(integrationType)
+	integration, err := s.repo.GetByType(integrationType, organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to fetch integration", "error", err, "type", integrationType)
 		return nil, err
@@ -58,8 +58,8 @@ func (s *IntegrationService) GetByType(integrationType string) (*domain.Integrat
 	return integration, nil
 }
 
-func (s *IntegrationService) Create(integration *domain.Integration) error {
-	s.log.Infow("Creating integration", "name", integration.Name, "type", integration.Type)
+func (s *IntegrationService) Create(integration *domain.Integration, organizationUUID string) error {
+	s.log.Infow("Creating integration", "name", integration.Name, "type", integration.Type, "organizationUUID", organizationUUID)
 
 	var config map[string]interface{}
 	if err := json.Unmarshal(integration.Config, &config); err != nil {
@@ -67,7 +67,7 @@ func (s *IntegrationService) Create(integration *domain.Integration) error {
 		return err
 	}
 
-	created, err := s.repo.Create(integration.Name, integration.Type, integration.Enabled, config)
+	created, err := s.repo.Create(integration.Name, integration.Type, organizationUUID, integration.Enabled, config)
 	if err != nil {
 		s.log.Errorw("Failed to create integration", "error", err)
 		return err
@@ -75,6 +75,7 @@ func (s *IntegrationService) Create(integration *domain.Integration) error {
 
 	// Update the integration with the created values
 	integration.ID = created.ID
+	integration.OrganizationUUID = created.OrganizationUUID
 	integration.CreatedAt = created.CreatedAt
 	integration.UpdatedAt = created.UpdatedAt
 
@@ -82,10 +83,10 @@ func (s *IntegrationService) Create(integration *domain.Integration) error {
 	return nil
 }
 
-func (s *IntegrationService) Update(id int, enabled bool, config map[string]interface{}) error {
-	s.log.Infow("Updating integration", "id", id, "enabled", enabled)
+func (s *IntegrationService) Update(id int, organizationUUID string, enabled bool, config map[string]interface{}) error {
+	s.log.Infow("Updating integration", "id", id, "enabled", enabled, "organizationUUID", organizationUUID)
 
-	err := s.repo.Update(id, enabled, config)
+	err := s.repo.Update(id, organizationUUID, enabled, config)
 	if err != nil {
 		s.log.Errorw("Failed to update integration", "error", err, "id", id)
 		return err
@@ -95,10 +96,10 @@ func (s *IntegrationService) Update(id int, enabled bool, config map[string]inte
 	return nil
 }
 
-func (s *IntegrationService) Delete(id int) error {
-	s.log.Infow("Deleting integration", "id", id)
+func (s *IntegrationService) Delete(id int, organizationUUID string) error {
+	s.log.Infow("Deleting integration", "id", id, "organizationUUID", organizationUUID)
 
-	err := s.repo.Delete(id)
+	err := s.repo.Delete(id, organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to delete integration", "error", err, "id", id)
 		return err
@@ -108,8 +109,8 @@ func (s *IntegrationService) Delete(id int) error {
 	return nil
 }
 
-func (s *IntegrationService) GetAzureDevOpsConfig() (*domain.AzureDevOpsConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeAzureDevOps))
+func (s *IntegrationService) GetAzureDevOpsConfig(organizationUUID string) (*domain.AzureDevOpsConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeAzureDevOps), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -131,8 +132,8 @@ func (s *IntegrationService) GetAzureDevOpsConfig() (*domain.AzureDevOpsConfig, 
 	}, nil
 }
 
-func (s *IntegrationService) GetAllAzureDevOpsConfigs() (map[string]*domain.AzureDevOpsConfig, error) {
-	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeAzureDevOps))
+func (s *IntegrationService) GetAllAzureDevOpsConfigs(organizationUUID string) (map[string]*domain.AzureDevOpsConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeAzureDevOps), organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to fetch Azure DevOps integrations", "error", err)
 		return nil, err
@@ -156,8 +157,8 @@ func (s *IntegrationService) GetAllAzureDevOpsConfigs() (map[string]*domain.Azur
 	return configs, nil
 }
 
-func (s *IntegrationService) GetSonarQubeConfig() (*domain.SonarQubeConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeSonarQube))
+func (s *IntegrationService) GetSonarQubeConfig(organizationUUID string) (*domain.SonarQubeConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeSonarQube), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -178,8 +179,8 @@ func (s *IntegrationService) GetSonarQubeConfig() (*domain.SonarQubeConfig, erro
 	}, nil
 }
 
-func (s *IntegrationService) GetAllSonarQubeConfigs() (map[string]*domain.SonarQubeConfig, error) {
-	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeSonarQube))
+func (s *IntegrationService) GetAllSonarQubeConfigs(organizationUUID string) (map[string]*domain.SonarQubeConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeSonarQube), organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to fetch SonarQube integrations", "error", err)
 		return nil, err
@@ -203,8 +204,8 @@ func (s *IntegrationService) GetAllSonarQubeConfigs() (map[string]*domain.SonarQ
 }
 
 // Cloud provider config methods
-func (s *IntegrationService) GetAllAzureCloudConfigs() (map[string]*domain.AzureCloudConfig, error) {
-	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeAzureCloud))
+func (s *IntegrationService) GetAllAzureCloudConfigs(organizationUUID string) (map[string]*domain.AzureCloudConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeAzureCloud), organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to fetch Azure Cloud integrations", "error", err)
 		return nil, err
@@ -233,8 +234,8 @@ func (s *IntegrationService) GetAllAzureCloudConfigs() (map[string]*domain.Azure
 	return configs, nil
 }
 
-func (s *IntegrationService) GetAllGCPConfigs() (map[string]*domain.GCPCloudConfig, error) {
-	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGCP))
+func (s *IntegrationService) GetAllGCPConfigs(organizationUUID string) (map[string]*domain.GCPCloudConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGCP), organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to fetch GCP integrations", "error", err)
 		return nil, err
@@ -261,8 +262,8 @@ func (s *IntegrationService) GetAllGCPConfigs() (map[string]*domain.GCPCloudConf
 	return configs, nil
 }
 
-func (s *IntegrationService) GetAllAWSConfigs() (map[string]*domain.AWSCloudConfig, error) {
-	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeAWS))
+func (s *IntegrationService) GetAllAWSConfigs(organizationUUID string) (map[string]*domain.AWSCloudConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeAWS), organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to fetch AWS integrations", "error", err)
 		return nil, err
@@ -290,8 +291,34 @@ func (s *IntegrationService) GetAllAWSConfigs() (map[string]*domain.AWSCloudConf
 	return configs, nil
 }
 
-func (s *IntegrationService) GetKubernetesConfig() (*domain.KubernetesConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeKubernetes))
+func (s *IntegrationService) GetAWSConfigByName(name string, organizationUUID string) (*domain.AWSCloudConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeAWS), organizationUUID)
+	if err != nil {
+		s.log.Errorw("Failed to fetch AWS integrations", "error", err)
+		return nil, err
+	}
+
+	for _, integration := range integrations {
+		if integration.Name == name && integration.Enabled {
+			var config domain.AWSCloudIntegrationConfig
+			if err := json.Unmarshal(integration.Config, &config); err != nil {
+				s.log.Errorw("Failed to unmarshal AWS config", "error", err, "integration", integration.Name)
+				return nil, err
+			}
+
+			return &domain.AWSCloudConfig{
+				AccessKeyID:     config.AccessKeyID,
+				SecretAccessKey: config.SecretAccessKey,
+				Region:          config.Region,
+			}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("AWS integration '%s' not found or disabled", name)
+}
+
+func (s *IntegrationService) GetKubernetesConfig(organizationUUID string) (*domain.KubernetesConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeKubernetes), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -312,8 +339,8 @@ func (s *IntegrationService) GetKubernetesConfig() (*domain.KubernetesConfig, er
 	}, nil
 }
 
-func (s *IntegrationService) GetAllKubernetesConfigs() (map[string]*domain.KubernetesConfig, error) {
-	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeKubernetes))
+func (s *IntegrationService) GetAllKubernetesConfigs(organizationUUID string) (map[string]*domain.KubernetesConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeKubernetes), organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to fetch Kubernetes integrations", "error", err)
 		return nil, err
@@ -340,8 +367,8 @@ func (s *IntegrationService) GetAllKubernetesConfigs() (map[string]*domain.Kuber
 	return configs, nil
 }
 
-func (s *IntegrationService) GetGrafanaConfig() (*domain.GrafanaConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeGrafana))
+func (s *IntegrationService) GetGrafanaConfig(organizationUUID string) (*domain.GrafanaConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeGrafana), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -362,8 +389,8 @@ func (s *IntegrationService) GetGrafanaConfig() (*domain.GrafanaConfig, error) {
 	}, nil
 }
 
-func (s *IntegrationService) GetAllGrafanaConfigs() (map[string]*domain.GrafanaConfig, error) {
-	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGrafana))
+func (s *IntegrationService) GetAllGrafanaConfigs(organizationUUID string) (map[string]*domain.GrafanaConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGrafana), organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to fetch Grafana integrations", "error", err)
 		return nil, err
@@ -390,8 +417,8 @@ func (s *IntegrationService) GetAllGrafanaConfigs() (map[string]*domain.GrafanaC
 	return configs, nil
 }
 
-func (s *IntegrationService) GetGitHubConfig() (*domain.GitHubConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeGitHub))
+func (s *IntegrationService) GetGitHubConfig(organizationUUID string) (*domain.GitHubConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeGitHub), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -412,8 +439,8 @@ func (s *IntegrationService) GetGitHubConfig() (*domain.GitHubConfig, error) {
 	}, nil
 }
 
-func (s *IntegrationService) GetAllGitHubConfigs() (map[string]*domain.GitHubConfig, error) {
-	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGitHub))
+func (s *IntegrationService) GetAllGitHubConfigs(organizationUUID string) (map[string]*domain.GitHubConfig, error) {
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGitHub), organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to fetch GitHub integrations", "error", err)
 		return nil, err
@@ -440,13 +467,13 @@ func (s *IntegrationService) GetAllGitHubConfigs() (map[string]*domain.GitHubCon
 	return configs, nil
 }
 
-func (s *IntegrationService) GetGitHubConfigByName(name string) (*domain.GitHubConfig, error) {
+func (s *IntegrationService) GetGitHubConfigByName(name string, organizationUUID string) (*domain.GitHubConfig, error) {
 	if name == "" {
 		// If no name provided, return the first one (backward compatibility)
-		return s.GetGitHubConfig()
+		return s.GetGitHubConfig(organizationUUID)
 	}
 
-	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGitHub))
+	integrations, err := s.repo.GetAllByType(string(domain.IntegrationTypeGitHub), organizationUUID)
 	if err != nil {
 		s.log.Errorw("Failed to fetch GitHub integrations", "error", err)
 		return nil, err
@@ -476,8 +503,8 @@ func (s *IntegrationService) GetGitHubConfigByName(name string) (*domain.GitHubC
 	return nil, nil
 }
 
-func (s *IntegrationService) GetJiraConfig() (*domain.JiraConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeJira))
+func (s *IntegrationService) GetJiraConfig(organizationUUID string) (*domain.JiraConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeJira), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -499,8 +526,8 @@ func (s *IntegrationService) GetJiraConfig() (*domain.JiraConfig, error) {
 	}, nil
 }
 
-func (s *IntegrationService) GetJiraService() (*JiraService, error) {
-	config, err := s.GetJiraConfig()
+func (s *IntegrationService) GetJiraService(organizationUUID string) (*JiraService, error) {
+	config, err := s.GetJiraConfig(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -512,8 +539,8 @@ func (s *IntegrationService) GetJiraService() (*JiraService, error) {
 	return NewJiraService(*config, s.log), nil
 }
 
-func (s *IntegrationService) GetSlackConfig() (*domain.SlackConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeSlack))
+func (s *IntegrationService) GetSlackConfig(organizationUUID string) (*domain.SlackConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeSlack), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -534,8 +561,8 @@ func (s *IntegrationService) GetSlackConfig() (*domain.SlackConfig, error) {
 	}, nil
 }
 
-func (s *IntegrationService) GetSlackService() (*SlackService, error) {
-	config, err := s.GetSlackConfig()
+func (s *IntegrationService) GetSlackService(organizationUUID string) (*SlackService, error) {
+	config, err := s.GetSlackConfig(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -547,8 +574,8 @@ func (s *IntegrationService) GetSlackService() (*SlackService, error) {
 	return NewSlackService(*config, s.log), nil
 }
 
-func (s *IntegrationService) GetTeamsConfig() (*domain.TeamsConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeTeams))
+func (s *IntegrationService) GetTeamsConfig(organizationUUID string) (*domain.TeamsConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeTeams), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -568,8 +595,8 @@ func (s *IntegrationService) GetTeamsConfig() (*domain.TeamsConfig, error) {
 	}, nil
 }
 
-func (s *IntegrationService) GetTeamsService() (*TeamsService, error) {
-	config, err := s.GetTeamsConfig()
+func (s *IntegrationService) GetTeamsService(organizationUUID string) (*TeamsService, error) {
+	config, err := s.GetTeamsConfig(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -582,8 +609,8 @@ func (s *IntegrationService) GetTeamsService() (*TeamsService, error) {
 }
 
 // ArgoCD methods
-func (s *IntegrationService) GetArgoCDConfig() (*domain.ArgoCDConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeArgoCD))
+func (s *IntegrationService) GetArgoCDConfig(organizationUUID string) (*domain.ArgoCDConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeArgoCD), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -604,8 +631,8 @@ func (s *IntegrationService) GetArgoCDConfig() (*domain.ArgoCDConfig, error) {
 	}, nil
 }
 
-func (s *IntegrationService) GetArgoCDService() (*ArgoCDService, error) {
-	config, err := s.GetArgoCDConfig()
+func (s *IntegrationService) GetArgoCDService(organizationUUID string) (*ArgoCDService, error) {
+	config, err := s.GetArgoCDConfig(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -618,8 +645,8 @@ func (s *IntegrationService) GetArgoCDService() (*ArgoCDService, error) {
 }
 
 // Prometheus methods
-func (s *IntegrationService) GetPrometheusConfig() (*domain.PrometheusConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypePrometheus))
+func (s *IntegrationService) GetPrometheusConfig(organizationUUID string) (*domain.PrometheusConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypePrometheus), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -640,8 +667,8 @@ func (s *IntegrationService) GetPrometheusConfig() (*domain.PrometheusConfig, er
 	}, nil
 }
 
-func (s *IntegrationService) GetPrometheusService() (*PrometheusService, error) {
-	config, err := s.GetPrometheusConfig()
+func (s *IntegrationService) GetPrometheusService(organizationUUID string) (*PrometheusService, error) {
+	config, err := s.GetPrometheusConfig(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -654,8 +681,8 @@ func (s *IntegrationService) GetPrometheusService() (*PrometheusService, error) 
 }
 
 // Loki methods
-func (s *IntegrationService) GetLokiConfig() (*domain.LokiConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeLoki))
+func (s *IntegrationService) GetLokiConfig(organizationUUID string) (*domain.LokiConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeLoki), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -676,8 +703,8 @@ func (s *IntegrationService) GetLokiConfig() (*domain.LokiConfig, error) {
 	}, nil
 }
 
-func (s *IntegrationService) GetLokiService() (*LokiService, error) {
-	config, err := s.GetLokiConfig()
+func (s *IntegrationService) GetLokiService(organizationUUID string) (*LokiService, error) {
+	config, err := s.GetLokiConfig(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -690,8 +717,8 @@ func (s *IntegrationService) GetLokiService() (*LokiService, error) {
 }
 
 // Vault methods
-func (s *IntegrationService) GetVaultConfig() (*domain.VaultConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeVault))
+func (s *IntegrationService) GetVaultConfig(organizationUUID string) (*domain.VaultConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeVault), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -712,8 +739,8 @@ func (s *IntegrationService) GetVaultConfig() (*domain.VaultConfig, error) {
 	}, nil
 }
 
-func (s *IntegrationService) GetVaultService() (*VaultService, error) {
-	config, err := s.GetVaultConfig()
+func (s *IntegrationService) GetVaultService(organizationUUID string) (*VaultService, error) {
+	config, err := s.GetVaultConfig(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -726,8 +753,8 @@ func (s *IntegrationService) GetVaultService() (*VaultService, error) {
 }
 
 // AWS Secrets Manager methods
-func (s *IntegrationService) GetAWSSecretsConfig() (*domain.AWSSecretsConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeAWSSecrets))
+func (s *IntegrationService) GetAWSSecretsConfig(organizationUUID string) (*domain.AWSSecretsConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeAWSSecrets), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -749,8 +776,8 @@ func (s *IntegrationService) GetAWSSecretsConfig() (*domain.AWSSecretsConfig, er
 	}, nil
 }
 
-func (s *IntegrationService) GetAWSSecretsService() (*AWSSecretsService, error) {
-	config, err := s.GetAWSSecretsConfig()
+func (s *IntegrationService) GetAWSSecretsService(organizationUUID string) (*AWSSecretsService, error) {
+	config, err := s.GetAWSSecretsConfig(organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -763,8 +790,8 @@ func (s *IntegrationService) GetAWSSecretsService() (*AWSSecretsService, error) 
 }
 
 // GetAWSConfigByID retorna a configuração AWS de uma integração específica por ID
-func (s *IntegrationService) GetAWSConfigByID(integrationID int) (*domain.AWSSecretsConfig, error) {
-	integration, err := s.repo.GetByID(integrationID)
+func (s *IntegrationService) GetAWSConfigByID(integrationID int, organizationUUID string) (*domain.AWSSecretsConfig, error) {
+	integration, err := s.repo.GetByID(integrationID, organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -794,8 +821,8 @@ func (s *IntegrationService) GetAWSConfigByID(integrationID int) (*domain.AWSSec
 }
 
 // GetAWSSecretsServiceByID cria um serviço AWS Secrets a partir de uma integração específica
-func (s *IntegrationService) GetAWSSecretsServiceByID(integrationID int) (*AWSSecretsService, error) {
-	config, err := s.GetAWSConfigByID(integrationID)
+func (s *IntegrationService) GetAWSSecretsServiceByID(integrationID int, organizationUUID string) (*AWSSecretsService, error) {
+	config, err := s.GetAWSConfigByID(integrationID, organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -804,8 +831,8 @@ func (s *IntegrationService) GetAWSSecretsServiceByID(integrationID int) (*AWSSe
 }
 
 // GetVaultConfigByID retorna a configuração Vault de uma integração específica por ID
-func (s *IntegrationService) GetVaultConfigByID(integrationID int) (*domain.VaultConfig, error) {
-	integration, err := s.repo.GetByID(integrationID)
+func (s *IntegrationService) GetVaultConfigByID(integrationID int, organizationUUID string) (*domain.VaultConfig, error) {
+	integration, err := s.repo.GetByID(integrationID, organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -835,8 +862,8 @@ func (s *IntegrationService) GetVaultConfigByID(integrationID int) (*domain.Vaul
 }
 
 // GetVaultServiceByID cria um serviço Vault a partir de uma integração específica
-func (s *IntegrationService) GetVaultServiceByID(integrationID int) (*VaultService, error) {
-	config, err := s.GetVaultConfigByID(integrationID)
+func (s *IntegrationService) GetVaultServiceByID(integrationID int, organizationUUID string) (*VaultService, error) {
+	config, err := s.GetVaultConfigByID(integrationID, organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -845,8 +872,8 @@ func (s *IntegrationService) GetVaultServiceByID(integrationID int) (*VaultServi
 }
 
 // AI Provider methods
-func (s *IntegrationService) GetOpenAIConfig() (*domain.OpenAIIntegrationConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeOpenAI))
+func (s *IntegrationService) GetOpenAIConfig(organizationUUID string) (*domain.OpenAIIntegrationConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeOpenAI), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -864,8 +891,8 @@ func (s *IntegrationService) GetOpenAIConfig() (*domain.OpenAIIntegrationConfig,
 	return &config, nil
 }
 
-func (s *IntegrationService) GetClaudeConfig() (*domain.ClaudeIntegrationConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeClaude))
+func (s *IntegrationService) GetClaudeConfig(organizationUUID string) (*domain.ClaudeIntegrationConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeClaude), organizationUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -883,8 +910,8 @@ func (s *IntegrationService) GetClaudeConfig() (*domain.ClaudeIntegrationConfig,
 	return &config, nil
 }
 
-func (s *IntegrationService) GetGeminiConfig() (*domain.GeminiIntegrationConfig, error) {
-	integration, err := s.repo.GetByType(string(domain.IntegrationTypeGemini))
+func (s *IntegrationService) GetGeminiConfig(organizationUUID string) (*domain.GeminiIntegrationConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeGemini), organizationUUID)
 	if err != nil {
 		return nil, err
 	}

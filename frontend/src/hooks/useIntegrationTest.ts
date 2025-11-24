@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { buildApiUrl } from '../config/api'
+import { apiFetch } from '../config/api'
 
 interface TestResult {
   success: boolean
@@ -22,7 +22,7 @@ export function useIntegrationTest(): UseIntegrationTestReturn {
     setTestResult(null)
 
     try {
-      const response = await fetch(buildApiUrl(`integrations/test/${integrationType}`), {
+      const response = await apiFetch(`integrations/test/${integrationType}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ export function useIntegrationTest(): UseIntegrationTestReturn {
       if (response.ok) {
         setTestResult({
           success: true,
-          message: data.message || 'Conexão estabelecida com sucesso!',
+          message: data.message || 'Conexï¿½o estabelecida com sucesso!',
         })
       } else {
         const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error || 'Falha ao conectar'
@@ -45,7 +45,7 @@ export function useIntegrationTest(): UseIntegrationTestReturn {
       console.error('Connection test error:', err)
       setTestResult({
         success: false,
-        message: `Erro ao testar conexão: ${err.message || 'Verifique se o backend está rodando'}`,
+        message: `Erro ao testar conexï¿½o: ${err.message || 'Verifique se o backend estï¿½ rodando'}`,
       })
     } finally {
       setTesting(false)

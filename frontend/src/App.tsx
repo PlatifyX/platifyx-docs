@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { OrganizationProvider } from './contexts/OrganizationContext'
 import Layout from './components/Layout/Layout'
 import PrivateRoute from './components/PrivateRoute'
+import AdminRoute from './components/AdminRoute'
 import LoginPage from './pages/LoginPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
@@ -15,11 +17,16 @@ import AzureDevOpsPage from './pages/AzureDevOpsPage'
 import IntegrationsPage from './pages/IntegrationsPage'
 import InfrastructureTemplatesPage from './pages/InfrastructureTemplatesPage'
 import QualityPage from './pages/QualityPage'
-import FinOpsPageEnhanced from './pages/FinOpsPageEnhanced'
+import FinOpsPage from './pages/FinOpsPage'
 import TechDocsPage from './pages/TechDocsPage'
+import AutonomousPage from './pages/AutonomousPage'
+import MaturityPage from './pages/MaturityPage'
+import ServicePlaybookPage from './pages/ServicePlaybookPage'
+import BoardsPage from './pages/BoardsPage'
 import ObservabilityPage from './pages/ObservabilityPage'
 import SettingsPage from './pages/SettingsPage'
 import SecretsPage from './pages/SecretsPage'
+import OrganizationsPage from './pages/OrganizationsPage'
 
 function RootRedirect() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -42,7 +49,8 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
+        <OrganizationProvider>
+          <Routes>
           {/* Rota raiz - redireciona para login ou home */}
           <Route path="/" element={<RootRedirect />} />
 
@@ -112,7 +120,35 @@ function App() {
           <Route path="/finops" element={
             <PrivateRoute>
               <Layout>
-                <FinOpsPageEnhanced />
+                <FinOpsPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/autonomous" element={
+            <PrivateRoute>
+              <Layout>
+                <AutonomousPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/maturity" element={
+            <PrivateRoute>
+              <Layout>
+                <MaturityPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/playbook" element={
+            <PrivateRoute>
+              <Layout>
+                <ServicePlaybookPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/boards" element={
+            <PrivateRoute>
+              <Layout>
+                <BoardsPage />
               </Layout>
             </PrivateRoute>
           } />
@@ -151,7 +187,15 @@ function App() {
               </Layout>
             </PrivateRoute>
           } />
+          <Route path="/organizations" element={
+            <AdminRoute>
+              <Layout>
+                <OrganizationsPage />
+              </Layout>
+            </AdminRoute>
+          } />
         </Routes>
+        </OrganizationProvider>
       </AuthProvider>
     </Router>
   )

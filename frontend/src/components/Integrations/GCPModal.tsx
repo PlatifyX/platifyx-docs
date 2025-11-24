@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, CheckCircle, XCircle } from 'lucide-react'
-import { buildApiUrl } from '../../config/api'
+import { apiFetch } from '../../config/api'
 
 interface Integration {
   id: number
@@ -35,7 +35,7 @@ function GCPModal({ integration, isCreating, onSave, onClose }: GCPModalProps) {
     setTestResult(null)
 
     try {
-      const response = await fetch(buildApiUrl('integrations/test/gcp'), {
+      const response = await apiFetch('integrations/test/gcp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, Shield, Bug, TrendingUp, AlertTriangle, Server, Container } from 'lucide-react'
-import { buildApiUrl } from '../config/api'
+import { apiFetch } from '../config/api'
 
 interface Service {
   id: number
@@ -96,7 +96,7 @@ function ServicesPage() {
     setError(null)
 
     try {
-      const response = await fetch(buildApiUrl('service-catalog'))
+      const response = await apiFetch('service-catalog')
       if (!response.ok) {
         throw new Error('Failed to fetch services')
       }
@@ -121,11 +121,8 @@ function ServicesPage() {
     setLoadingMetrics(true)
 
     try {
-      const response = await fetch(buildApiUrl('service-catalog/metrics'), {
+      const response = await apiFetch('service-catalog/metrics', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ serviceNames }),
       })
 
@@ -150,7 +147,7 @@ function ServicesPage() {
       // Fetch status for each service
       const statusPromises = serviceNames.map(async (serviceName) => {
         try {
-          const response = await fetch(buildApiUrl(`service-catalog/${serviceName}/status`))
+          const response = await apiFetch(`service-catalog/${serviceName}/status`)
           if (response.ok) {
             const status: ServiceStatus = await response.json()
             return { serviceName, status }
@@ -181,7 +178,7 @@ function ServicesPage() {
     setError(null)
 
     try {
-      const response = await fetch(buildApiUrl('service-catalog/sync'), {
+      const response = await apiFetch('service-catalog/sync', {
         method: 'POST',
       })
 

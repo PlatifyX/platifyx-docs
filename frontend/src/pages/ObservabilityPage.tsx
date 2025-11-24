@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { RefreshCw, AlertCircle, Layers, FileText } from 'lucide-react'
-import { buildApiUrl } from '../config/api'
+import { apiFetch } from '../config/api'
 
 // Grafana Interfaces
 interface GrafanaDashboard {
@@ -96,7 +96,7 @@ function ObservabilityPage() {
   const fetchLokiApps = async () => {
     setLoadingLokiApps(true)
     try {
-      const response = await fetch(buildApiUrl('observability/logs/apps'))
+      const response = await apiFetch('observability/logs/apps')
       if (response.ok) {
         const data = await response.json()
         const apps = (data.apps || []).map(parseAppName)
@@ -115,7 +115,7 @@ function ObservabilityPage() {
     setLogs([])
 
     try {
-      const response = await fetch(buildApiUrl(`observability/logs/apps/${appName}?limit=100&duration=1h`))
+      const response = await apiFetch(`observability/logs/apps/${appName}?limit=100&duration=1h`)
       if (response.ok) {
         const data: LokiQueryResult = await response.json()
 
@@ -153,10 +153,10 @@ function ObservabilityPage() {
     try {
       // Fetch Prometheus stats, Grafana stats, Prometheus alerts, Grafana config, and Grafana dashboards
       const [prometheusStatsRes, grafanaStatsRes, alertsRes, grafanaConfigRes] = await Promise.all([
-        fetch(buildApiUrl('prometheus/stats')),
-        fetch(buildApiUrl('grafana/stats')),
-        fetch(buildApiUrl('prometheus/alerts')),
-        fetch(buildApiUrl('grafana/config'))
+        apiFetch('prometheus/stats'),
+        apiFetch('grafana/stats'),
+        apiFetch('prometheus/alerts'),
+        apiFetch('grafana/config')
       ])
 
       // Fetch Loki apps in parallel
@@ -207,7 +207,7 @@ function ObservabilityPage() {
         setGrafanaUrl(configResult.url)
 
         // Fetch dashboards to find the main one
-        const dashboardsRes = await fetch(buildApiUrl('grafana/dashboards'))
+        const dashboardsRes = await apiFetch('grafana/dashboards')
         if (dashboardsRes.ok) {
           const dashboardsResult = await dashboardsRes.json()
           const dashboards = dashboardsResult.dashboards || []

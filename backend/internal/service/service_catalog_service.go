@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -11,6 +12,8 @@ import (
 	"github.com/PlatifyX/platifyx-core/pkg/cache"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"gopkg.in/yaml.v3"
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -47,10 +50,23 @@ func NewServiceCatalogService(
 
 // SyncFromKubernetes scans Kubernetes for managed deployments and syncs to database
 func (s *ServiceCatalogService) SyncFromKubernetes() error {
+	if s.kubeService == nil {
+		return fmt.Errorf("kubernetes service not available")
+	}
+	return s.SyncFromKubernetesWithService(s.kubeService)
+}
+
+// SyncFromKubernetesWithService scans Kubernetes for managed deployments and syncs to database using provided KubernetesService
+func (s *ServiceCatalogService) SyncFromKubernetesWithService(kubeService *KubernetesService) error {
+	return s.SyncFromKubernetesWithServiceAndOrg(kubeService, "")
+}
+
+// SyncFromKubernetesWithServiceAndOrg scans Kubernetes for managed deployments and syncs to database using provided KubernetesService and organizationUUID
+func (s *ServiceCatalogService) SyncFromKubernetesWithServiceAndOrg(kubeService *KubernetesService, organizationUUID string) error {
 	s.log.Info("Starting service sync from Kubernetes")
 
 	// Get Kubernetes client
-	clientset := s.kubeService.GetClientset()
+	clientset := kubeService.GetClientset()
 	if clientset == nil {
 		return fmt.Errorf("kubernetes client not available")
 	}
@@ -110,13 +126,21 @@ func (s *ServiceCatalogService) SyncFromKubernetes() error {
 		// Check if we already processed this service
 		if _, exists := servicesMap[serviceName]; !exists {
 			// Fetch pipeline metadata from Azure DevOps
-			service, err := s.fetchServiceMetadata(squad, application, namespace)
+			service, err := s.fetchServiceMetadata(organizationUUID, squad, application, namespace)
 			if err != nil {
-				s.log.Errorw("Failed to fetch service metadata",
+				s.log.Warnw("Failed to fetch service metadata, creating service with minimal info",
 					"service", serviceName,
 					"error", err,
 				)
-				continue
+				// Create a basic service even if metadata fetch fails
+				service = &domain.Service{
+					Name:      serviceName,
+					Squad:     squad,
+					Application: application,
+					Language:  "",
+					RepositoryURL: "",
+					RepositoryType: "",
+				}
 			}
 
 			// Check which environments exist
@@ -161,53 +185,102 @@ func (s *ServiceCatalogService) SyncFromKubernetes() error {
 }
 
 // fetchServiceMetadata fetches metadata from GitHub or Azure DevOps ci/pipeline.yml
-func (s *ServiceCatalogService) fetchServiceMetadata(squad, application, namespace string) (*domain.Service, error) {
+func (s *ServiceCatalogService) fetchServiceMetadata(organizationUUID string, squad, application, namespace string) (*domain.Service, error) {
 	serviceName := fmt.Sprintf("%s-%s", squad, application)
 	var fileContent string
 	var err error
 	var repoURL string
 	var repositoryType string
 
-	// Try GitHub first if available
-	if s.githubService != nil {
-		owner := s.githubService.GetConfiguredOrganization()
-		if owner == "" {
-			owner = "PlatifyX" // Fallback default
-		}
+	// Try ALL GitHub integrations first
+	if s.integrationRepo != nil {
+		s.log.Infow("Trying to fetch from GitHub integrations", "service", serviceName)
 
-		s.log.Infow("Trying to fetch from GitHub",
-			"service", serviceName,
-			"owner", owner,
-		)
-
-		// Try different branches
-		branches := []string{"main", "master"}
-
-		for _, branch := range branches {
-			s.log.Infow("Attempting GitHub fetch",
-				"owner", owner,
-				"repo", serviceName,
-				"branch", branch,
-				"path", "ci/pipeline.yml",
-			)
-
-			fileContent, err = s.githubService.GetFileContent(owner, serviceName, "ci/pipeline.yml", branch)
-			if err == nil {
-				repoURL = s.githubService.GetRepositoryURL(owner, serviceName)
-				repositoryType = "github"
-				s.log.Infow("Successfully found repository on GitHub",
-					"owner", owner,
-					"repo", serviceName,
-					"branch", branch,
+		// Get all GitHub integrations
+		githubIntegrations, err := s.integrationRepo.GetAllByType("github", organizationUUID)
+		if err != nil {
+			s.log.Warnw("Failed to get GitHub integrations", "error", err)
+		} else {
+			// Try each GitHub integration
+			for _, integration := range githubIntegrations {
+				s.log.Infow("Trying GitHub integration",
+					"service", serviceName,
+					"integration", integration.Name,
 				)
-				break
+
+				// Parse GitHub integration config
+				var integrationConfig domain.GitHubIntegrationConfig
+				if err := json.Unmarshal(integration.Config, &integrationConfig); err != nil {
+					s.log.Warnw("Failed to parse GitHub integration config",
+						"integration", integration.Name,
+						"error", err,
+					)
+					continue
+				}
+
+				// Convert to GitHubConfig
+				githubConfig := domain.GitHubConfig{
+					Token:        integrationConfig.Token,
+					Organization: integrationConfig.Organization,
+				}
+
+				// Create a temporary GitHub service for this integration
+				githubService := NewGitHubService(githubConfig, s.log)
+
+				// Try different owners (from config or default)
+				owners := []string{githubConfig.Organization}
+				if githubConfig.Organization == "" {
+					owners = []string{"PlatifyX"} // Fallback default
+				}
+
+				// Try different branches
+				branches := []string{"main", "master"}
+
+				found := false
+				for _, owner := range owners {
+					for _, branch := range branches {
+						s.log.Infow("Attempting GitHub fetch",
+							"owner", owner,
+							"repo", serviceName,
+							"branch", branch,
+							"path", "ci/pipeline.yml",
+							"integration", integration.Name,
+						)
+
+						fileContent, err = githubService.GetFileContent(owner, serviceName, "ci/pipeline.yml", branch)
+						if err == nil {
+							repoURL = githubService.GetRepositoryURL(owner, serviceName)
+							repositoryType = "github"
+							s.log.Infow("Successfully found repository on GitHub",
+								"owner", owner,
+								"repo", serviceName,
+								"branch", branch,
+								"integration", integration.Name,
+							)
+							found = true
+							break
+						}
+						s.log.Debugw("GitHub fetch failed, trying next branch",
+							"owner", owner,
+							"repo", serviceName,
+							"branch", branch,
+							"integration", integration.Name,
+							"error", err.Error(),
+						)
+					}
+					if found {
+						break
+					}
+				}
+				if found {
+					break
+				} else {
+					s.log.Debugw("Repository not found in this GitHub integration",
+						"service", serviceName,
+						"integration", integration.Name,
+					)
+				}
 			}
-			s.log.Debugw("GitHub fetch failed, trying next branch",
-				"owner", owner,
-				"repo", serviceName,
-				"branch", branch,
-				"error", err.Error(),
-			)
 		}
 	}
 
@@ -216,7 +289,7 @@ func (s *ServiceCatalogService) fetchServiceMetadata(squad, application, namespa
 		s.log.Infow("Trying to fetch from Azure DevOps integrations", "service", serviceName)
 
 		// Get all Azure DevOps integrations
-		azureIntegrations, err := s.integrationRepo.GetAllByType("azuredevops")
+		azureIntegrations, err := s.integrationRepo.GetAllByType("azuredevops", organizationUUID)
 		if err != nil {
 			s.log.Warnw("Failed to get Azure DevOps integrations", "error", err)
 		} else {
@@ -351,7 +424,33 @@ func (s *ServiceCatalogService) GetByName(name string) (*domain.Service, error) 
 }
 
 // GetServiceStatus returns runtime status for a service (with cache)
+// Deprecated: Use GetServiceStatusWithKubeService instead
 func (s *ServiceCatalogService) GetServiceStatus(serviceName string) (*domain.ServiceStatus, error) {
+	status := &domain.ServiceStatus{
+		ServiceName: serviceName,
+	}
+
+	// Get Kubernetes client
+	if s.kubeService != nil {
+		clientset := s.kubeService.GetClientset()
+		if clientset != nil {
+			// Check stage deployment
+			stageDeploymentName := fmt.Sprintf("%s-stage", serviceName)
+			stageStatus, _ := s.getDeploymentStatus(clientset, stageDeploymentName, "stage")
+			status.StageStatus = stageStatus
+
+			// Check prod deployment
+			prodDeploymentName := fmt.Sprintf("%s-prod", serviceName)
+			prodStatus, _ := s.getDeploymentStatus(clientset, prodDeploymentName, "prod")
+			status.ProdStatus = prodStatus
+		}
+	}
+
+	return status, nil
+}
+
+// GetServiceStatusWithKubeService returns runtime status for a service using provided KubernetesService
+func (s *ServiceCatalogService) GetServiceStatusWithKubeService(serviceName string, kubeService *KubernetesService) (*domain.ServiceStatus, error) {
 	cacheKey := fmt.Sprintf("service-catalog:status:%s", serviceName)
 
 	// Try to get from cache first
@@ -369,7 +468,7 @@ func (s *ServiceCatalogService) GetServiceStatus(serviceName string) (*domain.Se
 	}
 
 	// Get Kubernetes client
-	clientset := s.kubeService.GetClientset()
+	clientset := kubeService.GetClientset()
 	if clientset == nil {
 		return status, nil
 	}
@@ -397,14 +496,34 @@ func (s *ServiceCatalogService) GetServiceStatus(serviceName string) (*domain.Se
 
 // getDeploymentStatus gets status of a specific deployment
 func (s *ServiceCatalogService) getDeploymentStatus(clientset *kubernetes.Clientset, deploymentName, environment string) (*domain.DeploymentStatus, error) {
-	deployment, err := clientset.AppsV1().Deployments("").List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("app=%s", deploymentName),
-	})
-	if err != nil || len(deployment.Items) == 0 {
+	// First try to find by name directly (searching all namespaces)
+	deployments, err := clientset.AppsV1().Deployments("").List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
 		return nil, err
 	}
 
-	dep := deployment.Items[0]
+	var dep *appsv1.Deployment
+	for i := range deployments.Items {
+		if deployments.Items[i].Name == deploymentName {
+			dep = &deployments.Items[i]
+			break
+		}
+	}
+
+	// If not found by name, try by label selector (for backward compatibility)
+	if dep == nil {
+		labelDeployments, err := clientset.AppsV1().Deployments("").List(context.TODO(), metav1.ListOptions{
+			LabelSelector: fmt.Sprintf("app=%s", deploymentName),
+		})
+		if err == nil && len(labelDeployments.Items) > 0 {
+			dep = &labelDeployments.Items[0]
+		}
+	}
+
+	if dep == nil {
+		return nil, fmt.Errorf("deployment %s not found", deploymentName)
+	}
+
 	namespace := dep.Namespace
 
 	status := &domain.DeploymentStatus{
@@ -440,15 +559,44 @@ func (s *ServiceCatalogService) getDeploymentStatus(clientset *kubernetes.Client
 
 // getPodsForDeployment gets pods related to a deployment
 func (s *ServiceCatalogService) getPodsForDeployment(clientset *kubernetes.Clientset, namespace, deploymentName string) ([]domain.PodInfo, error) {
-	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("app=%s", deploymentName),
-	})
+	// Try to get pods by matching the deployment name in labels or pod name prefix
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	var podInfos []domain.PodInfo
+	// Filter pods that belong to this deployment
+	var matchingPods []v1.Pod
 	for _, pod := range pods.Items {
+		// Check if pod name starts with deployment name (common pattern)
+		if strings.HasPrefix(pod.Name, deploymentName) {
+			matchingPods = append(matchingPods, pod)
+			continue
+		}
+		// Check labels
+		if pod.Labels["app"] == deploymentName {
+			matchingPods = append(matchingPods, pod)
+			continue
+		}
+		// Check if pod has owner reference to this deployment
+		for _, owner := range pod.OwnerReferences {
+			if owner.Kind == "ReplicaSet" {
+				// Get the ReplicaSet to check if it belongs to this deployment
+				rs, err := clientset.AppsV1().ReplicaSets(namespace).Get(context.TODO(), owner.Name, metav1.GetOptions{})
+				if err == nil {
+					for _, rsOwner := range rs.OwnerReferences {
+						if rsOwner.Kind == "Deployment" && rsOwner.Name == deploymentName {
+							matchingPods = append(matchingPods, pod)
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+
+	var podInfos []domain.PodInfo
+	for _, pod := range matchingPods {
 		// Calculate ready containers
 		readyContainers := 0
 		totalContainers := len(pod.Status.ContainerStatuses)
@@ -501,7 +649,7 @@ func formatDuration(d time.Duration) string {
 }
 
 // GetServiceMetrics returns aggregated metrics from SonarQube and last build from Azure DevOps (with cache)
-func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeService *SonarQubeService, azureDevOpsServices []*AzureDevOpsService) map[string]interface{} {
+func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeServices []*SonarQubeService, azureDevOpsServices []*AzureDevOpsService) map[string]interface{} {
 	cacheKey := fmt.Sprintf("service-catalog:metrics:%s", serviceName)
 
 	// Try to get from cache first
@@ -517,32 +665,71 @@ func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeS
 	metrics := make(map[string]interface{})
 	metrics["serviceName"] = serviceName
 
-	// Fetch SonarQube metrics
-	if sonarQubeService != nil {
-		sonarMetrics, err := sonarQubeService.GetProjectMeasures(serviceName)
-		if err != nil {
-			s.log.Warnw("Failed to fetch SonarQube metrics for service",
-				"service", serviceName,
-				"error", err,
-			)
-		} else if sonarMetrics != nil {
-			s.log.Infow("Fetched SonarQube metrics",
-				"service", serviceName,
-				"bugs", sonarMetrics.Bugs,
-				"vulnerabilities", sonarMetrics.Vulnerabilities,
-				"codeSmells", sonarMetrics.CodeSmells,
-				"securityHotspots", sonarMetrics.SecurityHotspots,
-				"coverage", sonarMetrics.Coverage,
-			)
-			metrics["sonarqube"] = map[string]interface{}{
-				"bugs":             sonarMetrics.Bugs,
-				"vulnerabilities":  sonarMetrics.Vulnerabilities,
-				"codeSmells":       sonarMetrics.CodeSmells,
-				"securityHotspots": sonarMetrics.SecurityHotspots,
-				"coverage":         sonarMetrics.Coverage,
-			}
+	// Get service info to find the correct SonarQube project name
+	service, err := s.serviceRepo.GetByName(serviceName)
+	var sonarQubeProjectKey string
+	if err == nil && service != nil {
+		// Use sonarqubeProject if available, otherwise use application, otherwise use serviceName
+		if service.SonarQubeProject != "" {
+			sonarQubeProjectKey = service.SonarQubeProject
+		} else if service.Application != "" {
+			sonarQubeProjectKey = service.Application
 		} else {
-			s.log.Warnw("SonarQube metrics returned nil", "service", serviceName)
+			sonarQubeProjectKey = serviceName
+		}
+	} else {
+		sonarQubeProjectKey = serviceName
+	}
+
+	// Fetch SonarQube metrics from all integrations
+	if len(sonarQubeServices) > 0 {
+		for _, sonarQubeService := range sonarQubeServices {
+			if sonarQubeService == nil {
+				continue
+			}
+
+			// Try sonarqubeProject first, then application, then serviceName
+			projectKeys := []string{sonarQubeProjectKey}
+			if service != nil && service.Application != "" && service.Application != sonarQubeProjectKey {
+				projectKeys = append(projectKeys, service.Application)
+			}
+			if serviceName != sonarQubeProjectKey {
+				projectKeys = append(projectKeys, serviceName)
+			}
+
+			for _, projectKey := range projectKeys {
+				sonarMetrics, err := sonarQubeService.GetProjectMeasures(projectKey)
+				if err == nil && sonarMetrics != nil {
+					s.log.Infow("Fetched SonarQube metrics",
+						"service", serviceName,
+						"projectKey", projectKey,
+						"bugs", sonarMetrics.Bugs,
+						"vulnerabilities", sonarMetrics.Vulnerabilities,
+						"codeSmells", sonarMetrics.CodeSmells,
+						"securityHotspots", sonarMetrics.SecurityHotspots,
+						"coverage", sonarMetrics.Coverage,
+					)
+					metrics["sonarqube"] = map[string]interface{}{
+						"bugs":             sonarMetrics.Bugs,
+						"vulnerabilities":  sonarMetrics.Vulnerabilities,
+						"codeSmells":       sonarMetrics.CodeSmells,
+						"securityHotspots": sonarMetrics.SecurityHotspots,
+						"coverage":         sonarMetrics.Coverage,
+					}
+					break // Found metrics, no need to try other project keys
+				} else {
+					s.log.Debugw("Failed to fetch SonarQube metrics for project",
+						"service", serviceName,
+						"projectKey", projectKey,
+						"error", err,
+					)
+				}
+			}
+
+			// If we found metrics, no need to check other integrations
+			if metrics["sonarqube"] != nil {
+				break
+			}
 		}
 	}
 
@@ -712,11 +899,11 @@ func (s *ServiceCatalogService) GetServiceMetrics(serviceName string, sonarQubeS
 }
 
 // GetMultipleServiceMetrics returns metrics for multiple services
-func (s *ServiceCatalogService) GetMultipleServiceMetrics(serviceNames []string, sonarQubeService *SonarQubeService, azureDevOpsServices []*AzureDevOpsService) map[string]interface{} {
+func (s *ServiceCatalogService) GetMultipleServiceMetrics(serviceNames []string, sonarQubeServices []*SonarQubeService, azureDevOpsServices []*AzureDevOpsService) map[string]interface{} {
 	result := make(map[string]interface{})
 
 	for _, serviceName := range serviceNames {
-		result[serviceName] = s.GetServiceMetrics(serviceName, sonarQubeService, azureDevOpsServices)
+		result[serviceName] = s.GetServiceMetrics(serviceName, sonarQubeServices, azureDevOpsServices)
 	}
 
 	return result

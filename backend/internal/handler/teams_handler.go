@@ -22,6 +22,14 @@ func NewTeamsHandler(svc *service.IntegrationService, log *logger.Logger) *Teams
 }
 
 func (h *TeamsHandler) SendMessage(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var input domain.TeamsMessage
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -31,7 +39,7 @@ func (h *TeamsHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	teamsService, err := h.service.GetTeamsService()
+	teamsService, err := h.service.GetTeamsService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Teams service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -54,6 +62,14 @@ func (h *TeamsHandler) SendMessage(c *gin.Context) {
 }
 
 func (h *TeamsHandler) SendSimpleMessage(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var input struct {
 		Title string `json:"title" binding:"required"`
 		Text  string `json:"text" binding:"required"`
@@ -66,7 +82,7 @@ func (h *TeamsHandler) SendSimpleMessage(c *gin.Context) {
 		return
 	}
 
-	teamsService, err := h.service.GetTeamsService()
+	teamsService, err := h.service.GetTeamsService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Teams service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -89,6 +105,14 @@ func (h *TeamsHandler) SendSimpleMessage(c *gin.Context) {
 }
 
 func (h *TeamsHandler) SendAlert(c *gin.Context) {
+	orgUUID := c.GetString("organization_uuid")
+	if orgUUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Organization UUID is required",
+		})
+		return
+	}
+
 	var input struct {
 		Title string `json:"title" binding:"required"`
 		Text  string `json:"text" binding:"required"`
@@ -102,7 +126,7 @@ func (h *TeamsHandler) SendAlert(c *gin.Context) {
 		return
 	}
 
-	teamsService, err := h.service.GetTeamsService()
+	teamsService, err := h.service.GetTeamsService(orgUUID)
 	if err != nil {
 		h.log.Errorw("Failed to get Teams service", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{

@@ -31,13 +31,21 @@ type HandlerManager struct {
 	SettingsHandler        *SettingsHandler
 	AuthHandler            *AuthHandler
 	SSOHandler             *SSOHandler
+	AutonomousHandler      *AutonomousHandler
+	MaturityHandler        *MaturityHandler
+	AutoDocsHandler        *AutoDocsHandler
+	ServicePlaybookHandler *ServicePlaybookHandler
+	BoardsHandler          *BoardsHandler
+	OrganizationHandler    *OrganizationHandler
+	UserOrganizationHandler *UserOrganizationHandler
+	OrganizationUserHandler *OrganizationUserHandler
 }
 
 func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *HandlerManager {
 	return &HandlerManager{
 		HealthHandler:          NewHealthHandler(),
 		MetricsHandler:         NewMetricsHandler(services.MetricsService, log),
-		KubernetesHandler:      NewKubernetesHandler(services.KubernetesService, log),
+		KubernetesHandler:      NewKubernetesHandler(services.IntegrationService, log),
 		AzureDevOpsHandler:     NewAzureDevOpsHandler(services.IntegrationService, log),
 		SonarQubeHandler:       NewSonarQubeHandler(services.IntegrationService, services.CacheService, log),
 		IntegrationHandler:     NewIntegrationHandler(services.IntegrationService, services.CacheService, log),
@@ -60,5 +68,13 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		SettingsHandler:        NewSettingsHandler(services.UserService, services.UserRepository, services.RoleRepository, services.TeamRepository, services.AuditRepository, services.SSORepository),
 		AuthHandler:            NewAuthHandler(services.AuthService, services.UserService),
 		SSOHandler:             NewSSOHandler(services.SSORepository, services.UserRepository, services.AuthService, services.CacheService),
+		AutonomousHandler:      NewAutonomousHandler(services.AutonomousRecommendationsService, services.TroubleshootingAssistantService, services.AutonomousActionsService, log),
+		MaturityHandler:        NewMaturityHandler(services.MaturityService, log),
+		AutoDocsHandler:        NewAutoDocsHandler(services.AutoDocsService, log),
+		ServicePlaybookHandler: NewServicePlaybookHandler(services.ServicePlaybookService, log),
+		BoardsHandler:          NewBoardsHandler(services.BoardsService, log),
+		OrganizationHandler:    NewOrganizationHandler(services.OrganizationService, log),
+		UserOrganizationHandler: NewUserOrganizationHandler(services.UserOrganizationService, log),
+		OrganizationUserHandler: NewOrganizationUserHandler(services.OrganizationUserService, log),
 	}
 }

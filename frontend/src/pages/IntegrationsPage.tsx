@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Plug, CheckCircle, XCircle, Plus } from 'lucide-react'
+import { Plug, CheckCircle, XCircle, Plus, MessageSquare } from 'lucide-react'
 import IntegrationCard from '../components/Integrations/IntegrationCard'
 import { IntegrationApi, type Integration } from '../utils/integrationApi'
 import AzureDevOpsModal from '../components/Integrations/AzureDevOpsModal'
+import RequestIntegrationModal, { type RequestIntegrationData } from '../components/Integrations/RequestIntegrationModal'
 import SonarQubeModal from '../components/Integrations/SonarQubeModal'
 import AzureCloudModal from '../components/Integrations/AzureCloudModal'
 import GCPModal from '../components/Integrations/GCPModal'
@@ -31,6 +32,7 @@ function IntegrationsPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [showTypeSelector, setShowTypeSelector] = useState(false)
   const [selectedType, setSelectedType] = useState<string | null>(null)
+  const [showRequestModal, setShowRequestModal] = useState(false)
 
   useEffect(() => {
     fetchIntegrations()
@@ -117,6 +119,16 @@ function IntegrationsPage() {
     }
   }
 
+  const handleRequestIntegration = async (data: RequestIntegrationData) => {
+    console.log('Solicitação de integração recebida:', data)
+    
+    // TODO: Implementar chamada à API quando o endpoint estiver pronto
+    // await IntegrationApi.requestIntegration(data)
+    
+    // Por enquanto, apenas simula sucesso
+    await new Promise(resolve => setTimeout(resolve, 1000))
+  }
+
   if (loading) {
     return (
       <div className="max-w-[1400px] mx-auto">
@@ -135,10 +147,19 @@ function IntegrationsPage() {
             <p className="text-base text-text-secondary">Configure as integrações com ferramentas externas</p>
           </div>
         </div>
-        <button className="flex items-center gap-2 py-3 px-6 bg-primary text-white border-none rounded-lg text-[15px] font-semibold cursor-pointer transition-all duration-200 ease-in-out whitespace-nowrap hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)]" onClick={handleCreateNew}>
-          <Plus size={20} />
-          <span>Nova Integração</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            className="flex items-center gap-2 py-3 px-6 bg-gray-700 hover:bg-gray-600 text-white border-none rounded-lg text-[15px] font-semibold cursor-pointer transition-all duration-200 ease-in-out whitespace-nowrap" 
+            onClick={() => setShowRequestModal(true)}
+          >
+            <MessageSquare size={20} />
+            <span>Solicitar Integração</span>
+          </button>
+          <button className="flex items-center gap-2 py-3 px-6 bg-primary text-white border-none rounded-lg text-[15px] font-semibold cursor-pointer transition-all duration-200 ease-in-out whitespace-nowrap hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)]" onClick={handleCreateNew}>
+            <Plus size={20} />
+            <span>Nova Integração</span>
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-6 mb-8 p-5 bg-surface border border-border rounded-xl">
@@ -162,6 +183,22 @@ function IntegrationsPage() {
             onDelete={() => handleDelete(integration)}
           />
         ))}
+        
+        <div 
+          className="bg-gradient-to-br from-[#1B998B]/20 to-[#1B998B]/10 rounded-lg border-2 border-dashed border-[#1B998B]/50 p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#1B998B] hover:bg-[#1B998B]/20 transition-all"
+          onClick={() => setShowRequestModal(true)}
+        >
+          <div className="w-16 h-16 bg-[#1B998B]/20 rounded-full flex items-center justify-center mb-4">
+            <MessageSquare className="w-8 h-8 text-[#1B998B]" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-2">Não encontrou a integração que precisa?</h3>
+          <p className="text-sm text-gray-400 mb-4">
+            Solicite uma nova integração e nossa equipe entrará em contato
+          </p>
+          <button className="px-4 py-2 bg-[#1B998B] hover:bg-[#1B998B]/90 text-white rounded-lg transition-colors text-sm font-medium">
+            Solicitar Integração
+          </button>
+        </div>
       </div>
 
       {showTypeSelector && (
@@ -434,6 +471,13 @@ function IntegrationsPage() {
             setIsCreating(false)
             setSelectedType(null)
           }}
+        />
+      )}
+
+      {showRequestModal && (
+        <RequestIntegrationModal
+          onClose={() => setShowRequestModal(false)}
+          onSubmit={handleRequestIntegration}
         />
       )}
     </div>
