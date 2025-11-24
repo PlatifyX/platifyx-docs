@@ -1,11 +1,43 @@
+import { useState, useEffect } from 'react'
 import { TrendingUp, TrendingDown, Activity, CheckCircle, AlertCircle, Server, GitBranch } from 'lucide-react'
+import { getMockDashboardData } from '../mocks/data/dashboard'
 
 function DashboardPage() {
+  const [metrics, setMetrics] = useState<any[]>([])
+  const [services, setServices] = useState<any[]>([])
+  const [recentDeployments, setRecentDeployments] = useState<any[]>([])
+  const [quickStats, setQuickStats] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const metrics: any[] = []
-  const services: any[] = []
-  const recentDeployments: any[] = []
-  const quickStats: any[] = []
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        const data = await getMockDashboardData()
+        setMetrics(data.metrics)
+        setServices(data.services)
+        setRecentDeployments(data.recentDeployments)
+        setQuickStats(data.quickStats)
+      } catch (error) {
+        console.error('Erro ao carregar dados do dashboard:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="max-w-[1400px] mx-auto p-8 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Carregando dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-[1400px] mx-auto p-8 min-h-screen">
@@ -19,7 +51,7 @@ function DashboardPage() {
           <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 relative z-10">
             {quickStats.map((stat) => (
               <div key={stat.label} className="flex items-center gap-4 bg-white/15 backdrop-blur-[10px] border border-white/20 rounded-xl p-5 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-white/20 hover:-translate-y-1 hover:shadow-[0_8px_16px_rgba(0,0,0,0.15)]">
-                <div className="flex items-center justify-center w-12 h-12 bg-white/25 rounded-[10px] flex-shrink-0" style={{ color: stat.color }}>
+                <div className="flex items-center justify-center w-12 h-12 bg-white/25 rounded-[10px] flex-shrink-0 text-2xl">
                   {stat.icon}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -37,15 +69,13 @@ function DashboardPage() {
         <section className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-6 mb-8">
           {metrics.map((metric) => (
             <div key={metric.label} className="bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex gap-4 border border-border hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:border-border group">
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110" style={{ backgroundColor: `${metric.color}15` }}>
-                <div style={{ color: metric.color }}>
-                  {metric.icon}
-                </div>
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 text-2xl" style={{ backgroundColor: `${metric.color}15`, color: metric.color }}>
+                {metric.icon}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-sm text-border font-semibold uppercase tracking-wide">{metric.label}</span>
-                  <span className={`flex items-center gap-1 text-sm font-semibold py-1 px-2.5 rounded-md whitespace-nowrap ${metric.trend === 'up' || metric.trend === 'down' ? 'text-emerald-500 bg-emerald-100' : ''}`}>
+                  <span className={`flex items-center gap-1 text-sm font-semibold py-1 px-2.5 rounded-md whitespace-nowrap ${metric.trend === 'up' ? 'text-emerald-500 bg-emerald-100' : 'text-red-500 bg-red-100'}`}>
                     {metric.trend === 'up' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                     {metric.change}
                   </span>
@@ -128,7 +158,7 @@ function DashboardPage() {
           <div className="flex justify-between items-center mb-6 pb-4 border-b-2 border-border">
             <h2 className="flex items-center gap-3 text-xl font-bold text-white m-0">
               <GitBranch size={20} />
-              Deployments
+              Deployments Recentes
             </h2>
           </div>
           {recentDeployments.length > 0 ? (
