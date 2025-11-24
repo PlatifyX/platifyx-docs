@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { OrganizationApi, type Organization } from '../utils/organizationApi'
+import { type Organization } from '../utils/organizationApi'
 import { useAuth } from './AuthContext'
-import { buildApiUrl } from '../config/api'
+import { getMockOrganizations } from '../mocks/data/organizations'
 
 interface OrganizationContextType {
   currentOrganization: Organization | null
@@ -29,36 +29,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
     try {
       setLoading(true)
-      let orgs: Organization[] = []
-      
-      try {
-        const token = localStorage.getItem('token')
-        if (token) {
-          const response = await fetch(buildApiUrl('me/organizations'), {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          })
-          
-          if (response.ok) {
-            const data = await response.json()
-            orgs = data.organizations || []
-          } else {
-            orgs = await OrganizationApi.getAll()
-          }
-        } else {
-          orgs = await OrganizationApi.getAll()
-        }
-      } catch (error) {
-        console.error('Failed to load organizations:', error)
-        try {
-          orgs = await OrganizationApi.getAll()
-        } catch (e) {
-          orgs = []
-        }
-      }
-      
+
+      // Usando dados mockados
+      const orgs = await getMockOrganizations()
       setOrganizations(orgs)
 
       const savedOrgUUID = localStorage.getItem(ORGANIZATION_STORAGE_KEY)
@@ -119,4 +92,3 @@ export function useOrganization() {
   }
   return context
 }
-
