@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import { 
-  AlertTriangle, 
-  MessageSquare, 
-  Zap, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
+import {
+  AlertTriangle,
+  MessageSquare,
+  Zap,
+  CheckCircle,
+  XCircle,
+  Clock,
   TrendingUp,
   TrendingDown,
   DollarSign,
@@ -15,7 +15,14 @@ import {
   Settings,
   PlayCircle
 } from 'lucide-react'
-import { buildApiUrl } from '../config/api'
+import {
+  getMockRecommendations,
+  getMockAutonomousActions,
+  getMockAutonomousConfig,
+  mockTroubleshoot,
+  mockExecuteAction,
+  mockUpdateConfig
+} from '../mocks/data/autonomous'
 
 interface Recommendation {
   id: string
@@ -92,20 +99,21 @@ function AutonomousPage() {
   useEffect(() => {
     fetchRecommendations()
     fetchConfig()
+
+    // Carregar ações mockadas
+    const loadActions = async () => {
+      const mockActions = await getMockAutonomousActions()
+      setActions(mockActions)
+    }
+    loadActions()
   }, [])
 
   const fetchRecommendations = async () => {
     try {
       setLoading(true)
-      const response = await fetch(buildApiUrl('autonomous/recommendations'), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setRecommendations(data.recommendations || [])
-      }
+      // Usando dados mockados
+      const data = await getMockRecommendations()
+      setRecommendations(data)
     } catch (error) {
       console.error('Failed to fetch recommendations:', error)
     } finally {
@@ -115,15 +123,9 @@ function AutonomousPage() {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch(buildApiUrl('autonomous/actions/config'), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setConfig(data)
-      }
+      // Usando dados mockados
+      const data = await getMockAutonomousConfig()
+      setConfig(data)
     } catch (error) {
       console.error('Failed to fetch config:', error)
     }
@@ -134,23 +136,9 @@ function AutonomousPage() {
 
     try {
       setTroubleshootingLoading(true)
-      const response = await fetch(buildApiUrl('autonomous/troubleshoot'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          question: troubleshootingQuestion,
-          serviceName: serviceName || undefined,
-          namespace: namespace || undefined
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setTroubleshootingResponse(data)
-      }
+      // Usando dados mockados
+      const data = await mockTroubleshoot(troubleshootingQuestion, serviceName, namespace)
+      setTroubleshootingResponse(data)
     } catch (error) {
       console.error('Failed to troubleshoot:', error)
     } finally {
@@ -164,30 +152,32 @@ function AutonomousPage() {
       return
     }
 
-    const actionType = recommendation.type === 'deployment' ? 'rollback' : 'scale'
-    const action: RecommendedAction = {
-      type: actionType,
-      description: recommendation.action,
-      parameters: recommendation.metadata || {},
-      autoExecute: config.autoExecute && !config.requireApproval
-    }
-
     try {
-      const response = await fetch(buildApiUrl('autonomous/actions/execute'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(action)
-      })
+      // Usando dados mockados
+      const result = await mockExecuteAction(recommendation.id)
 
-      if (response.ok) {
-        const data = await response.json()
-        setActions(prev => [data, ...prev])
-        alert(`Ação ${data.status === 'completed' ? 'executada' : 'criada'} com sucesso!`)
-        fetchRecommendations()
+      const newAction: AutonomousAction = {
+        id: 'action-' + Date.now(),
+        type: recommendation.type,
+        status: 'completed',
+        description: recommendation.title,
+        trigger: recommendation.reason,
+        action: {
+          type: recommendation.type,
+          description: recommendation.action,
+          autoExecute: config.autoExecute
+        },
+        result: result.result,
+        createdAt: new Date().toISOString(),
+        executedAt: new Date().toISOString(),
+        executedBy: 'user'
       }
+
+      setActions(prev => [newAction, ...prev])
+      alert('Ação executada com sucesso!')
+
+      // Remove a recomendação da lista
+      setRecommendations(prev => prev.filter(r => r.id !== recommendation.id))
     } catch (error) {
       console.error('Failed to execute action:', error)
       alert('Falha ao executar ação')
@@ -196,20 +186,11 @@ function AutonomousPage() {
 
   const updateConfig = async (newConfig: AutonomousConfig) => {
     try {
-      const response = await fetch(buildApiUrl('autonomous/actions/config'), {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(newConfig)
-      })
-
-      if (response.ok) {
-        setConfig(newConfig)
-        setShowConfig(false)
-        alert('Configuração atualizada com sucesso!')
-      }
+      // Usando dados mockados
+      const result = await mockUpdateConfig(newConfig)
+      setConfig(result.config)
+      setShowConfig(false)
+      alert('Configuração atualizada com sucesso!')
     } catch (error) {
       console.error('Failed to update config:', error)
       alert('Falha ao atualizar configuração')
