@@ -16,6 +16,7 @@ Você precisa desenvolver um **site de marketing moderno e profissional** para a
 - **Ícones**: Lucide React
 - **Animações**: Framer Motion
 - **Forms**: React Hook Form + Zod (validação)
+- **Email**: SendGrid (@sendgrid/mail)
 - **SEO**: React Helmet Async
 - **Routing**: React Router v6
 
@@ -644,10 +645,55 @@ Post individual:
 
 ## 🔧 Implementação Backend (Express)
 
+### Package.json do Backend
+
+```json
+{
+  "name": "platifyx-marketing-backend",
+  "version": "1.0.0",
+  "description": "Backend do site de marketing da PlatifyX",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
+```
+
+### Variáveis de Ambiente (.env)
+
+```bash
+# Server
+NODE_ENV=development
+PORT=3000
+
+# Frontend URL (para CORS)
+FRONTEND_URL=http://localhost:7000
+
+# SendGrid
+SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000  # 15 minutos
+RATE_LIMIT_MAX_REQUESTS=100   # 100 requests por IP
+```
+
 ### Estrutura de Rotas
 
 ```javascript
 // backend/server.js
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -657,24 +703,44 @@ const app = express();
 
 // Middlewares
 app.use(helmet());
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:7000'
+}));
 app.use(express.json());
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100 // 100 requests por IP
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  message: 'Muitas requisições deste IP, tente novamente mais tarde.'
 });
 app.use('/api/', limiter);
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // Rotas
 app.post('/api/demo', require('./routes/demo'));
 app.post('/api/contact', require('./routes/contact'));
 app.post('/api/newsletter', require('./routes/newsletter'));
 
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint não encontrado' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('Erro:', err);
+  res.status(500).json({ error: 'Erro interno do servidor' });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`📧 SendGrid configured: ${!!process.env.SENDGRID_API_KEY}`);
 });
 ```
 
@@ -684,73 +750,242 @@ app.listen(PORT, () => {
 // backend/routes/demo.js
 const express = require('express');
 const router = express.Router();
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
+
+// Configurar SendGrid API Key
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 router.post('/', async (req, res) => {
-  const {
-    name,
-    email,
-    company,
-    role,
-    companySize,
-    phone,
-    stack,
-    message
-  } = req.body;
+  try {
+    const {
+      name,
+      email,
+      company,
+      role,
+      companySize,
+      phone,
+      stack,
+      message
+    } = req.body;
 
-  // Validação
-  if (!name || !email || !company || !role) {
-    return res.status(400).json({
-      error: 'Campos obrigatórios faltando'
+    // Validação
+    if (!name || !email || !company || !role) {
+      return res.status(400).json({
+        error: 'Campos obrigatórios faltando'
+      });
+    }
+
+    // Email para equipe de vendas
+    const salesEmail = {
+      to: 'sales@platifyx.com',
+      from: {
+        email: 'noreply@platifyx.com',
+        name: 'PlatifyX Marketing'
+      },
+      subject: `Nova solicitação de demo - ${company}`,
+      html: `
+        <h2>Nova solicitação de demo</h2>
+        <p><strong>Nome:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Empresa:</strong> ${company}</p>
+        <p><strong>Cargo:</strong> ${role}</p>
+        <p><strong>Tamanho:</strong> ${companySize}</p>
+        <p><strong>Telefone:</strong> ${phone || 'Não informado'}</p>
+        <p><strong>Stack:</strong> ${stack?.join(', ') || 'Não informado'}</p>
+        <p><strong>Mensagem:</strong><br>${message || 'Nenhuma mensagem'}</p>
+      `
+    };
+
+    // Email de confirmação para o usuário
+    const confirmationEmail = {
+      to: email,
+      from: {
+        email: 'noreply@platifyx.com',
+        name: 'PlatifyX'
+      },
+      subject: 'Recebemos sua solicitação de demo - PlatifyX',
+      html: `
+        <h2>Olá ${name}!</h2>
+        <p>Recebemos sua solicitação de demo da PlatifyX.</p>
+        <p>Nossa equipe entrará em contato em até 24 horas úteis.</p>
+        <p>Enquanto isso, confira nossa <a href="https://docs.platifyx.com">documentação</a>.</p>
+        <br>
+        <p>Equipe PlatifyX</p>
+      `
+    };
+
+    // Enviar ambos os emails
+    await Promise.all([
+      sgMail.send(salesEmail),
+      sgMail.send(confirmationEmail)
+    ]);
+
+    res.json({
+      success: true,
+      message: 'Solicitação enviada com sucesso!'
+    });
+  } catch (error) {
+    console.error('Erro ao enviar email:', error);
+    res.status(500).json({
+      error: 'Erro ao processar solicitação. Tente novamente.'
     });
   }
+});
 
-  // Enviar email para equipe de vendas
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
+module.exports = router;
+```
+
+### Endpoint: Contato
+
+```javascript
+// backend/routes/contact.js
+const express = require('express');
+const router = express.Router();
+const sgMail = require('@sendgrid/mail');
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+router.post('/', async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+
+    // Validação
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({
+        error: 'Todos os campos são obrigatórios'
+      });
     }
-  });
 
-  await transporter.sendMail({
-    from: 'noreply@platifyx.com',
-    to: 'sales@platifyx.com',
-    subject: `Nova solicitação de demo - ${company}`,
-    html: `
-      <h2>Nova solicitação de demo</h2>
-      <p><strong>Nome:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Empresa:</strong> ${company}</p>
-      <p><strong>Cargo:</strong> ${role}</p>
-      <p><strong>Tamanho:</strong> ${companySize}</p>
-      <p><strong>Telefone:</strong> ${phone || 'Não informado'}</p>
-      <p><strong>Stack:</strong> ${stack?.join(', ') || 'Não informado'}</p>
-      <p><strong>Mensagem:</strong><br>${message || 'Nenhuma mensagem'}</p>
-    `
-  });
+    // Email para equipe de suporte
+    const contactEmail = {
+      to: 'contact@platifyx.com',
+      from: {
+        email: 'noreply@platifyx.com',
+        name: 'PlatifyX Marketing'
+      },
+      replyTo: email,
+      subject: `[Contato] ${subject}`,
+      html: `
+        <h2>Nova mensagem de contato</h2>
+        <p><strong>Nome:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Assunto:</strong> ${subject}</p>
+        <p><strong>Mensagem:</strong></p>
+        <p>${message.replace(/\n/g, '<br>')}</p>
+      `
+    };
 
-  // Email de confirmação para o usuário
-  await transporter.sendMail({
-    from: 'noreply@platifyx.com',
-    to: email,
-    subject: 'Recebemos sua solicitação de demo - PlatifyX',
-    html: `
-      <h2>Olá ${name}!</h2>
-      <p>Recebemos sua solicitação de demo da PlatifyX.</p>
-      <p>Nossa equipe entrará em contato em até 24 horas úteis.</p>
-      <p>Enquanto isso, confira nossa <a href="https://docs.platifyx.com">documentação</a>.</p>
-      <br>
-      <p>Equipe PlatifyX</p>
-    `
-  });
+    // Email de confirmação
+    const confirmationEmail = {
+      to: email,
+      from: {
+        email: 'noreply@platifyx.com',
+        name: 'PlatifyX'
+      },
+      subject: 'Recebemos sua mensagem - PlatifyX',
+      html: `
+        <h2>Olá ${name}!</h2>
+        <p>Recebemos sua mensagem e responderemos em breve.</p>
+        <p><strong>Sua mensagem:</strong></p>
+        <p>${message.replace(/\n/g, '<br>')}</p>
+        <br>
+        <p>Equipe PlatifyX</p>
+      `
+    };
 
-  res.json({
-    success: true,
-    message: 'Solicitação enviada com sucesso!'
-  });
+    await Promise.all([
+      sgMail.send(contactEmail),
+      sgMail.send(confirmationEmail)
+    ]);
+
+    res.json({
+      success: true,
+      message: 'Mensagem enviada com sucesso!'
+    });
+  } catch (error) {
+    console.error('Erro ao enviar email:', error);
+    res.status(500).json({
+      error: 'Erro ao processar mensagem. Tente novamente.'
+    });
+  }
+});
+
+module.exports = router;
+```
+
+### Endpoint: Newsletter
+
+```javascript
+// backend/routes/newsletter.js
+const express = require('express');
+const router = express.Router();
+const sgMail = require('@sendgrid/mail');
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+router.post('/', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Validação
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({
+        error: 'Email inválido'
+      });
+    }
+
+    // Notificar equipe de marketing
+    const notificationEmail = {
+      to: 'marketing@platifyx.com',
+      from: {
+        email: 'noreply@platifyx.com',
+        name: 'PlatifyX Marketing'
+      },
+      subject: 'Nova inscrição na newsletter',
+      html: `
+        <h2>Nova inscrição na newsletter</h2>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Data:</strong> ${new Date().toLocaleString('pt-BR')}</p>
+      `
+    };
+
+    // Email de boas-vindas
+    const welcomeEmail = {
+      to: email,
+      from: {
+        email: 'newsletter@platifyx.com',
+        name: 'PlatifyX'
+      },
+      subject: 'Bem-vindo à Newsletter da PlatifyX! 🚀',
+      html: `
+        <h2>Obrigado por se inscrever!</h2>
+        <p>Você agora receberá as últimas novidades sobre Platform Engineering, FinOps, DevOps e muito mais.</p>
+        <p>Fique de olho na sua caixa de entrada para conteúdos exclusivos!</p>
+        <br>
+        <p>Equipe PlatifyX</p>
+        <hr>
+        <p style="font-size: 12px; color: #666;">
+          Não quer mais receber nossos emails?
+          <a href="https://platifyx.com/unsubscribe?email=${encodeURIComponent(email)}">Cancelar inscrição</a>
+        </p>
+      `
+    };
+
+    await Promise.all([
+      sgMail.send(notificationEmail),
+      sgMail.send(welcomeEmail)
+    ]);
+
+    res.json({
+      success: true,
+      message: 'Inscrição realizada com sucesso!'
+    });
+  } catch (error) {
+    console.error('Erro ao enviar email:', error);
+    res.status(500).json({
+      error: 'Erro ao processar inscrição. Tente novamente.'
+    });
+  }
 });
 
 module.exports = router;
@@ -830,10 +1065,7 @@ services:
     environment:
       - NODE_ENV=production
       - FRONTEND_URL=https://platifyx.com
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
     restart: unless-stopped
 ```
 
@@ -891,8 +1123,9 @@ services:
 - [ ] Endpoint /api/contact
 - [ ] Endpoint /api/newsletter
 - [ ] Rate limiting
-- [ ] Email sending (nodemailer)
+- [ ] Email sending (SendGrid)
 - [ ] Error handling
+- [ ] Configurar SendGrid API Key
 
 **Performance**
 - [ ] Lazy loading de imagens
@@ -984,12 +1217,62 @@ Criar um site de marketing **profissional, moderno e de alta conversão** que:
 ## 📞 Próximos Passos
 
 Após implementar o site:
-1. Conectar domínio customizado (platifyx.com)
-2. Configurar Google Analytics ou Plausible
-3. Configurar SMTP para emails (SendGrid, Mailgun, etc.)
+1. **Criar conta no SendGrid** (https://sendgrid.com)
+   - Criar API Key em Settings > API Keys
+   - Verificar domínio (noreply@platifyx.com)
+   - Configurar variável de ambiente: `SENDGRID_API_KEY`
+2. Conectar domínio customizado (platifyx.com)
+3. Configurar Google Analytics ou Plausible
 4. Criar conteúdo para o blog
 5. Fazer campanhas de marketing (SEO, Google Ads, LinkedIn)
 6. Monitorar conversões e otimizar
+
+### 📧 Configuração do SendGrid
+
+**1. Criar conta e obter API Key:**
+```bash
+# Acessar: https://app.sendgrid.com/settings/api_keys
+# Criar uma nova API Key com permissão "Full Access"
+# Copiar a chave (será exibida apenas uma vez!)
+```
+
+**2. Verificar domínio e emails:**
+```bash
+# Acessar: https://app.sendgrid.com/settings/sender_auth
+# Verificar domínio platifyx.com (recomendado)
+# OU verificar emails individualmente:
+#   - noreply@platifyx.com
+#   - sales@platifyx.com
+#   - contact@platifyx.com
+#   - marketing@platifyx.com
+#   - newsletter@platifyx.com
+```
+
+**3. Adicionar variável de ambiente:**
+```bash
+# .env
+SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+**4. Instalar dependência:**
+```bash
+cd backend
+npm install @sendgrid/mail
+```
+
+**5. Testar envio:**
+```bash
+# Fazer um POST para /api/demo ou /api/contact
+# Verificar se o email chegou
+# Checar logs do SendGrid: https://app.sendgrid.com/email_activity
+```
+
+**6. Configurações recomendadas no SendGrid:**
+- Ativar **Click Tracking** (rastrear cliques nos links)
+- Ativar **Open Tracking** (rastrear abertura de emails)
+- Configurar **Unsubscribe Group** para newsletter
+- Adicionar **Custom Unsubscribe URL** (https://platifyx.com/unsubscribe)
+- Configurar **Templates** para emails (opcional, mas recomendado)
 
 ---
 
