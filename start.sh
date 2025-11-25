@@ -37,6 +37,7 @@ echo ""
 
 echo "Installing backend dependencies..."
 cd backend
+export PATH=$PATH:$HOME/go/bin:/usr/local/go/bin
 go mod tidy
 go mod download
 cd ..
@@ -51,7 +52,7 @@ echo ""
 echo "🔧 Starting services..."
 echo ""
 
-echo "Starting Backend (http://localhost:8060)..."
+echo "Starting Backend (https://api.platifyx.com)..."
 cd backend
 go run cmd/api/main.go > ../logs/backend.log 2>&1 &
 BACKEND_PID=$!
@@ -60,7 +61,7 @@ cd ..
 
 sleep 2
 
-echo "Starting Frontend (http://localhost:7000)..."
+echo "Starting Frontend (https://app.platifyx.com)..."
 cd frontend
 npm run dev > ../logs/frontend.log 2>&1 &
 FRONTEND_PID=$!
@@ -73,9 +74,9 @@ echo ""
 echo "✅ PlatifyX started successfully!"
 echo ""
 echo "📍 Access:"
-echo "   Frontend: http://localhost:7000"
-echo "   Backend:  http://localhost:8060"
-echo "   API Docs: http://localhost:8060/api/v1/health"
+echo "   Frontend: https://app.platifyx.com"
+echo "   Backend:  https://api.platifyx.com"
+echo "   API Docs: https://api.platifyx.com/api/v1/health"
 echo ""
 echo "📝 Logs:"
 echo "   Backend:  tail -f logs/backend.log"
@@ -83,3 +84,4 @@ echo "   Frontend: tail -f logs/frontend.log"
 echo ""
 echo "🛑 To stop: ./stop.sh"
 echo ""
+

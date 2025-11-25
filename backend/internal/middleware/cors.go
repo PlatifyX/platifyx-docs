@@ -14,7 +14,7 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 	} else {
 		// Fallback defaults for development
 		config.AllowOrigins = []string{
-			"http://localhost:7000",
+			"https://app.platifyx.com",
 			"http://localhost:5173",
 		}
 	}

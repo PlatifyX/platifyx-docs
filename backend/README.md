@@ -33,7 +33,7 @@ ou
 go run cmd/api/main.go
 ```
 
-Acesse: http://localhost:8060
+Acesse: https://api.platifyx.com
 
 ### Build
 

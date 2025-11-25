@@ -191,7 +191,7 @@ stage-app → Staging
 
 #### Listar Templates Disponíveis
 ```bash
-curl http://localhost:8060/api/v1/infrastructure-templates
+curl https://api.platifyx.com/api/v1/infrastructure-templates
 ```
 
 **Response:**
@@ -212,7 +212,7 @@ curl http://localhost:8060/api/v1/infrastructure-templates
 
 #### Preview Template
 ```bash
-curl -X POST http://localhost:8060/api/v1/infrastructure-templates/preview \
+curl -X POST https://api.platifyx.com/api/v1/infrastructure-templates/preview \
   -H "Content-Type: application/json" \
   -d '{
     "squad": "cxm",
@@ -271,7 +271,7 @@ curl -X POST http://localhost:8060/api/v1/infrastructure-templates/preview \
 
 #### Generate Template (com arquivos completos)
 ```bash
-curl -X POST http://localhost:8060/api/v1/infrastructure-templates/generate \
+curl -X POST https://api.platifyx.com/api/v1/infrastructure-templates/generate \
   -H "Content-Type: application/json" \
   -d '{ ... mesmo payload do preview ... }'
 ```

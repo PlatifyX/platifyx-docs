@@ -25,7 +25,7 @@ npm install
 npm run dev
 ```
 
-Acesse: http://localhost:7000
+Acesse: https://app.platifyx.com
 
 ## 🏗️ Build
 

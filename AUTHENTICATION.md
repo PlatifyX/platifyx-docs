@@ -78,7 +78,7 @@ O backend já possui toda a infraestrutura necessária:
 ## Fluxo de Autenticação
 
 ```
-1. Usuário acessa http://localhost:7000/
+1. Usuário acessa https://app.platifyx.com/
    ↓
 2. Sistema verifica se há token no localStorage
    ↓
@@ -215,7 +215,7 @@ cd backend
 go run cmd/api/main.go
 ```
 
-O backend estará disponível em `http://localhost:8060`
+O backend estará disponível em `https://api.platifyx.com`
 
 ### 2. Iniciar o Frontend
 
@@ -225,11 +225,11 @@ npm install  # se ainda não instalou
 npm run dev
 ```
 
-O frontend estará disponível em `http://localhost:7000`
+O frontend estará disponível em `https://app.platifyx.com`
 
 ### 3. Testar o Fluxo
 
-1. Acesse `http://localhost:7000/`
+1. Acesse `https://app.platifyx.com/`
 2. Você será redirecionado para `/login`
 3. Use as credenciais padrão:
    - Email: `admin@platifyx.com`
@@ -256,7 +256,7 @@ O frontend estará disponível em `http://localhost:7000`
 **Solução:**
 ```bash
 # Verificar se o backend está rodando
-curl http://localhost:8060/health
+curl https://api.platifyx.com/health
 
 # Verificar logs do backend
 # Se necessário, executar migrações manualmente

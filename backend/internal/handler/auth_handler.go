@@ -215,7 +215,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	if token != "" {
 		// Apenas para desenvolvimento - remover em produção
 		response["token"] = token
-		response["reset_url"] = "http://localhost:7000/reset-password?token=" + token
+		response["reset_url"] = "https://app.platifyx.com/reset-password?token=" + token
 	}
 
 	c.JSON(http.StatusOK, response)

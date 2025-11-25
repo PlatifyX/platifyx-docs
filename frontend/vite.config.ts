@@ -5,7 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 7000,
-    host: true
+    host: true,
+    allowedHosts: ['app.platifyx.com']
   },
   build: {
     outDir: 'dist',

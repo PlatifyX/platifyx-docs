@@ -167,7 +167,7 @@ Sistema que pode executar ações automaticamente (com aprovação).
 
 ```bash
 # Buscar recomendações
-curl -X GET http://localhost:8060/api/v1/autonomous/recommendations \
+curl -X GET https://api.platifyx.com/api/v1/autonomous/recommendations \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -183,7 +183,7 @@ const fetchRecommendations = async () => {
 ### 2. **Troubleshooting**
 
 ```bash
-curl -X POST http://localhost:8060/api/v1/autonomous/troubleshoot \
+curl -X POST https://api.platifyx.com/api/v1/autonomous/troubleshoot \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -214,7 +214,7 @@ const askQuestion = async (question: string) => {
 
 ```bash
 # Executar ação (requer aprovação se configurado)
-curl -X POST http://localhost:8060/api/v1/autonomous/actions/execute \
+curl -X POST https://api.platifyx.com/api/v1/autonomous/actions/execute \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -251,7 +251,7 @@ curl -X POST http://localhost:8060/api/v1/autonomous/actions/execute \
 ### Habilitar Ações Autonômicas
 
 ```bash
-curl -X PUT http://localhost:8060/api/v1/autonomous/actions/config \
+curl -X PUT https://api.platifyx.com/api/v1/autonomous/actions/config \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{

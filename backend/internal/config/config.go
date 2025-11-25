@@ -46,7 +46,7 @@ func Load() *Config {
 	godotenv.Load()
 
 	// Parse CORS allowed origins
-	allowedOrigins := getEnv("ALLOWED_ORIGINS", "http://localhost:7000,http://localhost:5173")
+	allowedOrigins := getEnv("ALLOWED_ORIGINS", "https://app.platifyx.com,http://localhost:5173")
 	origins := strings.Split(allowedOrigins, ",")
 
 	return &Config{
@@ -73,7 +73,7 @@ func Load() *Config {
 		AllowedOrigins: origins,
 
 		// Frontend
-		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:7000"),
+		FrontendURL: getEnv("FRONTEND_URL", "https://app.platifyx.com"),
 
 		// External URLs
 		DocsBaseURL: getEnv("DOCS_BASE_URL", ""),

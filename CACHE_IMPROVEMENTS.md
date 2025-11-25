@@ -139,10 +139,10 @@ redis-cli ping  # Deve retornar PONG
 ### 2. Fazer requisições aos endpoints
 ```bash
 # Primeira requisição (MISS) - mais lenta
-curl http://localhost:8060/api/v1/finops/stats
+curl https://api.platifyx.com/api/v1/finops/stats
 
 # Segunda requisição (HIT) - muito mais rápida
-curl http://localhost:8060/api/v1/finops/stats
+curl https://api.platifyx.com/api/v1/finops/stats
 ```
 
 ### 3. Monitorar cache no Redis

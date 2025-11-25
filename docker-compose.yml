@@ -1,39 +1,21 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: platifyx-postgres
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: platifyx-backend
+    ports:
+      - "8060:8060"
     environment:
-      - POSTGRES_USER=platifyx
-      - POSTGRES_PASSWORD=platifyx123
-      - POSTGRES_DB=platifyx
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U platifyx"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - ENVIRONMENT=development
     restart: unless-stopped
-
-  redis:
-    image: redis:7.4-alpine
-    container_name: platifyx-redis
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: platifyx-frontend
     ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - "7000:7000"
     restart: unless-stopped
-
-volumes:
-  postgres_data:
-  redis_data:

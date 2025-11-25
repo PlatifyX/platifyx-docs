@@ -133,13 +133,13 @@ psql postgres://platifyx:platifyx123@localhost:5432/platifyx -c "SELECT email, n
 
 ```bash
 # Listar usuários
-curl http://localhost:8060/api/v1/settings/users
+curl https://api.platifyx.com/api/v1/settings/users
 
 # Listar roles
-curl http://localhost:8060/api/v1/settings/roles
+curl https://api.platifyx.com/api/v1/settings/roles
 
 # Listar teams
-curl http://localhost:8060/api/v1/settings/teams
+curl https://api.platifyx.com/api/v1/settings/teams
 ```
 
 ---
@@ -237,7 +237,7 @@ As migrations estão em `backend/migrations/`:
 Após configurar o banco de dados:
 
 1. Reinicie o backend
-2. Acesse http://localhost:7000
+2. Acesse https://app.platifyx.com
 3. Vá para Settings > Users
 4. Crie novos usuários
 5. Configure roles e permissões

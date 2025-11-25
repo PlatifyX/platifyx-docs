@@ -48,8 +48,8 @@ stop.bat         # Windows
 ```
 
 Acesse:
-- Frontend: http://localhost:7000
-- Backend API: http://localhost:8060
+- Frontend: https://app.platifyx.com
+- Backend API: https://api.platifyx.com
 
 Os logs ficam salvos em `logs/backend.log` e `logs/frontend.log`
 
@@ -60,8 +60,8 @@ docker-compose up --build
 ```
 
 Acesse:
-- Frontend: http://localhost:7000
-- Backend API: http://localhost:8060
+- Frontend: https://app.platifyx.com
+- Backend API: https://api.platifyx.com
 
 ### Opção 3: Executar Separadamente
 
@@ -73,7 +73,7 @@ npm install
 npm run dev
 ```
 
-Acesse: http://localhost:7000
+Acesse: https://app.platifyx.com
 
 #### Backend
 
@@ -83,28 +83,28 @@ go mod download
 make run
 ```
 
-Acesse: http://localhost:8060
+Acesse: https://api.platifyx.com
 
 ## 🔌 API Endpoints
 
 ### Health & Readiness
 
 ```bash
-curl http://localhost:8060/api/v1/health
-curl http://localhost:8060/api/v1/ready
+curl https://api.platifyx.com/api/v1/health
+curl https://api.platifyx.com/api/v1/ready
 ```
 
 ### Serviços
 
 ```bash
 # Listar todos os serviços
-curl http://localhost:8060/api/v1/services
+curl https://api.platifyx.com/api/v1/services
 
 # Obter serviço por ID
-curl http://localhost:8060/api/v1/services/svc-1
+curl https://api.platifyx.com/api/v1/services/svc-1
 
 # Criar novo serviço
-curl -X POST http://localhost:8060/api/v1/services \
+curl -X POST https://api.platifyx.com/api/v1/services \
   -H "Content-Type: application/json" \
   -d '{"name":"my-service","description":"My Service","type":"microservice"}'
 ```
@@ -113,20 +113,20 @@ curl -X POST http://localhost:8060/api/v1/services \
 
 ```bash
 # Dashboard metrics
-curl http://localhost:8060/api/v1/metrics/dashboard
+curl https://api.platifyx.com/api/v1/metrics/dashboard
 
 # DORA Metrics
-curl http://localhost:8060/api/v1/metrics/dora
+curl https://api.platifyx.com/api/v1/metrics/dora
 ```
 
 ### Kubernetes
 
 ```bash
 # Listar clusters
-curl http://localhost:8060/api/v1/kubernetes/clusters
+curl https://api.platifyx.com/api/v1/kubernetes/clusters
 
 # Listar pods
-curl http://localhost:8060/api/v1/kubernetes/pods?namespace=default
+curl https://api.platifyx.com/api/v1/kubernetes/pods?namespace=default
 ```
 
 ## 🛠️ Desenvolvimento

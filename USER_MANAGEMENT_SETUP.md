@@ -106,20 +106,20 @@ JWT_SECRET=your-secret-key-change-in-production-use-strong-random-string
 SESSION_TIMEOUT=86400  # 24 horas em segundos
 
 # CORS Configuration
-ALLOWED_ORIGINS=http://localhost:7000,http://localhost:5173
+ALLOWED_ORIGINS=https://app.platifyx.com,http://localhost:5173
 
 # Frontend URL (usado para callbacks SSO)
-FRONTEND_URL=http://localhost:7000
+FRONTEND_URL=https://app.platifyx.com
 ```
 
 #### Frontend (`frontend/.env`)
 
 ```bash
 # API Base URL
-VITE_API_BASE_URL=http://localhost:8060
+VITE_API_BASE_URL=https://api.platifyx.com
 
 # Application Base URL (usado para callbacks SSO)
-VITE_APP_BASE_URL=http://localhost:7000
+VITE_APP_BASE_URL=https://app.platifyx.com
 
 # API Version
 VITE_API_VERSION=v1
@@ -150,7 +150,7 @@ A migration cria:
 3. Ative a API "Google+ API"
 4. Vá em "Credentials" → "Create Credentials" → "OAuth client ID"
 5. Tipo: "Web application"
-6. Authorized redirect URIs: `http://localhost:7000/auth/callback/google`
+6. Authorized redirect URIs: `https://app.platifyx.com/auth/callback/google`
 7. Copie o Client ID e Client Secret
 
 #### Microsoft Azure AD
@@ -159,13 +159,13 @@ A migration cria:
 2. Vá em "Azure Active Directory" → "App registrations"
 3. Clique em "New registration"
 4. Nome: "PlatifyX"
-5. Redirect URI: `http://localhost:7000/auth/callback/microsoft`
+5. Redirect URI: `https://app.platifyx.com/auth/callback/microsoft`
 6. Em "Certificates & secrets", crie um novo client secret
 7. Copie o Application (client) ID, Client Secret e Tenant ID
 
 #### Configurar no Sistema
 
-1. Acesse http://localhost:7000/settings
+1. Acesse https://app.platifyx.com/settings
 2. Vá na aba "SSO"
 3. Configure as credenciais do provedor
 4. Defina os domínios permitidos
@@ -200,7 +200,7 @@ WHERE u.email = 'admin@platifyx.com'
 ### Acessar a Página de Configurações
 
 ```
-http://localhost:7000/settings
+https://app.platifyx.com/settings
 ```
 
 ### Abas Disponíveis
@@ -338,7 +338,7 @@ POST /api/v1/settings/sso
   "enabled": true,
   "client_id": "...",
   "client_secret": "...",
-  "redirect_uri": "http://localhost:7000/auth/callback/google",
+  "redirect_uri": "https://app.platifyx.com/auth/callback/google",
   "allowed_domains": ["example.com"]
 }
 ```

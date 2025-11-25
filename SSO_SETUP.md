@@ -44,10 +44,10 @@ O PlatifyX suporta autenticação SSO via OAuth2 com os seguintes provedores:
 4. Configure:
    - **Name**: PlatifyX SSO
    - **Authorized JavaScript origins**:
-     - `http://localhost:7000` (desenvolvimento)
+     - `https://app.platifyx.com` (desenvolvimento)
      - `https://seu-dominio.com` (produção)
    - **Authorized redirect URIs**:
-     - `http://localhost:8060/api/v1/auth/callback/google` (desenvolvimento)
+     - `https://api.platifyx.com/api/v1/auth/callback/google` (desenvolvimento)
      - `https://api.seu-dominio.com/api/v1/auth/callback/google` (produção)
 5. Clique em "Create"
 6. **Copie o Client ID e Client Secret**
@@ -61,7 +61,7 @@ Opção 1 - Via UI (Settings):
 4. Preencha:
    - **Client ID**: cole o valor copiado
    - **Client Secret**: cole o valor copiado
-   - **Redirect URI**: `http://localhost:8060/api/v1/auth/callback/google`
+   - **Redirect URI**: `https://api.platifyx.com/api/v1/auth/callback/google`
    - **Allowed Domains** (opcional): `exemplo.com` (restringe login apenas a emails deste domínio)
 5. Marque "Enabled"
 6. Salve
@@ -74,7 +74,7 @@ VALUES (
     true,
     'SEU_CLIENT_ID.apps.googleusercontent.com',
     'SEU_CLIENT_SECRET',
-    'http://localhost:8060/api/v1/auth/callback/google',
+    'https://api.platifyx.com/api/v1/auth/callback/google',
     '["exemplo.com"]',  -- opcional, deixe '[]' para permitir todos
     NOW(),
     NOW()
@@ -100,7 +100,7 @@ VALUES (
      - **Multi-tenant**: qualquer organização Azure AD
    - **Redirect URI**:
      - Platform: Web
-     - URI: `http://localhost:8060/api/v1/auth/callback/microsoft`
+     - URI: `https://api.platifyx.com/api/v1/auth/callback/microsoft`
 2. Clique em "Register"
 3. **Copie o Application (client) ID**
 4. **Copie o Directory (tenant) ID**
@@ -137,7 +137,7 @@ Opção 1 - Via UI (Settings):
    - **Client ID**: Application (client) ID
    - **Client Secret**: client secret value
    - **Tenant ID**: Directory (tenant) ID
-   - **Redirect URI**: `http://localhost:8060/api/v1/auth/callback/microsoft`
+   - **Redirect URI**: `https://api.platifyx.com/api/v1/auth/callback/microsoft`
    - **Allowed Domains** (opcional): `exemplo.com`
 5. Marque "Enabled"
 6. Salve
@@ -151,7 +151,7 @@ VALUES (
     'SEU_APPLICATION_CLIENT_ID',
     'SEU_CLIENT_SECRET',
     'SEU_TENANT_ID',  -- ou 'common' para multi-tenant
-    'http://localhost:8060/api/v1/auth/callback/microsoft',
+    'https://api.platifyx.com/api/v1/auth/callback/microsoft',
     '["exemplo.com"]',  -- opcional, deixe '[]' para permitir todos
     NOW(),
     NOW()
@@ -164,7 +164,7 @@ VALUES (
 
 ### 1. Teste Via Navegador
 
-1. Acesse a página de login: `http://localhost:7000/login`
+1. Acesse a página de login: `https://app.platifyx.com/login`
 2. Clique no botão "Google" ou "Microsoft"
 3. Você será redirecionado para a página de autenticação do provedor
 4. Faça login com suas credenciais
@@ -218,7 +218,7 @@ UPDATE sso_configs SET enabled = true WHERE provider = 'google';
 
 **Solução**:
 1. Verifique o Redirect URI no provedor (Google Console / Azure Portal)
-2. Deve ser EXATAMENTE: `http://localhost:8060/api/v1/auth/callback/{provider}`
+2. Deve ser EXATAMENTE: `https://api.platifyx.com/api/v1/auth/callback/{provider}`
 3. Não pode ter trailing slash ou diferenças de protocolo (http vs https)
 
 ### Erro: "Email domain not allowed"

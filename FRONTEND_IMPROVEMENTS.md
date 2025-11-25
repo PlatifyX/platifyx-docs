@@ -151,7 +151,7 @@
 
 ### 1. Acessar Settings
 ```
-http://localhost:7000/settings
+https://app.platifyx.com/settings
 ```
 
 ### 2. Navegar pelas Tabs

@@ -17,9 +17,9 @@ Inicie o PlatifyX em segundos!
 ## 📍 Acessar
 
 Após iniciar, acesse:
-- **Frontend:** http://localhost:7000
-- **Backend API:** http://localhost:8060
-- **Health Check:** http://localhost:8060/api/v1/health
+- **Frontend:** https://app.platifyx.com
+- **Backend API:** https://api.platifyx.com
+- **Health Check:** https://api.platifyx.com/api/v1/health
 
 ## 📝 Logs
 

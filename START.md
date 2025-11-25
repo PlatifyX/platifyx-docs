@@ -18,8 +18,8 @@ cd frontend && npm run dev
 ```
 
 **Pronto! 🎉**
-- Frontend: http://localhost:7000
-- Backend: http://localhost:8060
+- Frontend: https://app.platifyx.com
+- Backend: https://api.platifyx.com
 - PostgreSQL: localhost:5432
 - Redis: localhost:6379
 
@@ -79,7 +79,7 @@ go run cmd/api/main.go
 - ✅ Executa migrations automaticamente
 - ✅ Cria tabelas de user management
 - ✅ Insere dados seed (roles, permissões, admin)
-- ✅ API disponível em http://localhost:8060
+- ✅ API disponível em https://api.platifyx.com
 
 **Ver logs importantes:**
 ```bash
@@ -91,9 +91,9 @@ go run cmd/api/main.go
 
 **Testar API:**
 ```bash
-curl http://localhost:8060/api/v1/health
-curl http://localhost:8060/api/v1/settings/users
-curl http://localhost:8060/api/v1/settings/roles
+curl https://api.platifyx.com/api/v1/health
+curl https://api.platifyx.com/api/v1/settings/users
+curl https://api.platifyx.com/api/v1/settings/roles
 ```
 
 ---
@@ -112,13 +112,13 @@ npm run dev
 
 **O que acontece:**
 - ✅ Vite dev server inicia
-- ✅ Frontend disponível em http://localhost:7000
+- ✅ Frontend disponível em https://app.platifyx.com
 - ✅ Hot reload habilitado
 - ✅ Conecta ao backend em localhost:8060
 
 **Acessar:**
-- Home: http://localhost:7000
-- Settings: http://localhost:7000/settings
+- Home: https://app.platifyx.com
+- Settings: https://app.platifyx.com/settings
 
 ---
 
@@ -146,8 +146,8 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 
 # CORS (permite frontend)
-ALLOWED_ORIGINS=http://localhost:7000,http://localhost:5173
-FRONTEND_URL=http://localhost:7000
+ALLOWED_ORIGINS=https://app.platifyx.com,http://localhost:5173
+FRONTEND_URL=https://app.platifyx.com
 ```
 
 ---
@@ -191,13 +191,13 @@ exit
 
 ```bash
 # Health check
-curl http://localhost:8060/api/v1/health
+curl https://api.platifyx.com/api/v1/health
 
 # Listar usuários
-curl http://localhost:8060/api/v1/settings/users
+curl https://api.platifyx.com/api/v1/settings/users
 
 # Listar roles
-curl http://localhost:8060/api/v1/settings/roles
+curl https://api.platifyx.com/api/v1/settings/roles
 
 # Deve retornar JSON sem erros 500
 ```
@@ -270,11 +270,11 @@ cd backend && make run
 **Solução:**
 ```bash
 # 1. Verificar se backend está rodando
-curl http://localhost:8060/api/v1/health
+curl https://api.platifyx.com/api/v1/health
 
 # 2. Verificar CORS no .env
 cat .env | grep ALLOWED_ORIGINS
-# Deve conter: http://localhost:7000
+# Deve conter: https://app.platifyx.com
 
 # 3. Reiniciar backend
 cd backend && make run
@@ -376,7 +376,7 @@ docker-compose logs -f redis
 
 - **Setup completo:** [SETUP_DATABASE.md](./SETUP_DATABASE.md)
 - **Melhorias implementadas:** Ver commits no Git
-- **API docs:** http://localhost:8060/api/v1/health (quando rodando)
+- **API docs:** https://api.platifyx.com/api/v1/health (quando rodando)
 
 ---
 
@@ -387,8 +387,8 @@ Após iniciar tudo, verifique:
 - [ ] `docker-compose ps` mostra postgres e redis como UP
 - [ ] Backend mostra "Migrations completed successfully"
 - [ ] Backend mostra "Server listening :8060"
-- [ ] `curl http://localhost:8060/api/v1/health` retorna OK
-- [ ] Frontend abre em http://localhost:7000
+- [ ] `curl https://api.platifyx.com/api/v1/health` retorna OK
+- [ ] Frontend abre em https://app.platifyx.com
 - [ ] Settings page carrega sem erros 500
 - [ ] Console do navegador (F12) sem erros
 

@@ -83,7 +83,7 @@ func (h *SSOHandler) CallbackSSO(c *gin.Context) {
 	state := c.Query("state")
 
 	if code == "" {
-		frontendCallback := "http://localhost:7000/login?error=Missing+authorization+code"
+		frontendCallback := "https://app.platifyx.com/login?error=Missing+authorization+code"
 		c.Redirect(http.StatusTemporaryRedirect, frontendCallback)
 		return
 	}
@@ -95,7 +95,7 @@ func (h *SSOHandler) CallbackSSO(c *gin.Context) {
 
 		if err != nil || storedProvider != provider {
 			// State inválido ou expirado - possível ataque CSRF
-			frontendCallback := "http://localhost:7000/login?error=Invalid+SSO+session"
+			frontendCallback := "https://app.platifyx.com/login?error=Invalid+SSO+session"
 			c.Redirect(http.StatusTemporaryRedirect, frontendCallback)
 			return
 		}
@@ -189,13 +189,13 @@ func (h *SSOHandler) CallbackSSO(c *gin.Context) {
 
 	loginResp, err := h.authService.LoginWithSSO(user.ID, ipAddress, userAgent)
 	if err != nil {
-		frontendCallback := fmt.Sprintf("http://localhost:7000/login?error=%s", err.Error())
+		frontendCallback := fmt.Sprintf("https://app.platifyx.com/login?error=%s", err.Error())
 		c.Redirect(http.StatusTemporaryRedirect, frontendCallback)
 		return
 	}
 
 	// Redirecionar para o frontend com o token
-	frontendCallback := fmt.Sprintf("http://localhost:7000/auth/callback/%s?token=%s",
+	frontendCallback := fmt.Sprintf("https://app.platifyx.com/auth/callback/%s?token=%s",
 		provider, loginResp.Token)
 	c.Redirect(http.StatusTemporaryRedirect, frontendCallback)
 }

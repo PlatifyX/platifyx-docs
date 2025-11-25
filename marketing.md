@@ -653,7 +653,7 @@ NODE_ENV=development
 PORT=3000
 
 # Frontend URL (para CORS)
-FRONTEND_URL=http://localhost:7000
+FRONTEND_URL=https://app.platifyx.com
 
 # SendGrid
 SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -678,7 +678,7 @@ const app = express();
 // Middlewares
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:7000'
+  origin: process.env.FRONTEND_URL || 'https://app.platifyx.com'
 }));
 app.use(express.json());
 

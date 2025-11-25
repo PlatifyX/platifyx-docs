@@ -1,6 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8060'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.platifyx.com'
 const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1'
-const APP_BASE_URL = import.meta.env.VITE_APP_BASE_URL || 'http://localhost:7000'
+const APP_BASE_URL = import.meta.env.VITE_APP_BASE_URL || 'https://app.platifyx.com'
 
 export const API_CONFIG = {
   BASE_URL: API_BASE_URL,
