@@ -104,6 +104,12 @@ const integrationTypes = [
     logo: '/logos/vault.png',
   },
   {
+    id: 'openvpn',
+    name: 'OpenVPN',
+    description: 'Gerenciamento de usuários VPN e acesso à rede',
+    logo: '/logos/openvpn.png',
+  },
+  {
     id: 'kubernetes',
     name: 'Kubernetes',
     description: 'Integração com clusters Kubernetes',

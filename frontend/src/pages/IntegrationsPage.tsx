@@ -22,6 +22,7 @@ import PrometheusModal from '../components/Integrations/PrometheusModal'
 import LokiModal from '../components/Integrations/LokiModal'
 import VaultModal from '../components/Integrations/VaultModal'
 import AWSSecretsModal from '../components/Integrations/AWSSecretsModal'
+import OpenVPNModal from '../components/Integrations/OpenVPNModal'
 import IntegrationTypeSelector from '../components/Integrations/IntegrationTypeSelector'
 
 function IntegrationsPage() {
@@ -420,6 +421,20 @@ function IntegrationsPage() {
 
       {showModal && (isCreating ? selectedType === 'awssecrets' : selectedIntegration?.type === 'awssecrets') && (
         <AWSSecretsModal
+          integration={selectedIntegration}
+          isCreating={isCreating}
+          onSave={handleSave}
+          onClose={() => {
+            setShowModal(false)
+            setSelectedIntegration(null)
+            setIsCreating(false)
+            setSelectedType(null)
+          }}
+        />
+      )}
+
+      {showModal && (isCreating ? selectedType === 'openvpn' : selectedIntegration?.type === 'openvpn') && (
+        <OpenVPNModal
           integration={selectedIntegration}
           isCreating={isCreating}
           onSave={handleSave}

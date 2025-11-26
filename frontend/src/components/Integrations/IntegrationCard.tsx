@@ -54,6 +54,8 @@ function IntegrationCard({ integration, onConfigure, onToggle, onDelete }: Integ
         return 'Agregação e visualização de logs'
       case 'vault':
         return 'Gerenciamento seguro de secrets e credenciais'
+      case 'openvpn':
+        return 'Gerenciamento de usuários VPN e acesso à rede'
       default:
         return 'Integração externa'
     }
@@ -101,6 +103,8 @@ function IntegrationCard({ integration, onConfigure, onToggle, onDelete }: Integ
         return '/logos/grafana.png'
       case 'vault':
         return '/logos/vault.png'
+      case 'openvpn':
+        return '/logos/openvpn.png'
       default:
         return '/logos/platifyx-logo-white.png'
     }
