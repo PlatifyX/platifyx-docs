@@ -1,0 +1,30 @@
+Integração,Tipo,Implementado,Logo
+ArgoCD,CI/CD,Em breve,/logos/argocd.png
+GitLab CI/CD,CI/CD,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/gitlab.svg
+Jenkins,CI/CD,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/jenkins.svg
+CircleCI,CI/CD,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/circleci.svg
+Azure,Cloud/FinOps,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/microsoftazure.svg
+GCP,Cloud/FinOps,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/googlecloud.svg
+Slack,Communication,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/slack.svg
+Microsoft Teams,Communication,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/microsoftteams.svg
+Discord,Communication,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/discord.svg
+Claude,IA,Em breve,/logos/claude.png
+Gemini,IA,Em breve,/logos/gemini.png
+Datadog,Observability,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/datadog.svg
+New Relic,Observability,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/newrelic.svg
+ELK,Observability,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/elasticsearch.svg
+Grafana,Observability,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/grafana.svg
+Jira,Project Management,Sim,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/jira.svg
+Linear,Project Management,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/linear.svg
+Trello,Project Management,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/trello.svg
+Snyk,Quality,Em breve,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/snyk.svg
+Azure DevOps,CI/CD,Sim,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/azuredevops.svg
+AWS,Cloud/FinOps,Sim,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/amazonaws.svg
+OpenAI,IA,Sim,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/openai.svg
+Kubernetes,Infrastructure,Sim,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/kubernetes.svg
+Loki,Observability,Sim,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/grafana.svg
+Prometheus,Observability,Sim,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/prometheus.svg
+Sonarqube,Quality,Sim,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/sonarqube.svg
+Vault,Secrets,Sim,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/vault.svg
+Github,Version Control,Sim,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/github.svg
+OpenVPN,VPN,Sim,https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/openvpn.svg

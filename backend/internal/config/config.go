@@ -46,8 +46,14 @@ func Load() *Config {
 	godotenv.Load()
 
 	// Parse CORS allowed origins
-	allowedOrigins := getEnv("ALLOWED_ORIGINS", "https://app.platifyx.com,http://localhost:5173")
-	origins := strings.Split(allowedOrigins, ",")
+	allowedOrigins := getEnv("ALLOWED_ORIGINS", "")
+	var origins []string
+	if allowedOrigins != "" {
+		origins = strings.Split(allowedOrigins, ",")
+		for i := range origins {
+			origins[i] = strings.TrimSpace(origins[i])
+		}
+	}
 
 	return &Config{
 		// Server
