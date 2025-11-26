@@ -384,6 +384,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 			integrations.POST("/test/loki", handlers.IntegrationHandler.TestLoki)
 			integrations.POST("/test/vault", handlers.IntegrationHandler.TestVault)
 			integrations.POST("/test/awssecrets", handlers.IntegrationHandler.TestAWSSecrets)
+			integrations.POST("/test/openvpn", handlers.OpenVPNHandler.TestOpenVPN)
 			integrations.GET("/azuredevops/projects", handlers.IntegrationHandler.ListAzureDevOpsProjects)
 		}
 
@@ -405,6 +406,16 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 			slack.POST("/message", handlers.SlackHandler.SendMessage)
 			slack.POST("/simple", handlers.SlackHandler.SendSimpleMessage)
 			slack.POST("/alert", handlers.SlackHandler.SendAlert)
+		}
+
+		openvpn := v1.Group("/openvpn")
+		openvpn.Use(middleware.OrganizationMiddleware(orgRepo, userOrgRepo, log))
+		{
+			openvpn.GET("/users", handlers.OpenVPNHandler.ListUsers)
+			openvpn.GET("/users/:username", handlers.OpenVPNHandler.GetUser)
+			openvpn.POST("/users", handlers.OpenVPNHandler.CreateUser)
+			openvpn.PUT("/users/:username", handlers.OpenVPNHandler.UpdateUser)
+			openvpn.DELETE("/users/:username", handlers.OpenVPNHandler.DeleteUser)
 		}
 
 		teams := v1.Group("/teams")

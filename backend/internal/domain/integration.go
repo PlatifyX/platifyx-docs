@@ -120,6 +120,12 @@ type AWSSecretsIntegrationConfig struct {
 	SessionToken    string `json:"sessionToken,omitempty"`
 }
 
+type OpenVPNIntegrationConfig struct {
+	URL      string `json:"url"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type IntegrationType string
 
 const (
@@ -143,4 +149,5 @@ const (
 	IntegrationTypeLoki        IntegrationType = "loki"
 	IntegrationTypeVault       IntegrationType = "vault"
 	IntegrationTypeAWSSecrets  IntegrationType = "awssecrets"
+	IntegrationTypeOpenVPN     IntegrationType = "openvpn"
 )

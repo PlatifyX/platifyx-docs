@@ -928,3 +928,36 @@ func (s *IntegrationService) GetGeminiConfig(organizationUUID string) (*domain.G
 
 	return &config, nil
 }
+
+// OpenVPN methods
+func (s *IntegrationService) GetOpenVPNConfig(organizationUUID string) (*domain.OpenVPNIntegrationConfig, error) {
+	integration, err := s.repo.GetByType(string(domain.IntegrationTypeOpenVPN), organizationUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	if integration == nil || !integration.Enabled {
+		return nil, nil
+	}
+
+	var config domain.OpenVPNIntegrationConfig
+	if err := json.Unmarshal(integration.Config, &config); err != nil {
+		s.log.Errorw("Failed to unmarshal OpenVPN config", "error", err)
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func (s *IntegrationService) GetOpenVPNService(organizationUUID string) (*OpenVPNService, error) {
+	config, err := s.GetOpenVPNConfig(organizationUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, fmt.Errorf("OpenVPN integration not configured")
+	}
+
+	return NewOpenVPNService(*config, s.log), nil
+}
