@@ -104,7 +104,7 @@ const integrationTypesData = [
   { name: 'Sonarqube', tipo: 'Quality', implementado: 'Sim', logo: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/sonarqube.svg' },
   { name: 'Vault', tipo: 'Secrets', implementado: 'Sim', logo: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/vault.svg' },
   { name: 'Github', tipo: 'Version Control', implementado: 'Sim', logo: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/github.svg' },
-  { name: 'OpenVPN', tipo: 'VPN', implementado: 'Sim', logo: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/openvpn.svg' },
+  { name: 'OpenVPN', tipo: 'VPN', implementado: 'Em breve', logo: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/openvpn.svg' },
 ]
 
 const integrationTypes = integrationTypesData.map(item => ({
