@@ -108,3 +108,17 @@ func (k *KubernetesService) GetClientset() *k8s.Clientset {
 	}
 	return k.client.GetClientset()
 }
+
+// GetPodLogs retrieves logs for a specific pod
+func (k *KubernetesService) GetPodLogs(namespace, podName, container, tailLines string) (string, error) {
+	k.log.Infow("Fetching pod logs", "namespace", namespace, "pod", podName, "container", container)
+
+	logs, err := k.client.GetPodLogs(namespace, podName, container, tailLines)
+	if err != nil {
+		k.log.Errorw("Failed to fetch pod logs", "error", err, "namespace", namespace, "pod", podName)
+		return "", err
+	}
+
+	k.log.Infow("Fetched pod logs successfully", "namespace", namespace, "pod", podName)
+	return logs, nil
+}
