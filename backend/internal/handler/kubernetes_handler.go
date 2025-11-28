@@ -94,26 +94,31 @@ func (h *KubernetesHandler) GetClusterInfo(c *gin.Context) {
 	pods, err := kubeService.GetPods("")
 	if err != nil {
 		h.log.Warnw("Failed to get pods for metrics", "error", err)
-	} else {
-		// Calcular métricas de pods por status
-		statusCounts := make(map[string]int)
-		for _, pod := range pods {
-			statusCounts[pod.Status]++
-		}
-
-		// Adicionar métricas ao cluster info
-		clusterMap := make(map[string]interface{})
-		clusterMap["version"] = cluster.Version
-		clusterMap["nodes"] = cluster.NodeCount
-		clusterMap["namespaces"] = cluster.NamespaceCount
-		clusterMap["totalPods"] = len(pods)
-		clusterMap["podMetrics"] = statusCounts
-
-		c.JSON(http.StatusOK, clusterMap)
+		c.JSON(http.StatusOK, cluster)
 		return
 	}
 
-	c.JSON(http.StatusOK, cluster)
+	// Obter namespaces para contar
+	namespaces, err := kubeService.GetNamespaces()
+	if err != nil {
+		h.log.Warnw("Failed to get namespaces for metrics", "error", err)
+	}
+
+	// Calcular métricas de pods por status
+	statusCounts := make(map[string]int)
+	for _, pod := range pods {
+		statusCounts[pod.Status]++
+	}
+
+	// Adicionar métricas ao cluster info
+	clusterMap := make(map[string]interface{})
+	clusterMap["version"] = cluster.Version
+	clusterMap["nodes"] = cluster.NodeCount
+	clusterMap["namespaces"] = len(namespaces)
+	clusterMap["totalPods"] = len(pods)
+	clusterMap["podMetrics"] = statusCounts
+
+	c.JSON(http.StatusOK, clusterMap)
 }
 
 func (h *KubernetesHandler) ListPods(c *gin.Context) {
