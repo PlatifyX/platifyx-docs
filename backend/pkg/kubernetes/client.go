@@ -1,11 +1,15 @@
 package kubernetes
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"github.com/PlatifyX/platifyx-core/internal/domain"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -304,4 +308,42 @@ func (c *Client) ListNodes() ([]domain.KubernetesNode, error) {
 // GetClientset returns the Kubernetes clientset
 func (c *Client) GetClientset() *kubernetes.Clientset {
 	return c.clientset
+}
+
+// GetPodLogs retrieves logs from a specific pod
+func (c *Client) GetPodLogs(namespace, podName, container, tailLines string) (string, error) {
+	ctx := context.Background()
+
+	// Parse tail lines to int64
+	var tail int64 = 100
+	if tailLines != "" {
+		parsed, err := strconv.ParseInt(tailLines, 10, 64)
+		if err == nil && parsed > 0 {
+			tail = parsed
+		}
+	}
+
+	podLogOpts := corev1.PodLogOptions{
+		TailLines: &tail,
+	}
+
+	// Se um container específico foi fornecido, use-o
+	if container != "" {
+		podLogOpts.Container = container
+	}
+
+	req := c.clientset.CoreV1().Pods(namespace).GetLogs(podName, &podLogOpts)
+	podLogs, err := req.Stream(ctx)
+	if err != nil {
+		return "", fmt.Errorf("error opening log stream: %w", err)
+	}
+	defer podLogs.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		return "", fmt.Errorf("error reading log stream: %w", err)
+	}
+
+	return buf.String(), nil
 }

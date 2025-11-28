@@ -152,6 +152,7 @@ func setupRouter(cfg *config.Config, handlers *handler.HandlerManager, services 
 		{
 			kubernetes.GET("/cluster", handlers.KubernetesHandler.GetClusterInfo)
 			kubernetes.GET("/pods", handlers.KubernetesHandler.ListPods)
+			kubernetes.GET("/pods/:podName/logs", handlers.KubernetesHandler.GetPodLogs)
 			kubernetes.GET("/deployments", handlers.KubernetesHandler.ListDeployments)
 			kubernetes.GET("/services", handlers.KubernetesHandler.ListServices)
 			kubernetes.GET("/namespaces", handlers.KubernetesHandler.ListNamespaces)
