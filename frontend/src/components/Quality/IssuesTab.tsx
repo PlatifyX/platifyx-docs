@@ -18,6 +18,12 @@ interface Issue {
   updateDate: string
 }
 
+interface Project {
+  key: string
+  name: string
+  integration?: string
+}
+
 interface IssuesTabProps {
   filters: QualityFilterValues
 }
@@ -28,17 +34,37 @@ function IssuesTab({ filters }: IssuesTabProps) {
   const [error, setError] = useState<string | null>(null)
   const [filterType, setFilterType] = useState('')
   const [filterSeverity, setFilterSeverity] = useState('')
+  const [filterProject, setFilterProject] = useState(filters.project || '')
+  const [projects, setProjects] = useState<Project[]>([])
+
+  useEffect(() => {
+    fetchProjects()
+  }, [filters.integration])
 
   useEffect(() => {
     fetchIssues()
-  }, [filters, filterType, filterSeverity])
+  }, [filters, filterType, filterSeverity, filterProject])
+
+  const fetchProjects = async () => {
+    try {
+      const params = new URLSearchParams()
+      if (filters.integration) params.append('integration', filters.integration)
+
+      const response = await apiFetch(`quality/projects?${params.toString()}`)
+      if (!response.ok) return
+      const data = await response.json()
+      setProjects(data.projects || [])
+    } catch (err) {
+      console.error('Failed to fetch projects:', err)
+    }
+  }
 
   const fetchIssues = async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams({ limit: '100' })
       if (filters.integration) params.append('integration', filters.integration)
-      if (filters.project) params.append('project', filters.project)
+      if (filterProject) params.append('project', filterProject)
       if (filterType) params.append('type', filterType)
       if (filterSeverity) params.append('severity', filterSeverity)
 
@@ -97,30 +123,52 @@ function IssuesTab({ filters }: IssuesTabProps) {
 
   return (
     <div>
-      <div className="flex gap-4 mb-6">
-        <select
-          className="input-base flex-1"
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-        >
-          <option value="">Todos os tipos</option>
-          <option value="BUG">Bug</option>
-          <option value="VULNERABILITY">Vulnerabilidade</option>
-          <option value="CODE_SMELL">Code Smell</option>
-        </select>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Projeto</label>
+          <select
+            className="input-base w-full"
+            value={filterProject}
+            onChange={(e) => setFilterProject(e.target.value)}
+          >
+            <option value="">Todos os projetos</option>
+            {projects.map((project) => (
+              <option key={project.key} value={project.key}>
+                {project.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <select
-          className="input-base flex-1"
-          value={filterSeverity}
-          onChange={(e) => setFilterSeverity(e.target.value)}
-        >
-          <option value="">Todas as severidades</option>
-          <option value="BLOCKER">Blocker</option>
-          <option value="CRITICAL">Critical</option>
-          <option value="MAJOR">Major</option>
-          <option value="MINOR">Minor</option>
-          <option value="INFO">Info</option>
-        </select>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Tipo</label>
+          <select
+            className="input-base w-full"
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+          >
+            <option value="">Todos os tipos</option>
+            <option value="BUG">Bug</option>
+            <option value="VULNERABILITY">Vulnerabilidade</option>
+            <option value="CODE_SMELL">Code Smell</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Severidade</label>
+          <select
+            className="input-base w-full"
+            value={filterSeverity}
+            onChange={(e) => setFilterSeverity(e.target.value)}
+          >
+            <option value="">Todas as severidades</option>
+            <option value="BLOCKER">Blocker</option>
+            <option value="CRITICAL">Critical</option>
+            <option value="MAJOR">Major</option>
+            <option value="MINOR">Minor</option>
+            <option value="INFO">Info</option>
+          </select>
+        </div>
       </div>
 
       {issues.length === 0 ? (
@@ -130,35 +178,76 @@ function IssuesTab({ filters }: IssuesTabProps) {
         </div>
       ) : (
         <div className="space-y-4">
+          <div className="text-sm text-gray-400 mb-4">
+            Mostrando {issues.length} issue{issues.length !== 1 ? 's' : ''}
+          </div>
           {issues.map((issue) => (
-            <div key={issue.key} className="card-base">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 text-gray-300">
-                  {getTypeIcon(issue.type)}
-                  <span className="font-medium">{issue.type}</span>
+            <div key={issue.key} className="card-base hover:border-gray-600 transition-all">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className={getSeverityColorClass(issue.severity)}>
+                    {getTypeIcon(issue.type)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-gray-300">{issue.type}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                        issue.severity === 'BLOCKER' || issue.severity === 'CRITICAL'
+                          ? 'bg-red-500/20 text-red-400'
+                          : issue.severity === 'MAJOR'
+                          ? 'bg-yellow-500/20 text-yellow-400'
+                          : 'bg-blue-500/20 text-blue-400'
+                      }`}>
+                        {issue.severity}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className={`font-semibold ${getSeverityColorClass(issue.severity)}`}>
-                  {issue.severity}
-                </div>
+                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                  issue.status === 'OPEN'
+                    ? 'bg-red-500/20 text-red-400'
+                    : issue.status === 'CONFIRMED'
+                    ? 'bg-orange-500/20 text-orange-400'
+                    : issue.status === 'RESOLVED'
+                    ? 'bg-green-500/20 text-green-400'
+                    : 'bg-gray-700 text-gray-300'
+                }`}>
+                  {issue.status}
+                </span>
               </div>
 
-              <div className="text-white mb-3">{issue.message}</div>
+              <div className="text-white mb-4 leading-relaxed">{issue.message}</div>
 
-              <div className="flex items-center justify-between text-sm text-gray-400 mb-3">
-                <span className="font-mono">
-                  {issue.component}
-                  {issue.line && `:${issue.line}`}
-                </span>
-                <span className="px-2 py-1 bg-gray-700 rounded text-xs">{issue.status}</span>
-              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Code size={14} />
+                    <span className="font-mono text-xs bg-gray-800 px-2 py-1 rounded">
+                      {issue.component}
+                      {issue.line && <span className="text-blue-400">:{issue.line}</span>}
+                    </span>
+                  </div>
+                </div>
 
-              <div className="flex items-center justify-between text-sm text-gray-400">
-                {issue.integration && (
-                  <span className="text-blue-400">Integração: {issue.integration}</span>
-                )}
-                <span>
-                  Criado em: {formatDate(issue.creationDate)}
-                </span>
+                <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t border-gray-700">
+                  <div className="flex items-center gap-4">
+                    {issue.project && (
+                      <span className="flex items-center gap-1">
+                        <span className="text-gray-500">Projeto:</span>
+                        <span className="text-blue-400">{issue.project}</span>
+                      </span>
+                    )}
+                    {issue.integration && (
+                      <span className="flex items-center gap-1">
+                        <span className="text-gray-500">Integração:</span>
+                        <span className="text-blue-400">{issue.integration}</span>
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-gray-500">
+                    Criado em: {formatDate(issue.creationDate)}
+                  </span>
+                </div>
               </div>
             </div>
           ))}

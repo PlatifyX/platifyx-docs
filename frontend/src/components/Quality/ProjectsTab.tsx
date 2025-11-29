@@ -111,89 +111,116 @@ function ProjectsTab({ filters }: ProjectsTabProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {projects.map((project) => {
-        const details = projectDetails.get(project.key)
+    <div>
+      <div className="text-sm text-gray-400 mb-4">
+        Mostrando {projects.length} projeto{projects.length !== 1 ? 's' : ''}
+      </div>
 
-        return (
-          <div key={project.key} className="card-base">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <FolderOpen size={18} className="text-blue-400" />
-                <span className="font-medium text-white">{project.name}</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {projects.map((project) => {
+          const details = projectDetails.get(project.key)
+
+          return (
+            <div key={project.key} className="card-base hover:border-blue-500/50 transition-all cursor-pointer group">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <FolderOpen size={20} className="text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span className="font-semibold text-white">{project.name}</span>
+                </div>
+                {details?.qualityGateStatus && (
+                  <div className={`${details.qualityGateStatus === 'OK' ? 'text-green-500' : 'text-red-500'} flex items-center gap-1`}>
+                    {details.qualityGateStatus === 'OK' ? (
+                      <>
+                        <CheckCircle size={18} />
+                        <span className="text-xs">Passou</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle size={18} />
+                        <span className="text-xs">Falhou</span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
-              {details?.qualityGateStatus && (
-                <div className={details.qualityGateStatus === 'OK' ? 'text-green-500' : 'text-red-500'}>
-                  {details.qualityGateStatus === 'OK' ? (
-                    <CheckCircle size={18} />
-                  ) : (
-                    <XCircle size={18} />
-                  )}
+
+              <div className="text-xs text-gray-500 mb-4 space-y-1 bg-gray-800/50 p-2 rounded">
+                <div className="font-mono">{project.key}</div>
+                {project.integration && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-gray-400">Integração:</span>
+                    <span className="text-blue-400">{project.integration}</span>
+                  </div>
+                )}
+              </div>
+
+              {details ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-red-500/10 rounded-lg p-3 border border-red-500/20">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Bug size={14} className="text-red-500" />
+                        <div className="text-xs text-gray-400">Bugs</div>
+                      </div>
+                      <div className="text-lg font-bold text-white">{formatNumber(details.bugs)}</div>
+                    </div>
+
+                    <div className="bg-red-500/10 rounded-lg p-3 border border-red-500/20">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Shield size={14} className="text-red-500" />
+                        <div className="text-xs text-gray-400">Vulnerab.</div>
+                      </div>
+                      <div className="text-lg font-bold text-white">{formatNumber(details.vulnerabilities)}</div>
+                    </div>
+
+                    <div className="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/20">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Code size={14} className="text-yellow-500" />
+                        <div className="text-xs text-gray-400">Code Smells</div>
+                      </div>
+                      <div className="text-lg font-bold text-white">{formatNumber(details.code_smells)}</div>
+                    </div>
+
+                    <div className={`rounded-lg p-3 border ${
+                      details.coverage >= 80
+                        ? 'bg-green-500/10 border-green-500/20'
+                        : details.coverage >= 50
+                        ? 'bg-yellow-500/10 border-yellow-500/20'
+                        : 'bg-red-500/10 border-red-500/20'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp size={14} className={
+                          details.coverage >= 80 ? 'text-green-500' :
+                          details.coverage >= 50 ? 'text-yellow-500' : 'text-red-500'
+                        } />
+                        <div className="text-xs text-gray-400">Cobertura</div>
+                      </div>
+                      <div className="text-lg font-bold text-white">{details.coverage.toFixed(1)}%</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-3 border-t border-gray-700">
+                    <div className="flex items-center gap-1">
+                      <Copy size={12} className={details.duplications > 5 ? 'text-red-500' : 'text-yellow-500'} />
+                      <span className="text-gray-400">Duplicação:</span>
+                      <span className="text-white font-medium">{details.duplications.toFixed(1)}%</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Code size={12} className="text-gray-400" />
+                      <span className="text-gray-400">Linhas:</span>
+                      <span className="text-white font-medium">{formatNumber(details.lines)}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-8 text-gray-500 text-sm">
+                  Carregando detalhes...
                 </div>
               )}
             </div>
-
-            <div className="text-sm text-gray-400 mb-4 space-y-1">
-              <div>Key: {project.key}</div>
-              {project.integration && (
-                <div className="text-blue-400">Integração: {project.integration}</div>
-              )}
-            </div>
-
-            {details && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2">
-                  <Bug size={14} className="text-red-500" />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-400">Bugs</div>
-                    <div className="text-sm font-medium text-white">{formatNumber(details.bugs)}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Shield size={14} className="text-red-500" />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-400">Vulnerabilidades</div>
-                    <div className="text-sm font-medium text-white">{formatNumber(details.vulnerabilities)}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Code size={14} className="text-yellow-500" />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-400">Code Smells</div>
-                    <div className="text-sm font-medium text-white">{formatNumber(details.code_smells)}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <TrendingUp size={14} className="text-green-500" />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-400">Cobertura</div>
-                    <div className="text-sm font-medium text-white">{details.coverage.toFixed(1)}%</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Copy size={14} className={details.duplications > 5 ? 'text-red-500' : 'text-yellow-500'} />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-400">Duplicação</div>
-                    <div className="text-sm font-medium text-white">{details.duplications.toFixed(1)}%</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Code size={14} className="text-gray-400" />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-400">Linhas</div>
-                    <div className="text-sm font-medium text-white">{formatNumber(details.lines)}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }

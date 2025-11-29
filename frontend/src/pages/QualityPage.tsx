@@ -88,14 +88,28 @@ function QualityPage() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto">
+    <div className="max-w-[1600px] mx-auto px-4">
       <div className="mb-8">
-        <div className="flex items-center gap-4">
-          <Shield size={32} className="text-primary" />
-          <div>
-            <h1 className="text-[32px] font-bold text-text mb-1">Qualidade de Código</h1>
-            <p className="text-base text-text-secondary">Análise estática, bugs e vulnerabilidades</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="bg-blue-500/10 p-3 rounded-lg border border-blue-500/20">
+              <Shield size={32} className="text-primary" />
+            </div>
+            <div>
+              <h1 className="text-[32px] font-bold text-text mb-1">Qualidade de Código</h1>
+              <p className="text-base text-text-secondary">Análise estática, bugs e vulnerabilidades do SonarQube</p>
+            </div>
           </div>
+          {!loading && stats && (
+            <button
+              onClick={fetchStats}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-all"
+              title="Atualizar dados"
+            >
+              <RefreshCw size={16} />
+              <span className="text-sm">Atualizar</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -105,13 +119,24 @@ function QualityPage() {
         onIntegrationChange={handleIntegrationChange}
       />
 
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <p className="text-gray-400">Carregando métricas de qualidade...</p>
+          </div>
+        </div>
+      )}
+
       {!loading && stats && !error && stats.totalProjects !== undefined && (
         <QualityStatsCard stats={stats} />
       )}
 
       {!loading && error && (
         <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
-          <AlertCircle size={64} className="text-error mb-4" style={{ opacity: 0.7 }} />
+          <div className="bg-red-500/10 p-4 rounded-full mb-4">
+            <AlertCircle size={64} className="text-red-500" />
+          </div>
           <h2 className="text-2xl font-semibold text-text mb-2">Erro ao carregar dados</h2>
           <p className="text-base text-text-secondary max-w-[500px] mb-4">{error}</p>
           <button
@@ -126,37 +151,55 @@ function QualityPage() {
 
       {!loading && !error && (!stats || stats.totalProjects === undefined) && (
         <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
-          <Shield size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+          <div className="bg-gray-700/30 p-6 rounded-full mb-6">
+            <Shield size={64} className="text-gray-500" />
+          </div>
           <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma métrica de qualidade disponível</h2>
-          <p className="text-base text-text-secondary max-w-[500px]">Configure uma integração do SonarQube e certifique-se de que há projetos configurados para visualizar métricas de qualidade de código</p>
+          <p className="text-base text-text-secondary max-w-[500px] mb-4">Configure uma integração do SonarQube e certifique-se de que há projetos configurados para visualizar métricas de qualidade de código</p>
+          <a
+            href="/integrations"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all no-underline"
+          >
+            Ir para Integrações
+          </a>
         </div>
       )}
 
-      <QualityFilters onFilterChange={handleFilterChange} initialFilters={filters} />
+      {!loading && stats && !error && (
+        <>
+          <QualityFilters onFilterChange={handleFilterChange} initialFilters={filters} />
 
-      <div className="flex gap-2 border-b-2 border-border mb-6">
-        <button
-          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold text-text-secondary cursor-pointer relative transition-all duration-200 hover:text-text ${
-            activeTab === 'projects' ? 'text-primary after:content-[""] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary' : ''
-          }`}
-          onClick={() => setActiveTab('projects')}
-        >
-          Projetos
-        </button>
-        <button
-          className={`bg-transparent border-none py-3 px-6 text-[15px] font-semibold text-text-secondary cursor-pointer relative transition-all duration-200 hover:text-text ${
-            activeTab === 'issues' ? 'text-primary after:content-[""] after:absolute after:-bottom-0.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary' : ''
-          }`}
-          onClick={() => setActiveTab('issues')}
-        >
-          Issues
-        </button>
-      </div>
+          <div className="bg-gray-800/30 rounded-lg border border-gray-700 mb-6">
+            <div className="flex gap-2 border-b border-gray-700">
+              <button
+                className={`bg-transparent border-none py-4 px-6 text-[15px] font-semibold cursor-pointer relative transition-all duration-200 ${
+                  activeTab === 'projects'
+                    ? 'text-blue-500 bg-gray-800/50 after:content-[""] after:absolute after:-bottom-px after:left-0 after:right-0 after:h-0.5 after:bg-blue-500'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800/30'
+                }`}
+                onClick={() => setActiveTab('projects')}
+              >
+                📁 Projetos
+              </button>
+              <button
+                className={`bg-transparent border-none py-4 px-6 text-[15px] font-semibold cursor-pointer relative transition-all duration-200 ${
+                  activeTab === 'issues'
+                    ? 'text-blue-500 bg-gray-800/50 after:content-[""] after:absolute after:-bottom-px after:left-0 after:right-0 after:h-0.5 after:bg-blue-500'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800/30'
+                }`}
+                onClick={() => setActiveTab('issues')}
+              >
+                🐛 Issues
+              </button>
+            </div>
 
-      <div className="min-h-[400px]">
-        {activeTab === 'projects' && <ProjectsTab filters={filters} />}
-        {activeTab === 'issues' && <IssuesTab filters={filters} />}
-      </div>
+            <div className="p-6 min-h-[400px]">
+              {activeTab === 'projects' && <ProjectsTab filters={filters} />}
+              {activeTab === 'issues' && <IssuesTab filters={filters} />}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
