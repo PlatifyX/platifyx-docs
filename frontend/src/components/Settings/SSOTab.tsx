@@ -15,12 +15,34 @@ const SSOTab: React.FC = () => {
     try {
       setLoading(true);
       const response = await fetchSSOConfigs();
-      setConfigs(response.configs || []);
+      console.log('SSO configs response:', response);
+
+      // Se não houver configs na resposta, inicializar com provedores padrão
+      if (!response.configs || response.configs.length === 0) {
+        console.log('No SSO configs found, initializing defaults');
+        setConfigs([
+          {
+            provider: 'google',
+            enabled: false,
+            client_id: '',
+            redirect_uri: buildSSORedirectUri('google'),
+            allowed_domains: [],
+          },
+          {
+            provider: 'microsoft',
+            enabled: false,
+            client_id: '',
+            redirect_uri: buildSSORedirectUri('microsoft'),
+            allowed_domains: [],
+          },
+        ]);
+      } else {
+        setConfigs(response.configs);
+      }
       setError(null);
     } catch (err) {
       console.error('Error loading SSO configs:', err);
-      setError('Erro ao carregar configurações de SSO');
-      // Initialize with default providers if none exist
+      // Em caso de erro, ainda mostra os provedores para configuração
       setConfigs([
         {
           provider: 'google',
@@ -37,6 +59,7 @@ const SSOTab: React.FC = () => {
           allowed_domains: [],
         },
       ]);
+      setError(null); // Não mostrar erro ao usuário, apenas inicializar com defaults
     } finally {
       setLoading(false);
     }
@@ -75,6 +98,9 @@ const SSOTab: React.FC = () => {
     );
   }
 
+  console.log('Rendering SSO configs:', configs);
+  console.log('Configs length:', configs.length);
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -90,9 +116,22 @@ const SSOTab: React.FC = () => {
         </div>
       )}
 
+      {configs.length === 0 && (
+        <div className="mb-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+          <p className="text-blue-400">Nenhuma configuração de SSO encontrada. Inicializando provedores padrão...</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {configs.map((config) => {
           const info = providerInfo[config.provider];
+
+          // Se o provedor não estiver no providerInfo, pular
+          if (!info) {
+            console.warn(`Provider ${config.provider} not found in providerInfo`);
+            return null;
+          }
+
           return (
             <div
               key={config.provider}
