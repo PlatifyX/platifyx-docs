@@ -121,13 +121,13 @@ function IntegrationsPage() {
   }
 
   const handleRequestIntegration = async (data: RequestIntegrationData) => {
-    console.log('Solicitação de integração recebida:', data)
-    
-    // TODO: Implementar chamada à API quando o endpoint estiver pronto
-    // await IntegrationApi.requestIntegration(data)
-    
-    // Por enquanto, apenas simula sucesso
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      await IntegrationApi.requestIntegration(data)
+      console.log('Solicitação de integração enviada com sucesso')
+    } catch (err: any) {
+      console.error('Erro ao solicitar integração:', err)
+      throw err
+    }
   }
 
   if (loading) {

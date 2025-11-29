@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, Shield, Bug, TrendingUp, AlertTriangle, Server, Container } from 'lucide-react'
 import { apiFetch } from '../config/api'
+import EmptyIntegrationState from '../components/Common/EmptyIntegrationState'
 
 interface Service {
   id: number
@@ -341,15 +342,22 @@ function ServicesPage() {
         )}
 
         {!loading && !error && filteredServices.length === 0 && (
-          <div className="text-center py-20">
-            <Box size={64} className="text-text-secondary opacity-20 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-text mb-2">Nenhum serviço encontrado</h2>
-            <p className="text-sm text-text-secondary">
-              {filter || squadFilter !== 'all'
-                ? 'Tente ajustar os filtros de busca'
-                : 'Clique em "Sincronizar" para descobrir serviços do Kubernetes'}
-            </p>
-          </div>
+          <>
+            {filter || squadFilter !== 'all' ? (
+              <div className="text-center py-20">
+                <Box size={64} className="text-text-secondary opacity-20 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-text mb-2">Nenhum serviço encontrado</h2>
+                <p className="text-sm text-text-secondary">Tente ajustar os filtros de busca</p>
+              </div>
+            ) : (
+              <EmptyIntegrationState
+                title="Nenhum serviço encontrado"
+                description="Configure uma integração do Kubernetes para sincronizar e visualizar seus serviços"
+                integrations={['Kubernetes']}
+                icon={<Container size={64} className="text-gray-500" />}
+              />
+            )}
+          </>
         )}
 
         {!loading && !error && filteredServices.length > 0 && (

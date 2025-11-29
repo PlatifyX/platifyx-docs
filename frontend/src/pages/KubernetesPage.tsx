@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Server, Box, RefreshCw, AlertCircle, X, Terminal, Activity, AlertTriangle, CheckCircle, Clock, XCircle } from 'lucide-react'
 import { apiFetch } from '../config/api'
 import IntegrationSelector from '../components/Common/IntegrationSelector'
+import EmptyIntegrationState from '../components/Common/EmptyIntegrationState'
 
 interface Pod {
   name: string
@@ -413,11 +414,12 @@ function KubernetesPage() {
         )}
 
         {!loading && !error && !clusterInfo && (
-          <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
-            <Server size={64} className="text-text-secondary mb-4" style={{ opacity: 0.3 }} />
-            <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração configurada</h2>
-            <p className="text-base text-text-secondary max-w-[500px]">Configure uma integração do Kubernetes para visualizar clusters e pods</p>
-          </div>
+          <EmptyIntegrationState
+            title="Nenhum item encontrado"
+            description="Configure uma integração para visualizar clusters e pods"
+            integrations={['Kubernetes']}
+            icon={<Server size={64} className="text-gray-500" />}
+          />
         )}
 
         {!loading && clusterInfo && (

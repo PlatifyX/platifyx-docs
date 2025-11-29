@@ -12,6 +12,7 @@ type HandlerManager struct {
 	AzureDevOpsHandler     *AzureDevOpsHandler
 	SonarQubeHandler       *SonarQubeHandler
 	IntegrationHandler     *IntegrationHandler
+	IntegrationRequestHandler *IntegrationRequestHandler
 	FinOpsHandler          *FinOpsHandler
 	GrafanaHandler         *GrafanaHandler
 	GitHubHandler          *GitHubHandler
@@ -50,6 +51,7 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		AzureDevOpsHandler:     NewAzureDevOpsHandler(services.IntegrationService, log),
 		SonarQubeHandler:       NewSonarQubeHandler(services.IntegrationService, services.CacheService, log),
 		IntegrationHandler:     NewIntegrationHandler(services.IntegrationService, services.CacheService, log),
+		IntegrationRequestHandler: NewIntegrationRequestHandler(services.EmailService),
 		FinOpsHandler:          NewFinOpsHandler(services.FinOpsService, services.CacheService, log),
 		GrafanaHandler:         NewGrafanaHandler(services.IntegrationService, services.CacheService, log),
 		GitHubHandler:          NewGitHubHandler(services.IntegrationService, services.CacheService, log),

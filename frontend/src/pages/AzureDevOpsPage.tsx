@@ -5,6 +5,7 @@ import PipelinesTab from '../components/AzureDevOps/PipelinesTab'
 import BuildsTab from '../components/AzureDevOps/BuildsTab'
 import ReleasesTab from '../components/AzureDevOps/ReleasesTab'
 import CIFilters, { FilterValues } from '../components/AzureDevOps/CIFilters'
+import EmptyIntegrationState from '../components/Common/EmptyIntegrationState'
 import { apiFetch } from '../config/api'
 
 type TabType = 'pipelines' | 'builds' | 'releases'
@@ -107,11 +108,12 @@ function AzureDevOpsPage() {
       )}
 
       {!loading && !stats && !error && (
-        <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
-          <GitBranch size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-          <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>
-          <p className="text-base text-text-secondary max-w-[500px]">Configure uma integração de CI/CD (Azure DevOps, GitHub Actions, Jenkins) para visualizar pipelines e builds</p>
-        </div>
+        <EmptyIntegrationState
+          title="Nenhum item encontrado"
+          description="Configure uma integração de CI/CD para visualizar pipelines e builds"
+          integrations={['Azure DevOps', 'GitHub Actions', 'Jenkins']}
+          icon={<GitBranch size={64} className="text-gray-500" />}
+        />
       )}
 
       <CIFilters onFilterChange={handleFilterChange} initialFilters={filters} />

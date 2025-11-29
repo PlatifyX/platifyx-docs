@@ -74,4 +74,26 @@ export class IntegrationApi {
       config: integration.config || {},
     })
   }
+
+  static async requestIntegration(data: {
+    name: string
+    description: string
+    useCase: string
+    website?: string
+    apiDocumentation?: string
+    priority: 'low' | 'medium' | 'high'
+  }): Promise<void> {
+    const response = await apiFetch(`${this.basePath}/request`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to submit integration request' }))
+      throw new Error(error.error || 'Failed to submit integration request')
+    }
+  }
 }

@@ -3,6 +3,7 @@ import { Key, Shield, AlertCircle } from 'lucide-react'
 import AWSSecretsTab from '../components/Secrets/AWSSecretsTab'
 import VaultTab from '../components/Secrets/VaultTab'
 import { IntegrationApi, type Integration } from '../utils/integrationApi'
+import EmptyIntegrationState from '../components/Common/EmptyIntegrationState'
 
 type TabType = 'aws' | 'vault'
 
@@ -96,21 +97,12 @@ function SecretsPage() {
           {activeTab === 'aws' && (
             <>
               {awsIntegrations.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <AlertCircle size={48} className="text-yellow-400 mb-4" />
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    Nenhuma integração AWS configurada
-                  </h3>
-                  <p className="text-muted mb-4">
-                    Configure uma integração AWS na página de Integrações para usar o Secrets Manager
-                  </p>
-                  <a
-                    href="/integrations"
-                    className="px-4 py-2 bg-primary hover:bg-primary-dark rounded-lg text-white font-medium transition-colors"
-                  >
-                    Ir para Integrações
-                  </a>
-                </div>
+                <EmptyIntegrationState
+                  title="Nenhum item encontrado"
+                  description="Configure uma integração para usar o Secrets Manager"
+                  integrations={['AWS']}
+                  icon={<Key size={64} className="text-gray-500" />}
+                />
               ) : (
                 <>
                   <div className="mb-4">
@@ -138,21 +130,12 @@ function SecretsPage() {
           {activeTab === 'vault' && (
             <>
               {vaultIntegrations.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <AlertCircle size={48} className="text-yellow-400 mb-4" />
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    Nenhuma integração Vault configurada
-                  </h3>
-                  <p className="text-muted mb-4">
-                    Configure uma integração Vault na página de Integrações
-                  </p>
-                  <a
-                    href="/integrations"
-                    className="px-4 py-2 bg-primary hover:bg-primary-dark rounded-lg text-white font-medium transition-colors"
-                  >
-                    Ir para Integrações
-                  </a>
-                </div>
+                <EmptyIntegrationState
+                  title="Nenhum item encontrado"
+                  description="Configure uma integração para usar o HashiCorp Vault"
+                  integrations={['HashiCorp Vault']}
+                  icon={<Shield size={64} className="text-gray-500" />}
+                />
               ) : (
                 <>
                   <div className="mb-4">
