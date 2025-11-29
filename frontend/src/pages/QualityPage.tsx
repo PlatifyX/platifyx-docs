@@ -5,6 +5,7 @@ import ProjectsTab from '../components/Quality/ProjectsTab'
 import IssuesTab from '../components/Quality/IssuesTab'
 import QualityFilters, { QualityFilterValues } from '../components/Quality/QualityFilters'
 import IntegrationSelector from '../components/Common/IntegrationSelector'
+import EmptyIntegrationState from '../components/Common/EmptyIntegrationState'
 import { apiFetch } from '../config/api'
 
 type TabType = 'projects' | 'issues'
@@ -150,19 +151,12 @@ function QualityPage() {
       )}
 
       {!loading && !error && (!stats || stats.totalProjects === undefined) && (
-        <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
-          <div className="bg-gray-700/30 p-6 rounded-full mb-6">
-            <Shield size={64} className="text-gray-500" />
-          </div>
-          <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma métrica de qualidade disponível</h2>
-          <p className="text-base text-text-secondary max-w-[500px] mb-4">Configure uma integração do SonarQube e certifique-se de que há projetos configurados para visualizar métricas de qualidade de código</p>
-          <a
-            href="/integrations"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all no-underline"
-          >
-            Ir para Integrações
-          </a>
-        </div>
+        <EmptyIntegrationState
+          title="Nenhum item encontrado"
+          description="Configure uma integração do SonarQube para visualizar métricas de qualidade de código"
+          integrations={['SonarQube']}
+          icon={<Shield size={64} className="text-gray-500" />}
+        />
       )}
 
       {!loading && stats && !error && (

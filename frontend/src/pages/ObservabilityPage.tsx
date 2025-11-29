@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { RefreshCw, AlertCircle, Layers, FileText } from 'lucide-react'
 import { apiFetch } from '../config/api'
+import EmptyIntegrationState from '../components/Common/EmptyIntegrationState'
 
 // Grafana Interfaces
 interface GrafanaDashboard {
@@ -456,11 +457,12 @@ function ObservabilityPage() {
         )}
 
         {!loading && !error && !overviewStats.prometheus && !overviewStats.grafana && lokiApps.length === 0 && (
-          <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
-            <Layers size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-            <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>
-            <p className="text-base text-text-secondary max-w-[500px]">Configure integrações de Prometheus, Grafana ou Loki para monitorar métricas, dashboards e logs</p>
-          </div>
+          <EmptyIntegrationState
+            title="Nenhum item encontrado"
+            description="Configure integrações para monitorar métricas, dashboards e logs"
+            integrations={['Prometheus', 'Grafana', 'Loki']}
+            icon={<Layers size={64} className="text-gray-500" />}
+          />
         )}
 
         {!loading && (overviewStats.prometheus || overviewStats.grafana || lokiApps.length > 0) && renderOverview()}

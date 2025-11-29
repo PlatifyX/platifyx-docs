@@ -11,6 +11,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { buildApiUrl } from '../config/api'
+import EmptyIntegrationState from '../components/Common/EmptyIntegrationState'
 
 interface BoardItem {
   id: string
@@ -167,13 +168,12 @@ function BoardsPage() {
           <Loader2 className="animate-spin text-primary" size={32} />
         </div>
       ) : !board || board.totalItems === 0 ? (
-        <div className="bg-surface border border-border rounded-lg p-12 text-center">
-                  <LayoutGrid className="mx-auto mb-4 text-text-secondary" size={48} />
-          <p className="text-text-secondary text-lg">Nenhum item encontrado</p>
-          <p className="text-text-secondary/70 text-sm mt-2">
-            Configure integrações com Jira, Azure DevOps ou GitHub para ver os boards
-          </p>
-        </div>
+        <EmptyIntegrationState
+          title="Nenhum item encontrado"
+          description="Configure integrações para visualizar os boards"
+          integrations={['Jira', 'Azure DevOps', 'GitHub']}
+          icon={<LayoutGrid size={64} className="text-gray-500" />}
+        />
       ) : (
         <div className="overflow-x-auto">
           <div className="flex gap-4 min-w-max pb-4">

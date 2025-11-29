@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Github, GitBranch, AlertCircle, RefreshCw, ExternalLink, Star, GitFork } from 'lucide-react'
 import { apiFetch } from '../config/api'
 import IntegrationSelector from '../components/Common/IntegrationSelector'
+import EmptyIntegrationState from '../components/Common/EmptyIntegrationState'
 
 type Provider = 'github' | 'gitlab' | 'azure-repos'
 
@@ -437,19 +438,21 @@ function ReposPage() {
         )}
 
         {!loading && !error && !stats && activeTab === 'overview' && (
-          <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
-            <ProviderIcon size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-            <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>
-            <p className="text-base text-text-secondary max-w-[500px]">Configure uma integração de {currentProvider.name} para visualizar repositórios e estatísticas</p>
-          </div>
+          <EmptyIntegrationState
+            title="Nenhum item encontrado"
+            description="Configure uma integração para visualizar repositórios e estatísticas"
+            integrations={[currentProvider.name]}
+            icon={<ProviderIcon size={64} className="text-gray-500" />}
+          />
         )}
 
         {!loading && !error && repositories.length === 0 && activeTab === 'repositories' && (
-          <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
-            <ProviderIcon size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-            <h2 className="text-2xl font-semibold text-text mb-2">Nenhuma integração</h2>
-            <p className="text-base text-text-secondary max-w-[500px]">Configure uma integração de {currentProvider.name} para visualizar repositórios</p>
-          </div>
+          <EmptyIntegrationState
+            title="Nenhum item encontrado"
+            description="Configure uma integração para visualizar repositórios"
+            integrations={[currentProvider.name]}
+            icon={<ProviderIcon size={64} className="text-gray-500" />}
+          />
         )}
 
         {!loading && stats && activeTab === 'overview' && renderOverview()}
