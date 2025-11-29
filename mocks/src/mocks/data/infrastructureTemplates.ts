@@ -70,3 +70,4 @@ export const getMockInfrastructureTemplates = async (): Promise<{ templates: Tem
   return { templates: mockTemplates }
 }
 
+

@@ -466,3 +466,4 @@ export const getMockCIReleases = async (): Promise<{ releases: Release[] }> => {
   return { releases: mockReleases }
 }
 
+
