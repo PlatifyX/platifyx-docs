@@ -4,19 +4,19 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/PlatifyX/platifyx-core/pkg/logger"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
-	"go.uber.org/zap"
 )
 
 type EmailService struct {
-	log       *zap.SugaredLogger
+	log       *logger.Logger
 	apiKey    string
 	fromEmail string
 	fromName  string
 }
 
-func NewEmailService(log *zap.SugaredLogger) *EmailService {
+func NewEmailService(log *logger.Logger) *EmailService {
 	return &EmailService{
 		log:       log,
 		apiKey:    os.Getenv("SENDGRID_API_KEY"),
