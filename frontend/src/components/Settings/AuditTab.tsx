@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Filter, Download, Calendar, User, Activity } from 'lucide-react';
-
-interface AuditLog {
-  id: string;
-  user_email: string;
-  action: string;
-  resource: string;
-  resource_id?: string;
-  status: string;
-  ip_address?: string;
-  created_at: string;
-}
+import { fetchAuditLogs, type AuditLog } from '../../services/settingsApi';
 
 const AuditTab: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -19,69 +9,31 @@ const AuditTab: React.FC = () => {
     action: '',
     resource: '',
     status: '',
+    page: 1,
+    size: 50,
   });
 
   useEffect(() => {
-    fetchLogs();
-  }, []);
+    loadAuditLogs();
+  }, [filter]);
 
-  const fetchLogs = async () => {
+  const loadAuditLogs = async () => {
     try {
-      // Mock data
-      setLogs([
-        {
-          id: '1',
-          user_email: 'admin@platifyx.com',
-          action: 'user.login',
-          resource: 'user',
-          resource_id: '1',
-          status: 'success',
-          ip_address: '192.168.1.100',
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          user_email: 'admin@platifyx.com',
-          action: 'user.create',
-          resource: 'user',
-          resource_id: '5',
-          status: 'success',
-          ip_address: '192.168.1.100',
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-        },
-        {
-          id: '3',
-          user_email: 'developer@platifyx.com',
-          action: 'user.login',
-          resource: 'user',
-          resource_id: '2',
-          status: 'success',
-          ip_address: '192.168.1.101',
-          created_at: new Date(Date.now() - 7200000).toISOString(),
-        },
-        {
-          id: '4',
-          user_email: 'developer@platifyx.com',
-          action: 'role.update',
-          resource: 'role',
-          resource_id: '3',
-          status: 'success',
-          ip_address: '192.168.1.101',
-          created_at: new Date(Date.now() - 10800000).toISOString(),
-        },
-        {
-          id: '5',
-          user_email: 'admin@platifyx.com',
-          action: 'user.delete',
-          resource: 'user',
-          resource_id: '4',
-          status: 'failure',
-          ip_address: '192.168.1.100',
-          created_at: new Date(Date.now() - 14400000).toISOString(),
-        },
-      ]);
+      setLoading(true);
+      const params: any = {
+        page: filter.page,
+        size: filter.size,
+      };
+
+      if (filter.action) params.action = filter.action;
+      if (filter.resource) params.resource = filter.resource;
+      if (filter.status) params.status = filter.status;
+
+      const response = await fetchAuditLogs(params);
+      setLogs(response.logs || []);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
+      setLogs([]);
     } finally {
       setLoading(false);
     }
@@ -175,7 +127,10 @@ const AuditTab: React.FC = () => {
           </select>
         </div>
         <div className="flex items-end">
-          <button className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-[#3A3A3A] text-white rounded-lg hover:bg-[#4A4A4A] transition-colors">
+          <button
+            onClick={() => loadAuditLogs()}
+            className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-[#3A3A3A] text-white rounded-lg hover:bg-[#4A4A4A] transition-colors"
+          >
             <Filter className="w-4 h-4" />
             <span>Filtrar</span>
           </button>

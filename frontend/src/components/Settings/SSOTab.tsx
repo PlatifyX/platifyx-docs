@@ -1,43 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LogIn, CheckCircle, XCircle, Settings, Key } from 'lucide-react';
-import { buildSSORedirectUri } from '../../services/settingsApi';
-
-interface SSOConfig {
-  provider: string;
-  enabled: boolean;
-  client_id: string;
-  redirect_uri: string;
-  allowed_domains?: string[];
-}
+import { buildSSORedirectUri, fetchSSOConfigs, createOrUpdateSSOConfig, type SSOConfig } from '../../services/settingsApi';
 
 const SSOTab: React.FC = () => {
-  const [configs, setConfigs] = useState<SSOConfig[]>([
-    {
-      provider: 'google',
-      enabled: true,
-      client_id: '***',
-      redirect_uri: buildSSORedirectUri('google'),
-      allowed_domains: ['platifyx.com', 'example.com'],
-    },
-    {
-      provider: 'microsoft',
-      enabled: false,
-      client_id: '***',
-      redirect_uri: buildSSORedirectUri('microsoft'),
-      allowed_domains: [],
-    },
-  ]);
+  const [configs, setConfigs] = useState<SSOConfig[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggleProvider = (provider: string) => {
-    setConfigs(configs.map(c =>
-      c.provider === provider ? { ...c, enabled: !c.enabled } : c
-    ));
+  useEffect(() => {
+    loadSSOConfigs();
+  }, []);
+
+  const loadSSOConfigs = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchSSOConfigs();
+      setConfigs(response.configs || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error loading SSO configs:', err);
+      setError('Erro ao carregar configurações de SSO');
+      // Initialize with default providers if none exist
+      setConfigs([
+        {
+          provider: 'google',
+          enabled: false,
+          client_id: '',
+          redirect_uri: buildSSORedirectUri('google'),
+          allowed_domains: [],
+        },
+        {
+          provider: 'microsoft',
+          enabled: false,
+          client_id: '',
+          redirect_uri: buildSSORedirectUri('microsoft'),
+          allowed_domains: [],
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleProvider = async (provider: string) => {
+    const config = configs.find(c => c.provider === provider);
+    if (!config) return;
+
+    try {
+      const updatedConfig = await createOrUpdateSSOConfig({
+        ...config,
+        enabled: !config.enabled,
+        client_secret: config.client_secret || '',
+      });
+      setConfigs(configs.map(c =>
+        c.provider === provider ? { ...updatedConfig, client_id: updatedConfig.client_id || '***' } : c
+      ));
+    } catch (err) {
+      console.error('Error toggling SSO provider:', err);
+      alert('Erro ao atualizar configuração de SSO');
+    }
   };
 
   const providerInfo: { [key: string]: { name: string; icon: string; color: string } } = {
     google: { name: 'Google', icon: '🔵', color: 'bg-blue-500' },
     microsoft: { name: 'Microsoft', icon: '🟦', color: 'bg-blue-600' },
   };
+
+  if (loading) {
+    return (
+      <div className="p-6 text-center">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B998B] mb-2"></div>
+        <p className="text-gray-400">Carregando configurações de SSO...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -47,6 +83,12 @@ const SSOTab: React.FC = () => {
           Configure provedores de Single Sign-On para autenticação
         </p>
       </div>
+
+      {error && (
+        <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+          <p className="text-yellow-500">{error}</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {configs.map((config) => {

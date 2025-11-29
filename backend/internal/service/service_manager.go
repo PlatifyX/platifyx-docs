@@ -26,6 +26,7 @@ type ServiceManager struct {
 	TemplateService                  *TemplateService
 	UserService                      *UserService
 	AuthService                      *AuthService
+	EmailService                     *EmailService
 	AutonomousRecommendationsService *AutonomousRecommendationsService
 	TroubleshootingAssistantService   *TroubleshootingAssistantService
 	AutonomousActionsService         *AutonomousActionsService
@@ -132,6 +133,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 	// Initialize User Management services
 	userService := NewUserService(userRepo, auditRepo)
 	authService := NewAuthService(userRepo, sessionRepo, auditRepo, passwordResetRepo, cfg.JWTSecret)
+	emailService := NewEmailService(log)
 
 	// Initialize Autonomous Engineering services
 	autonomousRecommendationsService := NewAutonomousRecommendationsService(
@@ -221,6 +223,7 @@ func NewServiceManager(cfg *config.Config, log *logger.Logger, db *sql.DB) *Serv
 		TemplateService:        templateService,
 		UserService:                      userService,
 		AuthService:                      authService,
+		EmailService:                     emailService,
 		AutonomousRecommendationsService: autonomousRecommendationsService,
 		TroubleshootingAssistantService:   troubleshootingAssistantService,
 		AutonomousActionsService:         autonomousActionsService,
