@@ -5,7 +5,7 @@ export const mockDashboardMetrics = [
     change: '+0.05%',
     trend: 'up',
     color: '#10b981',
-    icon: '✓'
+    icon: 'check'
   },
   {
     label: 'Requests/min',
@@ -13,7 +13,7 @@ export const mockDashboardMetrics = [
     change: '+8.2%',
     trend: 'up',
     color: '#3b82f6',
-    icon: '⚡'
+    icon: 'zap'
   },
   {
     label: 'Latência Média',
@@ -21,7 +21,7 @@ export const mockDashboardMetrics = [
     change: '-12%',
     trend: 'up',
     color: '#8b5cf6',
-    icon: '⏱'
+    icon: 'clock'
   },
   {
     label: 'Taxa de Erros',
@@ -29,7 +29,7 @@ export const mockDashboardMetrics = [
     change: '-0.03%',
     trend: 'up',
     color: '#ef4444',
-    icon: '⚠'
+    icon: 'alert'
   }
 ]
 
@@ -169,28 +169,28 @@ export const mockRecentDeployments = [
 
 export const mockQuickStats = [
   {
-    label: 'Serviços Ativos',
+    label: 'Serviços',
     value: '12',
     color: '#10b981',
-    icon: '🚀'
+    icon: 'rocket'
   },
   {
-    label: 'Clusters K8s',
+    label: 'Clusters',
     value: '3',
     color: '#3b82f6',
-    icon: '☸️'
+    icon: 'container'
   },
   {
-    label: 'Deploys Hoje',
+    label: 'Deployments',
     value: '24',
     color: '#8b5cf6',
-    icon: '📦'
+    icon: 'package'
   },
   {
-    label: 'Alertas Ativos',
+    label: 'Alertas',
     value: '3',
     color: '#f59e0b',
-    icon: '⚠️'
+    icon: 'alert'
   }
 ]
 

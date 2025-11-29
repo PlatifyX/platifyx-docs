@@ -1,4 +1,4 @@
-import { TrendingUp, GitBranch, Package, Rocket, Clock, Calendar, AlertTriangle } from 'lucide-react'
+import { TrendingUp, GitBranch, Package, Clock, Calendar, CheckCircle, XCircle } from 'lucide-react'
 
 interface StatsCardProps {
   stats: {
@@ -25,75 +25,82 @@ function StatsCard({ stats }: StatsCardProps) {
   }
 
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-5 mb-8">
-      <div className="bg-surface border border-border rounded-xl p-6 flex items-center gap-4 transition-all duration-200 hover:border-primary hover:-translate-y-0.5">
-        <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-[10px] flex items-center justify-center text-white">
-          <GitBranch size={24} />
+    <div className="flex flex-nowrap gap-6 mb-8 overflow-x-auto">
+      <div className="bg-surface border-2 border-border rounded-2xl p-6 shadow-lg hover:border-primary hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex-shrink-0 min-w-[200px]">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <GitBranch className="w-7 h-7 text-primary" />
+          </div>
         </div>
-        <div className="flex-1">
-          <div className="text-[13px] text-text-secondary mb-1 font-medium">Total Pipelines</div>
-          <div className="text-[28px] font-bold text-text">{stats.totalPipelines}</div>
+        <div className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Total Pipelines</div>
+        <div className="text-3xl font-bold text-text">{stats.totalPipelines}</div>
+      </div>
+
+      <div className="bg-surface border-2 border-border rounded-2xl p-6 shadow-lg hover:border-primary hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex-shrink-0 min-w-[200px]">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Package className="w-7 h-7 text-primary" />
+          </div>
+        </div>
+        <div className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Total Builds</div>
+        <div className="text-3xl font-bold text-text">{stats.totalBuilds}</div>
+      </div>
+
+      <div className="bg-surface border-2 border-border rounded-2xl p-6 shadow-lg hover:border-success hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex-shrink-0 min-w-[200px]">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-14 h-14 bg-success/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <CheckCircle className="w-7 h-7 text-success" />
+          </div>
+        </div>
+        <div className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Sucessos</div>
+        <div className="text-3xl font-bold text-text">{stats.successCount}</div>
+      </div>
+
+      <div className="bg-surface border-2 border-border rounded-2xl p-6 shadow-lg hover:border-error hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex-shrink-0 min-w-[200px]">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-14 h-14 bg-error/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <XCircle className="w-7 h-7 text-error" />
+          </div>
+        </div>
+        <div className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Falhas</div>
+        <div className="text-3xl font-bold text-text">{stats.failedCount}</div>
+      </div>
+
+      <div className="bg-surface border-2 border-border rounded-2xl p-6 shadow-lg hover:border-primary hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex-shrink-0 min-w-[200px]">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <TrendingUp className="w-7 h-7 text-primary" />
+          </div>
+        </div>
+        <div className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Taxa de Sucesso</div>
+        <div className="text-3xl font-bold text-text">{stats.successRate.toFixed(1)}%</div>
+        <div className="h-2 bg-background rounded-full mt-3 overflow-hidden">
+          <div 
+            className="h-full rounded-full transition-all duration-500 bg-success" 
+            style={{ width: `${stats.successRate}%` }}
+          ></div>
         </div>
       </div>
 
-      <div className="bg-surface border border-border rounded-xl p-6 flex items-center gap-4 transition-all duration-200 hover:border-primary hover:-translate-y-0.5">
-        <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-[10px] flex items-center justify-center text-white">
-          <Package size={24} />
+      <div className="bg-surface border-2 border-border rounded-2xl p-6 shadow-lg hover:border-primary hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex-shrink-0 min-w-[200px]">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Clock className="w-7 h-7 text-primary" />
+          </div>
         </div>
-        <div className="flex-1">
-          <div className="text-[13px] text-text-secondary mb-1 font-medium">Total Builds</div>
-          <div className="text-[28px] font-bold text-text">{stats.totalBuilds}</div>
-        </div>
+        <div className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Tempo Médio</div>
+        <div className="text-3xl font-bold text-text">{formatTime(stats.avgPipelineTime)}</div>
       </div>
 
-      <div className="bg-surface border border-border rounded-xl p-6 flex items-center gap-4 transition-all duration-200 hover:border-primary hover:-translate-y-0.5">
-        <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-[10px] flex items-center justify-center text-success">
-          <TrendingUp size={24} />
+      <div className="bg-surface border-2 border-border rounded-2xl p-6 shadow-lg hover:border-primary hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex-shrink-0 min-w-[200px]">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Calendar className="w-7 h-7 text-primary" />
+          </div>
         </div>
-        <div className="flex-1">
-          <div className="text-[13px] text-text-secondary mb-1 font-medium">Success Rate</div>
-          <div className="text-[28px] font-bold text-text">{stats.successRate.toFixed(1)}%</div>
-        </div>
-      </div>
-
-      <div className="bg-surface border border-border rounded-xl p-6 flex items-center gap-4 transition-all duration-200 hover:border-primary hover:-translate-y-0.5">
-        <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-[10px] flex items-center justify-center text-primary">
-          <Clock size={24} />
-        </div>
-        <div className="flex-1">
-          <div className="text-[13px] text-text-secondary mb-1 font-medium">Avg Pipeline Time</div>
-          <div className="text-[28px] font-bold text-text">{formatTime(stats.avgPipelineTime)}</div>
-        </div>
-      </div>
-
-      <div className="bg-surface border border-border rounded-xl p-6 flex items-center gap-4 transition-all duration-200 hover:border-primary hover:-translate-y-0.5">
-        <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-[10px] flex items-center justify-center text-white">
-          <Calendar size={24} />
-        </div>
-        <div className="flex-1">
-          <div className="text-[13px] text-text-secondary mb-1 font-medium">Deploy Frequency</div>
-          <div className="text-[28px] font-bold text-text">{stats.deployFrequency.toFixed(1)}/mês</div>
-        </div>
-      </div>
-
-      <div className="bg-surface border border-border rounded-xl p-6 flex items-center gap-4 transition-all duration-200 hover:border-primary hover:-translate-y-0.5">
-        <div className={`w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-[10px] flex items-center justify-center ${stats.deployFailureRate > 20 ? 'text-error' : 'text-warning'}`}>
-          <AlertTriangle size={24} />
-        </div>
-        <div className="flex-1">
-          <div className="text-[13px] text-text-secondary mb-1 font-medium">Deploy Failure Rate</div>
-          <div className="text-[28px] font-bold text-text">{stats.deployFailureRate.toFixed(1)}%</div>
-        </div>
-      </div>
-
-      <div className="bg-surface border border-border rounded-xl p-6 flex items-center gap-4 transition-all duration-200 hover:border-primary hover:-translate-y-0.5">
-        <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-[10px] flex items-center justify-center text-primary">
-          <Rocket size={24} />
-        </div>
-        <div className="flex-1">
-          <div className="text-[13px] text-text-secondary mb-1 font-medium">Running</div>
-          <div className="text-[28px] font-bold text-text">{stats.runningCount}</div>
-        </div>
+        <div className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Frequência de Deploy</div>
+        <div className="text-3xl font-bold text-text">{stats.deployFrequency.toFixed(1)}</div>
+        <div className="text-sm text-text-secondary mt-1">por mês</div>
       </div>
     </div>
   )

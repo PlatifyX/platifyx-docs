@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Package, Clock, Cog, Layers, Plus, Search, Filter, Database, Globe, MessageSquare, Box } from 'lucide-react'
 import TemplateWizardModal from '../components/InfrastructureTemplates/TemplateWizardModal'
-import { buildApiUrl } from '../config/api'
+import { getMockInfrastructureTemplates } from '../mocks/data/infrastructureTemplates'
 
 interface Template {
   type: string
@@ -45,8 +45,7 @@ function InfrastructureTemplatesPage() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch(buildApiUrl('infrastructure-templates'))
-      const data = await response.json()
+      const data = await getMockInfrastructureTemplates()
       setTemplates(data.templates || [])
     } catch (error) {
       console.error('Error fetching templates:', error)

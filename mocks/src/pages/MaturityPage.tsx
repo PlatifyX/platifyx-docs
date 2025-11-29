@@ -83,9 +83,9 @@ function MaturityPage() {
 
     try {
       setLoading(true)
-      const response = await fetch(buildApiUrl(`maturity/team/${teamName}/scorecard`), {
+      const response = await fetch(buildApiUrl(`maturity/team/${encodeURIComponent(teamName)}/scorecard`), {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }
       })
 

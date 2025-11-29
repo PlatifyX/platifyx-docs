@@ -45,12 +45,10 @@ function QualityPage() {
 
       const response = await apiFetch(`quality/stats?${params.toString()}`)
       if (!response.ok) {
-        // 404 ou 503 = sem integração configurada
         if (response.status === 404 || response.status === 503) {
           setStats(null)
           setError(null)
         } else {
-          // Outros erros (500, etc.) = problema no serviço
           setError(`Erro ao buscar estatísticas (${response.status})`)
           setStats(null)
         }
@@ -58,17 +56,14 @@ function QualityPage() {
         return
       }
       const data = await response.json()
-      // Verificar se há dados válidos (pelo menos um projeto)
       if (data && data.totalProjects !== undefined) {
         setStats(data)
         setError(null)
       } else {
-        // Dados inválidos ou vazios
         setStats(null)
         setError(null)
       }
     } catch (err: any) {
-      // Erro de rede ou outros erros
       setError(`Erro de conexão: ${err.message || 'Não foi possível conectar ao backend'}`)
       setStats(null)
     } finally {

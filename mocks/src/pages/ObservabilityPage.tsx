@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { RefreshCw, AlertCircle, Layers, FileText } from 'lucide-react'
-import { apiFetch } from '../config/api'
+import { getMockPrometheusStats, getMockPrometheusAlerts, getMockGrafanaStats, getMockGrafanaConfig, getMockGrafanaDashboards, getMockLokiApps, getMockLokiLogs } from '../mocks/data/observability'
 
 // Grafana Interfaces
 interface GrafanaDashboard {
@@ -96,12 +96,9 @@ function ObservabilityPage() {
   const fetchLokiApps = async () => {
     setLoadingLokiApps(true)
     try {
-      const response = await apiFetch('observability/logs/apps')
-      if (response.ok) {
-        const data = await response.json()
-        const apps = (data.apps || []).map(parseAppName)
-        setLokiApps(apps)
-      }
+      const data = await getMockLokiApps()
+      const apps = (data.apps || []).map(parseAppName)
+      setLokiApps(apps)
     } catch (err) {
       console.error('Failed to fetch Loki apps:', err)
     } finally {
@@ -115,30 +112,23 @@ function ObservabilityPage() {
     setLogs([])
 
     try {
-      const response = await apiFetch(`observability/logs/apps/${appName}?limit=100&duration=1h`)
-      if (response.ok) {
-        const data: LokiQueryResult = await response.json()
+      const data: LokiQueryResult = await getMockLokiLogs(appName)
 
-        // Parse logs from Loki format
-        const parsedLogs: LokiLogEntry[] = []
-        if (data.data && data.data.result) {
-          data.data.result.forEach(stream => {
-            stream.values.forEach(([timestamp, line]) => {
-              parsedLogs.push({
-                timestamp: new Date(parseInt(timestamp) / 1000000).toISOString(),
-                line,
-                labels: stream.stream
-              })
+      const parsedLogs: LokiLogEntry[] = []
+      if (data.data && data.data.result) {
+        data.data.result.forEach(stream => {
+          stream.values.forEach(([timestamp, line]) => {
+            parsedLogs.push({
+              timestamp: new Date(parseInt(timestamp) / 1000000).toISOString(),
+              line,
+              labels: stream.stream
             })
           })
-        }
-
-        // Sort by timestamp descending (newest first)
-        parsedLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        setLogs(parsedLogs)
-      } else {
-        console.error('Failed to fetch logs:', response.status)
+        })
       }
+
+      parsedLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      setLogs(parsedLogs)
     } catch (err) {
       console.error('Failed to fetch logs for app:', err)
     } finally {
@@ -151,77 +141,33 @@ function ObservabilityPage() {
     setError(null)
 
     try {
-      // Fetch Prometheus stats, Grafana stats, Prometheus alerts, Grafana config, and Grafana dashboards
-      const [prometheusStatsRes, grafanaStatsRes, alertsRes, grafanaConfigRes] = await Promise.all([
-        apiFetch('prometheus/stats'),
-        apiFetch('grafana/stats'),
-        apiFetch('prometheus/alerts'),
-        apiFetch('grafana/config')
+      const [prometheusStats, grafanaStats, alertsResult, grafanaConfig, dashboardsResult] = await Promise.all([
+        getMockPrometheusStats(),
+        getMockGrafanaStats(),
+        getMockPrometheusAlerts(),
+        getMockGrafanaConfig(),
+        getMockGrafanaDashboards()
       ])
 
-      // Fetch Loki apps in parallel
       fetchLokiApps()
 
-      const stats: OverviewStats = {}
-      let hasAnyIntegration = false
-      let hasError = false
-      const errorStatuses: number[] = []
-
-      // Check Prometheus
-      if (prometheusStatsRes.ok) {
-        stats.prometheus = await prometheusStatsRes.json()
-        hasAnyIntegration = true
-      } else if (prometheusStatsRes.status !== 404) {
-        hasError = true
-        errorStatuses.push(prometheusStatsRes.status)
-      }
-
-      // Check Grafana
-      if (grafanaStatsRes.ok) {
-        stats.grafana = await grafanaStatsRes.json()
-        hasAnyIntegration = true
-      } else if (grafanaStatsRes.status !== 404) {
-        hasError = true
-        errorStatuses.push(grafanaStatsRes.status)
-      }
-
-      // Se todas as integrações falharam com erro (não 404), mostra erro
-      if (hasError && !hasAnyIntegration) {
-        setError(`Erro ao buscar dados de observabilidade (${errorStatuses.join(', ')})`)
-        setOverviewStats({})
-        setPrometheusAlerts([])
-        setLoading(false)
-        return
+      const stats: OverviewStats = {
+        prometheus: prometheusStats,
+        grafana: grafanaStats
       }
 
       setOverviewStats(stats)
+      setPrometheusAlerts(alertsResult.data?.alerts || [])
 
-      if (alertsRes.ok) {
-        const result = await alertsRes.json()
-        setPrometheusAlerts(result.data?.alerts || [])
-      }
+      setGrafanaUrl(grafanaConfig.url)
 
-      // Fetch Grafana config and find main dashboard
-      if (grafanaConfigRes.ok) {
-        const configResult = await grafanaConfigRes.json()
-        setGrafanaUrl(configResult.url)
-
-        // Fetch dashboards to find the main one
-        const dashboardsRes = await apiFetch('grafana/dashboards')
-        if (dashboardsRes.ok) {
-          const dashboardsResult = await dashboardsRes.json()
-          const dashboards = dashboardsResult.dashboards || []
-
-          // Find first starred dashboard, or just use the first dashboard
-          const mainDashboard = dashboards.find((d: GrafanaDashboard) => d.isStarred) || dashboards[0]
-          if (mainDashboard) {
-            setDashboardUid(mainDashboard.uid)
-          }
-        }
+      const dashboards = dashboardsResult.dashboards || []
+      const mainDashboard = dashboards.find((d: GrafanaDashboard) => d.isStarred) || dashboards[0]
+      if (mainDashboard) {
+        setDashboardUid(mainDashboard.uid)
       }
     } catch (err: any) {
-      // Erro de rede ou outros erros
-      setError(`Erro de conexão: ${err.message || 'Não foi possível conectar ao backend'}`)
+      setError(`Erro ao carregar dados: ${err.message || 'Erro desconhecido'}`)
       setOverviewStats({})
       setPrometheusAlerts([])
     } finally {
@@ -314,7 +260,7 @@ function ObservabilityPage() {
       </div>
 
       <div className="mb-12">
-        <h2 className="text-2xl font-bold text-text mb-6 pb-3 border-b-2 border-border">Loki - Logs</h2>
+        <h2 className="text-2xl font-bold text-text mb-6 pb-3 border-b-2 border-border">Logs</h2>
         {loadingLokiApps ? (
           <div className="text-center py-[60px] px-5 text-lg text-text-secondary">Carregando aplicações...</div>
         ) : lokiApps.length > 0 ? (

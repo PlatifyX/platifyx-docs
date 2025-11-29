@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8060'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:7000' : 'http://localhost:8060')
 const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1'
 const APP_BASE_URL = import.meta.env.VITE_APP_BASE_URL || 'http://localhost:7000'
 

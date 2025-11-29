@@ -1,3 +1,234 @@
+export interface PrometheusAlert {
+  labels: { [key: string]: string }
+  annotations: { [key: string]: string }
+  state: string
+  activeAt: string
+  value: string
+}
+
+export interface PrometheusStats {
+  totalTargets: number
+  activeTargets: number
+  totalAlerts: number
+  firingAlerts: number
+}
+
+export interface GrafanaStats {
+  totalDashboards: number
+  totalAlerts: number
+  alertingAlerts: number
+  totalDataSources: number
+}
+
+export interface GrafanaDashboard {
+  id: number
+  uid: string
+  title: string
+  url: string
+  type: string
+  tags: string[]
+  isStarred: boolean
+  uri: string
+  folderTitle?: string
+}
+
+export interface LokiApp {
+  name: string
+  squad?: string
+  application?: string
+  environment?: string
+}
+
+export interface LokiLogEntry {
+  timestamp: string
+  line: string
+  labels: { [key: string]: string }
+}
+
+export interface LokiStream {
+  stream: { [key: string]: string }
+  values: string[][]
+}
+
+export const mockPrometheusStats: PrometheusStats = {
+  totalTargets: 12,
+  activeTargets: 11,
+  totalAlerts: 8,
+  firingAlerts: 3
+}
+
+export const mockPrometheusAlerts: PrometheusAlert[] = [
+  {
+    labels: {
+      alertname: 'HighLatency',
+      squad: 'Payments',
+      service: 'payment-service',
+      severity: 'critical'
+    },
+    annotations: {
+      summary: 'Alta latência no payment-service',
+      description: 'Tempo de resposta médio acima de 2s nos últimos 5 minutos'
+    },
+    state: 'firing',
+    activeAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    value: '2.5'
+  },
+  {
+    labels: {
+      alertname: 'HighMemoryUsage',
+      squad: 'Security',
+      service: 'auth-service',
+      severity: 'warning'
+    },
+    annotations: {
+      summary: 'Uso elevado de memória',
+      description: 'Consumo de memória acima de 85% no auth-service'
+    },
+    state: 'firing',
+    activeAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+    value: '87.5'
+  },
+  {
+    labels: {
+      alertname: 'HighErrorRate',
+      squad: 'Platform',
+      service: 'api-gateway',
+      severity: 'warning'
+    },
+    annotations: {
+      summary: 'Aumento na taxa de erros 5xx',
+      description: 'Taxa de erros 5xx acima do limite em api-gateway'
+    },
+    state: 'firing',
+    activeAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+    value: '0.15'
+  }
+]
+
+export const mockGrafanaStats: GrafanaStats = {
+  totalDashboards: 15,
+  totalAlerts: 12,
+  alertingAlerts: 2,
+  totalDataSources: 5
+}
+
+export const mockGrafanaConfig = {
+  url: 'https://grafana.example.com'
+}
+
+export const mockGrafanaDashboards: GrafanaDashboard[] = [
+  {
+    id: 1,
+    uid: 'main-dashboard',
+    title: 'Main Dashboard',
+    url: 'https://grafana.example.com/d/main-dashboard',
+    type: 'dash-db',
+    tags: ['production', 'overview'],
+    isStarred: true,
+    uri: 'db/main-dashboard',
+    folderTitle: 'General'
+  },
+  {
+    id: 2,
+    uid: 'api-metrics',
+    title: 'API Metrics',
+    url: 'https://grafana.example.com/d/api-metrics',
+    type: 'dash-db',
+    tags: ['api', 'metrics'],
+    isStarred: false,
+    uri: 'db/api-metrics',
+    folderTitle: 'Services'
+  },
+  {
+    id: 3,
+    uid: 'infrastructure',
+    title: 'Infrastructure Overview',
+    url: 'https://grafana.example.com/d/infrastructure',
+    type: 'dash-db',
+    tags: ['infrastructure', 'kubernetes'],
+    isStarred: false,
+    uri: 'db/infrastructure',
+    folderTitle: 'Infrastructure'
+  }
+]
+
+export const mockLokiApps: string[] = [
+  'platform-api-gateway-prod',
+  'platform-api-gateway-stage',
+  'security-auth-service-prod',
+  'security-auth-service-stage',
+  'payments-payment-service-prod',
+  'payments-payment-service-stage',
+  'platform-user-service-prod',
+  'communications-notification-service-prod'
+]
+
+export const mockLokiLogs: Record<string, LokiLogEntry[]> = {
+  'platform-api-gateway-prod': [
+    {
+      timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+      line: 'INFO: Request processed successfully - GET /api/v1/users - 200 - 145ms',
+      labels: { app: 'api-gateway', env: 'prod', level: 'info' }
+    },
+    {
+      timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      line: 'ERROR: Upstream service unavailable: user-service - 503 - 5000ms',
+      labels: { app: 'api-gateway', env: 'prod', level: 'error' }
+    },
+    {
+      timestamp: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
+      line: 'WARN: Rate limit approaching for IP 192.168.1.100',
+      labels: { app: 'api-gateway', env: 'prod', level: 'warn' }
+    }
+  ],
+  'security-auth-service-prod': [
+    {
+      timestamp: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+      line: 'INFO: User authenticated successfully - user@example.com',
+      labels: { app: 'auth-service', env: 'prod', level: 'info' }
+    },
+    {
+      timestamp: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
+      line: 'WARN: Rate limit approaching for IP 192.168.1.100',
+      labels: { app: 'auth-service', env: 'prod', level: 'warn' }
+    },
+    {
+      timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+      line: 'ERROR: Failed to validate token - Invalid signature',
+      labels: { app: 'auth-service', env: 'prod', level: 'error' }
+    }
+  ],
+  'payments-payment-service-prod': [
+    {
+      timestamp: new Date(Date.now() - 1 * 60 * 1000).toISOString(),
+      line: 'INFO: Payment processed successfully - Transaction ID: TXN-12345',
+      labels: { app: 'payment-service', env: 'prod', level: 'info' }
+    },
+    {
+      timestamp: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
+      line: 'ERROR: Payment gateway timeout after 30s',
+      labels: { app: 'payment-service', env: 'prod', level: 'error' }
+    },
+    {
+      timestamp: new Date(Date.now() - 7 * 60 * 1000).toISOString(),
+      line: 'WARN: High latency detected - 2.5s average response time',
+      labels: { app: 'payment-service', env: 'prod', level: 'warn' }
+    }
+  ],
+  'platform-user-service-prod': [
+    {
+      timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+      line: 'INFO: User profile updated - user@example.com',
+      labels: { app: 'user-service', env: 'prod', level: 'info' }
+    },
+    {
+      timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      line: 'INFO: User created successfully - newuser@example.com',
+      labels: { app: 'user-service', env: 'prod', level: 'info' }
+    }
+  ]
+}
+
 export const mockObservabilityMetrics = {
   uptime: 99.95,
   avgResponseTime: 245,
@@ -5,39 +236,6 @@ export const mockObservabilityMetrics = {
   errorRate: 0.12,
   activeAlerts: 3
 }
-
-export const mockAlerts = [
-  {
-    id: 'alert-1',
-    severity: 'critical',
-    title: 'Alta latência no payment-service',
-    description: 'Tempo de resposta médio acima de 2s nos últimos 5 minutos',
-    service: 'payment-service',
-    timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-    status: 'firing',
-    assignee: 'Ana Oliveira'
-  },
-  {
-    id: 'alert-2',
-    severity: 'warning',
-    title: 'Uso elevado de memória - auth-service',
-    description: 'Consumo de memória acima de 85%',
-    service: 'auth-service',
-    timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-    status: 'firing',
-    assignee: 'Pedro Costa'
-  },
-  {
-    id: 'alert-3',
-    severity: 'warning',
-    title: 'Aumento na taxa de erros 5xx',
-    description: 'Taxa de erros 5xx acima do limite em api-gateway',
-    service: 'api-gateway',
-    timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    status: 'firing',
-    assignee: 'Maria Santos'
-  }
-]
 
 export const mockLogs = [
   {
@@ -97,6 +295,57 @@ export const mockMetricsTimeSeries = {
   ]
 }
 
+export const getMockPrometheusStats = async (): Promise<PrometheusStats> => {
+  await new Promise(resolve => setTimeout(resolve, 300))
+  return mockPrometheusStats
+}
+
+export const getMockPrometheusAlerts = async (): Promise<{ data: { alerts: PrometheusAlert[] } }> => {
+  await new Promise(resolve => setTimeout(resolve, 250))
+  return { data: { alerts: mockPrometheusAlerts } }
+}
+
+export const getMockGrafanaStats = async (): Promise<GrafanaStats> => {
+  await new Promise(resolve => setTimeout(resolve, 300))
+  return mockGrafanaStats
+}
+
+export const getMockGrafanaConfig = async () => {
+  await new Promise(resolve => setTimeout(resolve, 200))
+  return mockGrafanaConfig
+}
+
+export const getMockGrafanaDashboards = async (): Promise<{ dashboards: GrafanaDashboard[] }> => {
+  await new Promise(resolve => setTimeout(resolve, 250))
+  return { dashboards: mockGrafanaDashboards }
+}
+
+export const getMockLokiApps = async (): Promise<{ apps: string[] }> => {
+  await new Promise(resolve => setTimeout(resolve, 300))
+  return { apps: mockLokiApps }
+}
+
+export const getMockLokiLogs = async (appName: string): Promise<{ status: string; data: { resultType: string; result: LokiStream[] } }> => {
+  await new Promise(resolve => setTimeout(resolve, 350))
+  const logs = mockLokiLogs[appName] || []
+  
+  const streams: LokiStream[] = logs.map(log => {
+    const timestampNs = (new Date(log.timestamp).getTime() * 1000000).toString()
+    return {
+      stream: log.labels,
+      values: [[timestampNs, log.line]]
+    }
+  })
+  
+  return {
+    status: 'success',
+    data: {
+      resultType: 'streams',
+      result: streams
+    }
+  }
+}
+
 export const getMockObservabilityMetrics = async () => {
   await new Promise(resolve => setTimeout(resolve, 300))
   return mockObservabilityMetrics
@@ -104,15 +353,15 @@ export const getMockObservabilityMetrics = async () => {
 
 export const getMockAlerts = async () => {
   await new Promise(resolve => setTimeout(resolve, 250))
-  return mockAlerts
+  return []
 }
 
 export const getMockLogs = async () => {
   await new Promise(resolve => setTimeout(resolve, 350))
-  return mockLogs
+  return []
 }
 
 export const getMockMetricsTimeSeries = async () => {
   await new Promise(resolve => setTimeout(resolve, 400))
-  return mockMetricsTimeSeries
+  return {}
 }

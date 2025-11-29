@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { FolderOpen, Bug, Shield, Code, TrendingUp, Copy, CheckCircle, XCircle } from 'lucide-react'
 import { QualityFilterValues } from './QualityFilters'
-import { apiFetch } from '../../config/api'
+import { getMockQualityProjects, getMockQualityProjectDetails } from '../../mocks/data/quality'
 
 interface Project {
   key: string
@@ -42,23 +42,15 @@ function ProjectsTab({ filters }: ProjectsTabProps) {
   const fetchProjects = async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams()
-      if (filters.integration) params.append('integration', filters.integration)
-
-      const response = await apiFetch(`quality/projects?${params.toString()}`)
-      if (!response.ok) throw new Error('Failed to fetch projects')
-      const data = await response.json()
-
+      const data = await getMockQualityProjects()
       let filteredProjects = data.projects || []
 
-      // Apply project filter
       if (filters.project) {
         filteredProjects = filteredProjects.filter((p: Project) => p.key === filters.project)
       }
 
       setProjects(filteredProjects)
 
-      // Fetch details for each project
       filteredProjects.forEach((project: Project) => {
         fetchProjectDetails(project.key, project.integration)
       })
@@ -73,11 +65,8 @@ function ProjectsTab({ filters }: ProjectsTabProps) {
 
   const fetchProjectDetails = async (projectKey: string, integration?: string) => {
     try {
-      const params = new URLSearchParams()
-      if (integration) params.append('integration', integration)
-
-      const response = await apiFetch(`quality/projects/${projectKey}?${params.toString()}`)
-      if (!response.ok) return
+      const data = await getMockQualityProjectDetails(projectKey)
+      if (!data) return
 
       const details = await response.json()
       setProjectDetails(prev => new Map(prev).set(projectKey, details))

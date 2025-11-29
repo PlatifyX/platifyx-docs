@@ -3,7 +3,7 @@ import { Package, CheckCircle, XCircle, Clock, GitBranch, Plus } from 'lucide-re
 import BuildLogsModal from './BuildLogsModal'
 import QueueBuildModal from './QueueBuildModal'
 import { FilterValues } from './CIFilters'
-import { apiFetch } from '../../config/api'
+import { getMockCIBuilds } from '../../mocks/data/ci'
 
 interface Build {
   id: number
@@ -41,15 +41,7 @@ function BuildsTab({ filters }: BuildsTabProps) {
   const fetchBuilds = async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ limit: '50' })
-      if (filters.integration) params.append('integration', filters.integration)
-      if (filters.project) params.append('project', filters.project)
-      if (filters.startDate) params.append('startDate', filters.startDate)
-      if (filters.endDate) params.append('endDate', filters.endDate)
-
-      const response = await apiFetch(`ci/builds?${params.toString()}`)
-      if (!response.ok) throw new Error('Failed to fetch builds')
-      const data = await response.json()
+      const data = await getMockCIBuilds()
       setBuilds(data.builds || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load builds')

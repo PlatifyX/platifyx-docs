@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
 import AIAssistant from '../components/TechDocs/AIAssistant'
-import { buildApiUrl } from '../config/api'
+import { getMockTechDocsTree, getMockTechDocsDocument } from '../mocks/data/techdocs'
 
 interface TreeNode {
   path: string
@@ -48,9 +48,7 @@ function TechDocsPage() {
 
   const fetchTree = async () => {
     try {
-      const response = await fetch(buildApiUrl('techdocs/tree'))
-      if (!response.ok) throw new Error('Failed to fetch document tree')
-      const data = await response.json()
+      const data = await getMockTechDocsTree()
       setTree(data.tree || [])
     } catch (err) {
       console.error('Error fetching tree:', err)
@@ -61,9 +59,7 @@ function TechDocsPage() {
 
   const fetchDocument = async (path: string) => {
     try {
-      const response = await fetch(buildApiUrl(`techdocs/document?path=${encodeURIComponent(path)}`))
-      if (!response.ok) throw new Error('Failed to fetch document')
-      const data = await response.json()
+      const data = await getMockTechDocsDocument(path)
       setSelectedDoc(data)
       setEditContent(data.content || '')
       setIsEditing(false)

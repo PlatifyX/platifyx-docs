@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Github, GitBranch, AlertCircle, RefreshCw, ExternalLink, Star, GitFork } from 'lucide-react'
-import { apiFetch } from '../config/api'
+import { getMockRepoStats, getMockRepositories } from '../mocks/data/repositories'
 import IntegrationSelector from '../components/Common/IntegrationSelector'
 
 type Provider = 'github' | 'gitlab' | 'azure-repos'
@@ -80,73 +80,26 @@ function ReposPage() {
     setLoading(true)
     setError(null)
 
-    // Determine the correct endpoint based on provider
-    const getEndpoint = (type: 'stats' | 'repositories') => {
-      if (provider === 'azure-repos') {
-        return type === 'stats' ? 'ci/repositories/stats' : 'ci/repositories'
-      }
-      return type === 'stats' ? 'code/stats' : 'code/repositories'
-    }
-
     try {
       if (activeTab === 'overview') {
-        const params = new URLSearchParams()
-        if (selectedIntegration) params.append('integration', selectedIntegration)
-        const statsRes = await apiFetch(`${getEndpoint('stats')}?${params.toString()}`)
-        if (!statsRes.ok) {
-          if (statsRes.status === 404) {
-            setStats(null)
-            setRepositories([])
-            setError(null)
-          } else {
-            setError(`Erro ao buscar estatísticas (${statsRes.status})`)
-            setStats(null)
-            setRepositories([])
-          }
-          setLoading(false)
-          return
-        }
-        const data = await statsRes.json()
-        setStats(data)
+        const statsData = await getMockRepoStats()
+        setStats(statsData)
       }
 
       if (activeTab === 'repositories' || activeTab === 'overview') {
-        const params = new URLSearchParams()
-        if (selectedIntegration) params.append('integration', selectedIntegration)
-        const reposRes = await apiFetch(`${getEndpoint('repositories')}?${params.toString()}`)
-        if (!reposRes.ok) {
-          if (reposRes.status === 404) {
-            setRepositories([])
-            if (activeTab === 'repositories') {
-              setStats(null)
-              setError(null)
-              setLoading(false)
-              return
-            }
-          } else {
-            setError(`Erro ao buscar repositórios (${reposRes.status})`)
-            setRepositories([])
-            if (activeTab === 'repositories') {
-              setLoading(false)
-              return
-            }
-          }
-        } else {
-          const data = await reposRes.json()
-          const repos = data.repositories || []
-          setRepositories(repos)
+        const reposData = await getMockRepositories()
+        const repos = reposData.repositories || []
+        setRepositories(repos)
 
-          // Calculate project stats for Azure Repos
-          if (provider === 'azure-repos') {
-            const stats: Record<string, number> = {}
-            repos.forEach((repo: Repository) => {
-              const projectName = repo.owner.login
-              stats[projectName] = (stats[projectName] || 0) + 1
-            })
-            setProjectStats(stats)
-          } else {
-            setProjectStats({})
-          }
+        if (provider === 'azure-repos') {
+          const stats: Record<string, number> = {}
+          repos.forEach((repo: Repository) => {
+            const projectName = repo.owner.login
+            stats[projectName] = (stats[projectName] || 0) + 1
+          })
+          setProjectStats(stats)
+        } else {
+          setProjectStats({})
         }
       }
     } catch (err: any) {

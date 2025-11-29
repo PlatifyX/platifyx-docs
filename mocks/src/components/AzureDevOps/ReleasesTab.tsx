@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Rocket, CheckCircle, XCircle, Clock, UserCheck, Check, X } from 'lucide-react'
 import { FilterValues } from './CIFilters'
-import { apiFetch } from '../../config/api'
+import { getMockCIReleases } from '../../mocks/data/ci'
 
 interface User {
   id: string
@@ -63,15 +63,7 @@ function ReleasesTab({ filters }: ReleasesTabProps) {
   const fetchReleases = async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ limit: '50' })
-      if (filters.integration) params.append('integration', filters.integration)
-      if (filters.project) params.append('project', filters.project)
-      if (filters.startDate) params.append('startDate', filters.startDate)
-      if (filters.endDate) params.append('endDate', filters.endDate)
-
-      const response = await apiFetch(`ci/releases?${params.toString()}`)
-      if (!response.ok) throw new Error('Failed to fetch releases')
-      const data = await response.json()
+      const data = await getMockCIReleases()
       setReleases(data.releases || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load releases')

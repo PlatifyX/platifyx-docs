@@ -43,7 +43,6 @@ func (s *BoardsService) GetUnifiedBoard() (*domain.UnifiedBoard, error) {
 
 	// Default columns for Kanban board
 	columns := []domain.BoardColumn{
-		{ID: "backlog", Name: "Backlog", Items: []domain.BoardItem{}},
 		{ID: "todo", Name: "To Do", Items: []domain.BoardItem{}},
 		{ID: "inprogress", Name: "In Progress", Items: []domain.BoardItem{}},
 		{ID: "review", Name: "Review", Items: []domain.BoardItem{}},
@@ -168,8 +167,7 @@ func (s *BoardsService) mapAzureDevOpsStatus(status, result string) string {
 
 func (s *BoardsService) matchesColumn(item domain.BoardItem, columnID string) bool {
 	statusMap := map[string][]string{
-		"backlog":    {"backlog", "new", "open"},
-		"todo":       {"todo", "to do", "ready", "queued"},
+		"todo":       {"todo", "to do", "ready", "queued", "backlog", "new", "open"},
 		"inprogress": {"inprogress", "in progress", "in_progress", "active", "working", "running"},
 		"review":     {"review", "testing", "qa", "failed"},
 		"done":       {"done", "completed", "closed", "resolved", "succeeded", "finished"},
@@ -215,7 +213,6 @@ func (s *BoardsService) GetBoardBySource(source domain.BoardSource) (*domain.Boa
 
 	// Organize into columns
 	columns := []domain.BoardColumn{
-		{ID: "backlog", Name: "Backlog", Items: []domain.BoardItem{}},
 		{ID: "todo", Name: "To Do", Items: []domain.BoardItem{}},
 		{ID: "inprogress", Name: "In Progress", Items: []domain.BoardItem{}},
 		{ID: "review", Name: "Review", Items: []domain.BoardItem{}},

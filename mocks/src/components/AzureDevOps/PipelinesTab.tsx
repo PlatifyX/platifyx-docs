@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { GitBranch, FolderOpen, Package } from 'lucide-react'
 import PipelineRunsModal from './PipelineRunsModal'
 import { FilterValues } from './CIFilters'
-import { apiFetch } from '../../config/api'
+import { getMockCIPipelines } from '../../mocks/data/ci'
 
 interface Pipeline {
   id: number
@@ -32,13 +32,7 @@ function PipelinesTab({ filters }: PipelinesTabProps) {
   const fetchPipelines = async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams()
-      if (filters.integration) params.append('integration', filters.integration)
-      if (filters.project) params.append('project', filters.project)
-
-      const response = await apiFetch(`ci/pipelines?${params.toString()}`)
-      if (!response.ok) throw new Error('Failed to fetch pipelines')
-      const data = await response.json()
+      const data = await getMockCIPipelines()
       setPipelines(data.pipelines || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load pipelines')

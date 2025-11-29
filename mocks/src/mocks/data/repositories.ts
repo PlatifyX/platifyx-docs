@@ -1,93 +1,125 @@
-export const mockRepositories = [
+export interface Repository {
+  id: number | string
+  name: string
+  full_name: string
+  description: string
+  html_url: string
+  private: boolean
+  fork: boolean
+  created_at: string
+  updated_at: string
+  pushed_at: string
+  size: number
+  stargazers_count: number
+  watchers_count: number
+  language: string
+  forks_count: number
+  open_issues_count: number
+  default_branch: string
+  owner: {
+    login: string
+    avatar_url: string
+  }
+}
+
+export interface RepoStats {
+  totalRepositories: number
+  totalStars: number
+  totalForks: number
+  totalOpenIssues: number
+  publicRepos: number
+  privateRepos: number
+}
+
+export const mockRepositories: Repository[] = [
   {
-    id: '1',
+    id: 1,
     name: 'api-gateway',
-    fullName: 'empresa/api-gateway',
+    full_name: 'empresa/api-gateway',
     description: 'Gateway principal da API com roteamento e autenticação',
-    url: 'https://github.com/empresa/api-gateway',
-    defaultBranch: 'main',
+    html_url: 'https://github.com/empresa/api-gateway',
+    private: true,
+    fork: false,
+    created_at: '2024-01-15T10:00:00Z',
+    updated_at: '2024-03-16T10:30:00Z',
+    pushed_at: '2024-03-16T10:30:00Z',
+    size: 2450,
+    stargazers_count: 45,
+    watchers_count: 12,
     language: 'TypeScript',
-    stars: 45,
-    forks: 12,
-    openIssues: 8,
-    lastCommit: '2024-03-16T10:30:00Z',
-    isPrivate: true
+    forks_count: 12,
+    open_issues_count: 8,
+    default_branch: 'main',
+    owner: {
+      login: 'empresa',
+      avatar_url: 'https://github.com/empresa.png'
+    }
   },
   {
-    id: '2',
+    id: 2,
     name: 'auth-service',
-    fullName: 'empresa/auth-service',
+    full_name: 'empresa/auth-service',
     description: 'Serviço de autenticação usando JWT e OAuth2',
-    url: 'https://github.com/empresa/auth-service',
-    defaultBranch: 'main',
+    html_url: 'https://github.com/empresa/auth-service',
+    private: true,
+    fork: false,
+    created_at: '2024-01-20T09:00:00Z',
+    updated_at: '2024-03-15T14:20:00Z',
+    pushed_at: '2024-03-15T14:20:00Z',
+    size: 1820,
+    stargazers_count: 32,
+    watchers_count: 8,
     language: 'Go',
-    stars: 32,
-    forks: 8,
-    openIssues: 5,
-    lastCommit: '2024-03-15T14:20:00Z',
-    isPrivate: true
+    forks_count: 8,
+    open_issues_count: 5,
+    default_branch: 'main',
+    owner: {
+      login: 'empresa',
+      avatar_url: 'https://github.com/empresa.png'
+    }
   },
   {
-    id: '3',
+    id: 3,
     name: 'payment-service',
-    fullName: 'empresa/payment-service',
+    full_name: 'empresa/payment-service',
     description: 'Processamento de pagamentos integrado com Stripe e PayPal',
-    url: 'https://github.com/empresa/payment-service',
-    defaultBranch: 'main',
+    html_url: 'https://github.com/empresa/payment-service',
+    private: true,
+    fork: false,
+    created_at: '2024-02-01T14:00:00Z',
+    updated_at: '2024-03-16T09:15:00Z',
+    pushed_at: '2024-03-16T09:15:00Z',
+    size: 3200,
+    stargazers_count: 28,
+    watchers_count: 6,
     language: 'Python',
-    stars: 28,
-    forks: 6,
-    openIssues: 12,
-    lastCommit: '2024-03-16T09:15:00Z',
-    isPrivate: true
-  },
-  {
-    id: '4',
-    name: 'notification-service',
-    fullName: 'empresa/notification-service',
-    description: 'Sistema de notificações multi-canal (email, SMS, push)',
-    url: 'https://github.com/empresa/notification-service',
-    defaultBranch: 'main',
-    language: 'Node.js',
-    stars: 21,
-    forks: 5,
-    openIssues: 3,
-    lastCommit: '2024-03-14T16:45:00Z',
-    isPrivate: true
-  },
-  {
-    id: '5',
-    name: 'user-service',
-    fullName: 'empresa/user-service',
-    description: 'Gerenciamento de perfis e preferências de usuários',
-    url: 'https://github.com/empresa/user-service',
-    defaultBranch: 'main',
-    language: 'Java',
-    stars: 38,
-    forks: 10,
-    openIssues: 7,
-    lastCommit: '2024-03-15T11:30:00Z',
-    isPrivate: true
-  },
-  {
-    id: '6',
-    name: 'frontend-app',
-    fullName: 'empresa/frontend-app',
-    description: 'Aplicação frontend React com TypeScript',
-    url: 'https://github.com/empresa/frontend-app',
-    defaultBranch: 'main',
-    language: 'TypeScript',
-    stars: 56,
-    forks: 15,
-    openIssues: 18,
-    lastCommit: '2024-03-16T15:00:00Z',
-    isPrivate: true
+    forks_count: 6,
+    open_issues_count: 12,
+    default_branch: 'main',
+    owner: {
+      login: 'empresa',
+      avatar_url: 'https://github.com/empresa.png'
+    }
   }
 ]
 
-export const getMockRepositories = async () => {
+export const mockRepoStats: RepoStats = {
+  totalRepositories: 3,
+  totalStars: 105,
+  totalForks: 26,
+  totalOpenIssues: 25,
+  publicRepos: 0,
+  privateRepos: 3
+}
+
+export const getMockRepositories = async (): Promise<{ repositories: Repository[] }> => {
   await new Promise(resolve => setTimeout(resolve, 300))
-  return mockRepositories
+  return { repositories: mockRepositories }
+}
+
+export const getMockRepoStats = async (): Promise<RepoStats> => {
+  await new Promise(resolve => setTimeout(resolve, 250))
+  return mockRepoStats
 }
 
 export const getMockRepositoryById = async (id: string) => {

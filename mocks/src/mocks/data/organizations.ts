@@ -1,7 +1,7 @@
 export const mockOrganizations = [
   {
     uuid: '550e8400-e29b-41d4-a716-446655440001',
-    name: 'Organização Demo',
+    name: 'PlatifyX',
     ssoActive: false,
     databaseAddressWrite: 'postgres://demo-db:5432/platifyx',
     databaseAddressRead: 'postgres://demo-db:5432/platifyx',

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Server, Box, Layers, Network, RefreshCw, AlertCircle } from 'lucide-react'
-import { apiFetch } from '../config/api'
+import { getMockClusterInfo, getMockKubernetesPods, getMockKubernetesDeployments, getMockKubernetesNodes } from '../mocks/data/kubernetes'
 import IntegrationSelector from '../components/Common/IntegrationSelector'
 
 interface Pod {
@@ -52,65 +52,25 @@ function KubernetesPage() {
     setError(null)
 
     try {
-      const params = new URLSearchParams()
-      if (selectedIntegration) params.append('integration', selectedIntegration)
-
-      const clusterRes = await apiFetch(`kubernetes/cluster?${params.toString()}`)
-      if (!clusterRes.ok) {
-        // 400 = organização não encontrada ou sem header
-        // 404 = sem integração configurada
-        if (clusterRes.status === 400) {
-          const errorData = await clusterRes.json().catch(() => ({}))
-          setError(errorData.error || 'Organization UUID is required')
-        } else if (clusterRes.status === 404) {
-          setClusterInfo(null)
-          setPods([])
-          setDeployments([])
-          setNodes([])
-          setError(null)
-        } else {
-          // Outros erros (503, 500, etc.) = problema no serviço
-          setError(`Erro ao buscar dados do Kubernetes (${clusterRes.status})`)
-        }
-        setLoading(false)
-        return
-      }
-
-      const data = await clusterRes.json()
-      setClusterInfo(data)
+      const clusterData = await getMockClusterInfo()
+      setClusterInfo(clusterData)
 
       if (activeTab === 'pods' || activeTab === 'overview') {
-        const params = new URLSearchParams()
-        if (selectedIntegration) params.append('integration', selectedIntegration)
-        const podsRes = await apiFetch(`kubernetes/pods?${params.toString()}`)
-        if (podsRes.ok) {
-          const data = await podsRes.json()
-          setPods(data.pods || [])
-        }
+        const podsData = await getMockKubernetesPods()
+        setPods(podsData.pods || [])
       }
 
       if (activeTab === 'deployments' || activeTab === 'overview') {
-        const params = new URLSearchParams()
-        if (selectedIntegration) params.append('integration', selectedIntegration)
-        const deploymentsRes = await apiFetch(`kubernetes/deployments?${params.toString()}`)
-        if (deploymentsRes.ok) {
-          const data = await deploymentsRes.json()
-          setDeployments(data.deployments || [])
-        }
+        const deploymentsData = await getMockKubernetesDeployments()
+        setDeployments(deploymentsData.deployments || [])
       }
 
       if (activeTab === 'nodes' || activeTab === 'overview') {
-        const params = new URLSearchParams()
-        if (selectedIntegration) params.append('integration', selectedIntegration)
-        const nodesRes = await apiFetch(`kubernetes/nodes?${params.toString()}`)
-        if (nodesRes.ok) {
-          const data = await nodesRes.json()
-          setNodes(data.nodes || [])
-        }
+        const nodesData = await getMockKubernetesNodes()
+        setNodes(nodesData.nodes || [])
       }
     } catch (err: any) {
-      // Erro de rede ou outros erros
-      setError(`Erro de conexão: ${err.message || 'Não foi possível conectar ao backend'}`)
+      setError(`Erro ao carregar dados: ${err.message || 'Erro desconhecido'}`)
       setClusterInfo(null)
       setPods([])
       setDeployments([])
