@@ -3,6 +3,7 @@ import { DollarSign, Package, Filter, AlertTriangle } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
 import { apiFetch } from '../config/api'
 import IntegrationSelector from '../components/Common/IntegrationSelector'
+import EmptyIntegrationState from '../components/Common/EmptyIntegrationState'
 
 interface FinOpsStats {
   totalCost: number
@@ -399,6 +400,15 @@ function FinOpsPage() {
       </div>
 
       <div>
+        {activeTab === 'overview' && !stats && (
+          <EmptyIntegrationState
+            title="Nenhum item encontrado"
+            description="Configure uma integração de cloud provider para visualizar custos e otimizações"
+            integrations={['AWS', 'Azure', 'GCP']}
+            icon={<DollarSign size={64} className="text-gray-500" />}
+          />
+        )}
+
         {activeTab === 'overview' && stats && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-[#1E1E1E] border border-gray-700 rounded-lg p-6">

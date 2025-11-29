@@ -1,4 +1,5 @@
 import { Settings } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 interface EmptyIntegrationStateProps {
   title?: string
@@ -13,6 +14,8 @@ function EmptyIntegrationState({
   integrations,
   icon
 }: EmptyIntegrationStateProps) {
+  const navigate = useNavigate()
+
   return (
     <div className="text-center py-20 px-5 flex flex-col items-center justify-center">
       <div className="bg-gray-700/30 p-6 rounded-full mb-6">
@@ -37,13 +40,13 @@ function EmptyIntegrationState({
           </div>
         </div>
       )}
-      <a
-        href="/integrations"
-        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all no-underline inline-flex items-center gap-2"
+      <button
+        onClick={() => navigate('/integrations')}
+        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all inline-flex items-center gap-2 border-none cursor-pointer"
       >
         <Settings size={16} />
         Ir para Integrações
-      </a>
+      </button>
     </div>
   )
 }
