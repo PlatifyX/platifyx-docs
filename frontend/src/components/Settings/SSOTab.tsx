@@ -6,6 +6,9 @@ const SSOTab: React.FC = () => {
   const [configs, setConfigs] = useState<SSOConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingProvider, setEditingProvider] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Partial<SSOConfig>>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadSSOConfigs();
@@ -82,6 +85,66 @@ const SSOTab: React.FC = () => {
       console.error('Error toggling SSO provider:', err);
       alert('Erro ao atualizar configuração de SSO');
     }
+  };
+
+  const openEditModal = (provider: string) => {
+    const config = configs.find(c => c.provider === provider);
+    if (config) {
+      setFormData({
+        provider: config.provider,
+        enabled: config.enabled,
+        client_id: config.client_id === '***' ? '' : config.client_id,
+        client_secret: '',
+        tenant_id: config.tenant_id || '',
+        redirect_uri: config.redirect_uri,
+        allowed_domains: config.allowed_domains || [],
+      });
+      setEditingProvider(provider);
+    }
+  };
+
+  const closeEditModal = () => {
+    setEditingProvider(null);
+    setFormData({});
+  };
+
+  const handleSaveConfig = async () => {
+    if (!editingProvider || !formData.client_id) {
+      alert('Client ID é obrigatório');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const configToSave = {
+        provider: editingProvider,
+        enabled: formData.enabled ?? false,
+        client_id: formData.client_id,
+        client_secret: formData.client_secret || '',
+        tenant_id: formData.tenant_id,
+        redirect_uri: formData.redirect_uri || buildSSORedirectUri(editingProvider),
+        allowed_domains: formData.allowed_domains || [],
+      };
+
+      const updatedConfig = await createOrUpdateSSOConfig(configToSave);
+
+      setConfigs(configs.map(c =>
+        c.provider === editingProvider ? updatedConfig : c
+      ));
+
+      closeEditModal();
+      alert('Configuração salva com sucesso!');
+    } catch (err) {
+      console.error('Error saving SSO config:', err);
+      alert('Erro ao salvar configuração de SSO');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDomainsChange = (domainsText: string) => {
+    const domains = domainsText.split(',').map(d => d.trim()).filter(d => d);
+    setFormData({ ...formData, allowed_domains: domains });
   };
 
   const providerInfo: { [key: string]: { name: string; icon: string; color: string } } = {
@@ -200,7 +263,10 @@ const SSOTab: React.FC = () => {
                 )}
               </div>
 
-              <button className="w-full mt-4 flex items-center justify-center space-x-2 px-4 py-2 bg-[#3A3A3A] text-white rounded-lg hover:bg-[#4A4A4A] transition-colors">
+              <button
+                onClick={() => openEditModal(config.provider)}
+                className="w-full mt-4 flex items-center justify-center space-x-2 px-4 py-2 bg-[#3A3A3A] text-white rounded-lg hover:bg-[#4A4A4A] transition-colors"
+              >
                 <Settings className="w-4 h-4" />
                 <span>Configurar</span>
               </button>
@@ -221,6 +287,127 @@ const SSOTab: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de Edição */}
+      {editingProvider && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#2A2A2A] border border-gray-700 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-white">
+                  Configurar {providerInfo[editingProvider]?.name}
+                </h3>
+                <button
+                  onClick={closeEditModal}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Client ID */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Client ID *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.client_id || ''}
+                    onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
+                    className="w-full px-4 py-2 bg-[#1E1E1E] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B]"
+                    placeholder="Digite o Client ID"
+                  />
+                </div>
+
+                {/* Client Secret */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Client Secret *
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.client_secret || ''}
+                    onChange={(e) => setFormData({ ...formData, client_secret: e.target.value })}
+                    className="w-full px-4 py-2 bg-[#1E1E1E] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B]"
+                    placeholder="Digite o Client Secret"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Deixe em branco para manter o secret atual
+                  </p>
+                </div>
+
+                {/* Tenant ID (apenas para Microsoft) */}
+                {editingProvider === 'microsoft' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Tenant ID
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.tenant_id || ''}
+                      onChange={(e) => setFormData({ ...formData, tenant_id: e.target.value })}
+                      className="w-full px-4 py-2 bg-[#1E1E1E] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B]"
+                      placeholder="Digite o Tenant ID (opcional, padrão: common)"
+                    />
+                  </div>
+                )}
+
+                {/* Redirect URI */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Redirect URI
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.redirect_uri || ''}
+                    onChange={(e) => setFormData({ ...formData, redirect_uri: e.target.value })}
+                    className="w-full px-4 py-2 bg-[#1E1E1E] border border-gray-700 rounded-lg text-gray-400 focus:outline-none focus:border-[#1B998B]"
+                    disabled
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Copie esta URL e configure no console do provedor
+                  </p>
+                </div>
+
+                {/* Allowed Domains */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Domínios Permitidos (opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.allowed_domains?.join(', ') || ''}
+                    onChange={(e) => handleDomainsChange(e.target.value)}
+                    className="w-full px-4 py-2 bg-[#1E1E1E] border border-gray-700 rounded-lg text-white focus:outline-none focus:border-[#1B998B]"
+                    placeholder="exemplo.com, outrodominio.com"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Separe múltiplos domínios com vírgula. Deixe vazio para permitir todos.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 mt-6 pt-6 border-t border-gray-700">
+                <button
+                  onClick={closeEditModal}
+                  className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+                  disabled={saving}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveConfig}
+                  disabled={saving || !formData.client_id}
+                  className="px-6 py-2 bg-[#1B998B] text-white rounded-lg hover:bg-[#158777] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? 'Salvando...' : 'Salvar Configuração'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
