@@ -1,4 +1,4 @@
-import { apiFetch } from '../config/api'
+import { apiFetch, buildApiUrl } from '../config/api'
 
 export interface AIProvider {
   provider: string

@@ -12,7 +12,6 @@ import {
   BarChart3,
   Plug,
   FileText,
-  Network,
   Boxes,
   Workflow,
   Key,

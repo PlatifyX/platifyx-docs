@@ -6,16 +6,36 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: platifyx-backend
-    ports:
-      - "8060:8060"
+    network_mode: host
     environment:
-      - ENVIRONMENT=development
+      - ENVIRONMENT=production
+      - PORT=8060
+      - VERSION=0.1.0
+      - DATABASE_URL=postgres://admin:Ob9jupho@localhost:5432/platifyx?sslmode=disable
+      - REDIS_ENABLED=true
+      - REDIS_HOST=localhost
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - CACHE_ENABLED=true
+      - CACHE_TTL=300
+      - ALLOWED_ORIGINS=https://app.platifyx.com,https://api.platifyx.com
+      - FRONTEND_URL=https://app.platifyx.com
     restart: unless-stopped
+  
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: platifyx-frontend
     ports:
-      - "7000:7000"
+      - "7000:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
+    networks:
+      - platifyx-network
+
+networks:
+  platifyx-network:
+    driver: bridge

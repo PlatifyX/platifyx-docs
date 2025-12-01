@@ -7,7 +7,6 @@ import {
   XCircle, 
   Clock, 
   TrendingUp,
-  TrendingDown,
   DollarSign,
   Server,
   Loader2,

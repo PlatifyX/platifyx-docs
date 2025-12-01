@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 import { API_CONFIG } from '../config/api'
-import { useAuth } from '../contexts/AuthContext'
 
 function SSOCallbackPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { login } = useAuth()
   const [error, setError] = useState('')
   const [processing, setProcessing] = useState(true)
 
