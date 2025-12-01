@@ -21,6 +21,10 @@ services:
       - CACHE_TTL=300
       - ALLOWED_ORIGINS=https://app.platifyx.com,https://api.platifyx.com
       - FRONTEND_URL=https://app.platifyx.com
+      - AWS_SHARED_CREDENTIALS_FILE=/root/.aws/credentials
+      - AWS_CONFIG_FILE=/root/.aws/config
+    volumes:
+      - /home/ubuntu/.aws:/root/.aws:ro
     restart: unless-stopped
   
   frontend:

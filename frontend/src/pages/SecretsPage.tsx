@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Key, Shield, AlertCircle } from 'lucide-react'
+import { Key, Shield } from 'lucide-react'
 import AWSSecretsTab from '../components/Secrets/AWSSecretsTab'
 import VaultTab from '../components/Secrets/VaultTab'
 import { IntegrationApi, type Integration } from '../utils/integrationApi'

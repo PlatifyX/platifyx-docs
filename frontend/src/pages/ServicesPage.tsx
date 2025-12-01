@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, Shield, Bug, TrendingUp, AlertTriangle, Server, Container } from 'lucide-react'
+import { Box, RefreshCw, ExternalLink, Activity, Code, Users, GitBranch, Shield, Bug, TrendingUp, Server, Container } from 'lucide-react'
 import { apiFetch } from '../config/api'
 import EmptyIntegrationState from '../components/Common/EmptyIntegrationState'
 
@@ -363,8 +363,10 @@ function ServicesPage() {
         {!loading && !error && filteredServices.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredServices.map(service => {
-              const hasPods = (serviceStatus[service.name]?.stageStatus?.pods && serviceStatus[service.name]?.stageStatus?.pods!.length > 0) ||
-                             (serviceStatus[service.name]?.prodStatus?.pods && serviceStatus[service.name]?.prodStatus?.pods!.length > 0)
+              const stagePods = serviceStatus[service.name]?.stageStatus?.pods
+              const prodPods = serviceStatus[service.name]?.prodStatus?.pods
+              const hasPods = (stagePods && stagePods.length > 0) ||
+                             (prodPods && prodPods.length > 0)
 
               return (
                 <div key={service.id} className="bg-[#1E1E1E] border border-border rounded-xl overflow-hidden transition-all duration-200 hover:border-primary hover:shadow-xl">
@@ -571,14 +573,14 @@ function ServicesPage() {
                            Infraestrutura
                         </h4>
                         <div className="space-y-3">
-                        {serviceStatus[service.name]?.stageStatus?.pods && serviceStatus[service.name]?.stageStatus?.pods!.length > 0 && (
+                        {stagePods && stagePods.length > 0 && (
                           <div>
                             <div className="text-xs font-semibold text-text-secondary mb-2 flex items-center gap-2">
                               <Container size={14} className="text-warning" />
-                              STAGING ({serviceStatus[service.name]?.stageStatus?.pods!.length})
+                              STAGING ({stagePods.length})
                             </div>
                             <div className="space-y-2">
-                              {serviceStatus[service.name]?.stageStatus?.pods!.map((pod, idx) => (
+                              {stagePods.map((pod, idx) => (
                                 <div key={idx} className="p-2.5 bg-background rounded-lg border border-border">
                                   <div className="flex items-center justify-between mb-1.5">
                                     <span className="text-xs font-mono text-text truncate flex-1 mr-2">{pod.name}</span>
@@ -608,14 +610,14 @@ function ServicesPage() {
                           </div>
                         )}
 
-                        {serviceStatus[service.name]?.prodStatus?.pods && serviceStatus[service.name]?.prodStatus?.pods!.length > 0 && (
-                          <div className={serviceStatus[service.name]?.stageStatus?.pods && serviceStatus[service.name]?.stageStatus?.pods!.length > 0 ? 'pt-3 mt-3 border-t border-border' : ''}>
+                        {prodPods && prodPods.length > 0 && (
+                          <div className={stagePods && stagePods.length > 0 ? 'pt-3 mt-3 border-t border-border' : ''}>
                             <div className="text-xs font-semibold text-text-secondary mb-2 flex items-center gap-2">
                               <Container size={14} className="text-success" />
-                              PRODUCTION ({serviceStatus[service.name]?.prodStatus?.pods!.length})
+                              PRODUCTION ({prodPods.length})
                             </div>
                             <div className="space-y-2">
-                              {serviceStatus[service.name]?.prodStatus?.pods!.map((pod, idx) => (
+                              {prodPods.map((pod, idx) => (
                                 <div key={idx} className="p-2.5 bg-background rounded-lg border border-border">
                                   <div className="flex items-center justify-between mb-1.5">
                                     <span className="text-xs font-mono text-text truncate flex-1 mr-2">{pod.name}</span>

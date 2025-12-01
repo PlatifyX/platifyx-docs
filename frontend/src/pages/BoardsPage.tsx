@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react'
 import { 
   LayoutGrid, 
-  GitBranch, 
-  CheckCircle, 
   Clock, 
-  AlertCircle,
   Loader2,
   ExternalLink,
   Filter,
@@ -59,7 +56,7 @@ function BoardsPage() {
   const [board, setBoard] = useState<UnifiedBoard | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedSource, setSelectedSource] = useState<string | null>(null)
-  const [filterStatus, setFilterStatus] = useState<string | null>(null)
+  const [filterStatus] = useState<string | null>(null)
 
   useEffect(() => {
     fetchBoard()
