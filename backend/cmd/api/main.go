@@ -78,7 +78,7 @@ func main() {
 	}
 
 	serviceManager := service.NewServiceManager(cfg, log, db)
-	handlerManager := handler.NewHandlerManager(serviceManager, log)
+	handlerManager := handler.NewHandlerManager(cfg, serviceManager, log)
 
 	userOrgRepo := repository.NewUserOrganizationRepository(db)
 

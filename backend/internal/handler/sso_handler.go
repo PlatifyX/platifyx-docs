@@ -25,6 +25,7 @@ type SSOHandler struct {
 	userRepo     *repository.UserRepository
 	authService  *service.AuthService
 	cacheService *service.CacheService
+	frontendURL  string
 }
 
 func NewSSOHandler(
@@ -32,12 +33,14 @@ func NewSSOHandler(
 	userRepo *repository.UserRepository,
 	authService *service.AuthService,
 	cacheService *service.CacheService,
+	frontendURL string,
 ) *SSOHandler {
 	return &SSOHandler{
 		ssoRepo:      ssoRepo,
 		userRepo:     userRepo,
 		authService:  authService,
 		cacheService: cacheService,
+		frontendURL:  frontendURL,
 	}
 }
 
@@ -83,7 +86,7 @@ func (h *SSOHandler) CallbackSSO(c *gin.Context) {
 	state := c.Query("state")
 
 	if code == "" {
-		frontendCallback := "https://app.platifyx.com/login?error=Missing+authorization+code"
+		frontendCallback := fmt.Sprintf("%s/login?error=Missing+authorization+code", h.frontendURL)
 		c.Redirect(http.StatusTemporaryRedirect, frontendCallback)
 		return
 	}
@@ -95,7 +98,7 @@ func (h *SSOHandler) CallbackSSO(c *gin.Context) {
 
 		if err != nil || storedProvider != provider {
 			// State inválido ou expirado - possível ataque CSRF
-			frontendCallback := "https://app.platifyx.com/login?error=Invalid+SSO+session"
+			frontendCallback := fmt.Sprintf("%s/login?error=Invalid+SSO+session", h.frontendURL)
 			c.Redirect(http.StatusTemporaryRedirect, frontendCallback)
 			return
 		}
@@ -189,14 +192,14 @@ func (h *SSOHandler) CallbackSSO(c *gin.Context) {
 
 	loginResp, err := h.authService.LoginWithSSO(user.ID, ipAddress, userAgent)
 	if err != nil {
-		frontendCallback := fmt.Sprintf("https://app.platifyx.com/login?error=%s", err.Error())
+		frontendCallback := fmt.Sprintf("%s/login?error=%s", h.frontendURL, err.Error())
 		c.Redirect(http.StatusTemporaryRedirect, frontendCallback)
 		return
 	}
 
 	// Redirecionar para o frontend com o token
-	frontendCallback := fmt.Sprintf("https://app.platifyx.com/auth/callback/%s?token=%s",
-		provider, loginResp.Token)
+	frontendCallback := fmt.Sprintf("%s/auth/callback/%s?token=%s",
+		h.frontendURL, provider, loginResp.Token)
 	c.Redirect(http.StatusTemporaryRedirect, frontendCallback)
 }
 

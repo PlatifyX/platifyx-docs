@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/PlatifyX/platifyx-core/internal/config"
 	"github.com/PlatifyX/platifyx-core/internal/service"
 	"github.com/PlatifyX/platifyx-core/pkg/logger"
 )
@@ -43,7 +44,7 @@ type HandlerManager struct {
 	OrganizationUserHandler *OrganizationUserHandler
 }
 
-func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *HandlerManager {
+func NewHandlerManager(cfg *config.Config, services *service.ServiceManager, log *logger.Logger) *HandlerManager {
 	return &HandlerManager{
 		HealthHandler:          NewHealthHandler(),
 		MetricsHandler:         NewMetricsHandler(services.MetricsService, log),
@@ -71,7 +72,7 @@ func NewHandlerManager(services *service.ServiceManager, log *logger.Logger) *Ha
 		TemplateHandler:        NewTemplateHandler(services.TemplateService, log),
 		SettingsHandler:        NewSettingsHandler(services.UserService, services.UserRepository, services.RoleRepository, services.TeamRepository, services.AuditRepository, services.SSORepository),
 		AuthHandler:            NewAuthHandler(services.AuthService, services.UserService),
-		SSOHandler:             NewSSOHandler(services.SSORepository, services.UserRepository, services.AuthService, services.CacheService),
+		SSOHandler:             NewSSOHandler(services.SSORepository, services.UserRepository, services.AuthService, services.CacheService, cfg.FrontendURL),
 		AutonomousHandler:      NewAutonomousHandler(services.AutonomousRecommendationsService, services.TroubleshootingAssistantService, services.AutonomousActionsService, log),
 		MaturityHandler:        NewMaturityHandler(services.MaturityService, log),
 		AutoDocsHandler:        NewAutoDocsHandler(services.AutoDocsService, log),
